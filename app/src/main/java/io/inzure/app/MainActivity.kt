@@ -1,4 +1,4 @@
-package com.example.inzure
+package io.inzure.app
 
 import android.content.Intent
 import android.os.Bundle
@@ -9,6 +9,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.Composable
+import io.inzure.app.ui.views.LoginView
+import io.inzure.app.ui.views.MainView
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -19,9 +21,9 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainScreen(
+                    MainView(
                         onNavigateToLogin = {
-                            val intent = Intent(this@MainActivity, LoginScreen::class.java)
+                            val intent = Intent(this@MainActivity, LoginView::class.java)
                             startActivity(intent)
                         }
                     )

@@ -1,4 +1,4 @@
-package com.example.inzure
+package io.inzure.app.ui.views
 
 import android.app.DatePickerDialog
 import android.content.Intent
@@ -34,22 +34,24 @@ import androidx.compose.ui.text.input.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.inzure.ui.theme.InzureTheme
+import io.inzure.app.MainActivity
+import io.inzure.app.R
+import io.inzure.app.ui.theme.InzureTheme
 import java.util.*
 
-class RegisterScreen : ComponentActivity() {
+class RegisterView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             InzureTheme {
                 Scaffold { paddingValues ->
-                    registerScreen(paddingValues, onBackClick = {
-                        val intent = Intent(this@RegisterScreen, MainActivity::class.java)
+                    registerView(paddingValues, onBackClick = {
+                        val intent = Intent(this@RegisterView, MainActivity::class.java)
                         startActivity(intent)
                         finish()
                     }, onLoginClick = {
-                        val intent = Intent(this@RegisterScreen, LoginScreen::class.java)
+                        val intent = Intent(this@RegisterView, LoginView::class.java)
                         startActivity(intent)
                         finish()
                     })
@@ -61,7 +63,7 @@ class RegisterScreen : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun registerScreen(paddingValues: PaddingValues, onBackClick: () -> Unit, onLoginClick: () -> Unit) {
+fun registerView(paddingValues: PaddingValues, onBackClick: () -> Unit, onLoginClick: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var last_name by remember { mutableStateOf("") }
@@ -129,7 +131,7 @@ fun registerScreen(paddingValues: PaddingValues, onBackClick: () -> Unit, onLogi
             },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp),
-            colors = TextFieldDefaults.textFieldColors(
+            colors = TextFieldDefaults.colors(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent
             )
@@ -151,7 +153,7 @@ fun registerScreen(paddingValues: PaddingValues, onBackClick: () -> Unit, onLogi
             },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp),
-            colors = TextFieldDefaults.textFieldColors(
+            colors = TextFieldDefaults.colors(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent
             )
@@ -173,7 +175,7 @@ fun registerScreen(paddingValues: PaddingValues, onBackClick: () -> Unit, onLogi
             },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp),
-            colors = TextFieldDefaults.textFieldColors(
+            colors = TextFieldDefaults.colors(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent
             )
@@ -196,7 +198,7 @@ fun registerScreen(paddingValues: PaddingValues, onBackClick: () -> Unit, onLogi
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp),
-            colors = TextFieldDefaults.textFieldColors(
+            colors = TextFieldDefaults.colors(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent
             )
@@ -234,7 +236,7 @@ fun registerScreen(paddingValues: PaddingValues, onBackClick: () -> Unit, onLogi
                 .clickable { datePickerDialog.show() },
             enabled = false,
             shape = RoundedCornerShape(8.dp),
-            colors = TextFieldDefaults.textFieldColors(
+            colors = TextFieldDefaults.colors(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
                 disabledTextColor = Color.DarkGray,
@@ -267,7 +269,7 @@ fun registerScreen(paddingValues: PaddingValues, onBackClick: () -> Unit, onLogi
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp),
-            colors = TextFieldDefaults.textFieldColors(
+            colors = TextFieldDefaults.colors(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent
             )
@@ -296,7 +298,7 @@ fun registerScreen(paddingValues: PaddingValues, onBackClick: () -> Unit, onLogi
             visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp),
-            colors = TextFieldDefaults.textFieldColors(
+            colors = TextFieldDefaults.colors(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent
             )
@@ -319,7 +321,7 @@ fun registerScreen(paddingValues: PaddingValues, onBackClick: () -> Unit, onLogi
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
-                colors = TextFieldDefaults.textFieldColors(
+                colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 )
@@ -340,7 +342,7 @@ fun registerScreen(paddingValues: PaddingValues, onBackClick: () -> Unit, onLogi
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
-                colors = TextFieldDefaults.textFieldColors(
+                colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 )
@@ -361,7 +363,7 @@ fun registerScreen(paddingValues: PaddingValues, onBackClick: () -> Unit, onLogi
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
-                colors = TextFieldDefaults.textFieldColors(
+                colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 )
@@ -382,7 +384,7 @@ fun registerScreen(paddingValues: PaddingValues, onBackClick: () -> Unit, onLogi
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
-                colors = TextFieldDefaults.textFieldColors(
+                colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 )
@@ -454,8 +456,8 @@ fun registerScreen(paddingValues: PaddingValues, onBackClick: () -> Unit, onLogi
 
 @Preview(showBackground = true)
 @Composable
-fun RegisterScreenPreview() {
+fun RegisterViewPreview() {
     InzureTheme {
-        registerScreen(PaddingValues(0.dp), onBackClick = {}, onLoginClick = {})
+        registerView(PaddingValues(0.dp), onBackClick = {}, onLoginClick = {})
     }
 }
