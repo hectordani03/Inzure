@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "128506299824",
+    "firebase_url": "https://inzure-4de95-default-rtdb.firebaseio.com",
+    "project_id": "inzure-4de95",
+    "storage_bucket": "inzure-4de95.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:128506299824:android:9e4212f85a93ca810d4275",
+        "android_client_info": {
+          "package_name": "io.inzure.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2y4u-5tw6rF5Xq_J7lGMNR0oRU-lf-jo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

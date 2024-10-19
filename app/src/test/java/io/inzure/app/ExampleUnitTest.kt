@@ -1,4 +1,4 @@
-package com.example.inzure
+package io.inzure.app
 
 import org.junit.Test
 

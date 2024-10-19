@@ -1,4 +1,4 @@
-package com.example.inzure
+package io.inzure.app.ui.views
 
 import android.content.Intent
 import android.os.Bundle
@@ -28,22 +28,24 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.inzure.ui.theme.InzureTheme
+import io.inzure.app.MainActivity
+import io.inzure.app.R
+import io.inzure.app.ui.theme.InzureTheme
 
 
-class LoginScreen : ComponentActivity() {
+class LoginView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             InzureTheme {
                 Scaffold { paddingValues ->
-                    loginScreen(paddingValues, onBackClick = {
-                        val intent = Intent(this@LoginScreen, MainActivity::class.java)
+                    loginView(paddingValues, onBackClick = {
+                        val intent = Intent(this@LoginView, MainActivity::class.java)
                         startActivity(intent)
                         finish()
                     }, onRegisterClick = {
-                        val intent = Intent(this@LoginScreen, RegisterScreen::class.java)
+                        val intent = Intent(this@LoginView, RegisterView::class.java)
                         startActivity(intent)
                     })
                 }
@@ -54,7 +56,7 @@ class LoginScreen : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun loginScreen(
+fun loginView(
     paddingValues: PaddingValues,
     onBackClick: () -> Unit,
     onRegisterClick: () -> Unit,
@@ -115,7 +117,7 @@ fun loginScreen(
             },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp),
-            colors = TextFieldDefaults.textFieldColors(
+            colors = TextFieldDefaults.colors(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent
             )
@@ -150,7 +152,7 @@ fun loginScreen(
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp),
-            colors = TextFieldDefaults.textFieldColors(
+            colors = TextFieldDefaults.colors(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent
             )
@@ -213,8 +215,8 @@ fun loginScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun LoginScreenPreview() {
+fun LoginViewPreview() {
     InzureTheme {
-        loginScreen(PaddingValues(0.dp), onBackClick = {}, onRegisterClick = {})
+        loginView(PaddingValues(0.dp), onBackClick = {}, onRegisterClick = {})
     }
 }

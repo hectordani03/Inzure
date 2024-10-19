@@ -1,4 +1,4 @@
-package com.example.inzure.ui.theme
+package io.inzure.app.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
