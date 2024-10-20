@@ -77,6 +77,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.firebase.firestore.ktx)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     // Lifecycle
