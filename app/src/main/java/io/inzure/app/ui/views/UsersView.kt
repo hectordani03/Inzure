@@ -35,6 +35,11 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import android.app.DatePickerDialog
+import android.content.Context
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.ui.platform.LocalContext
+import java.util.*
 
 
 class UsersView : ComponentActivity() {
@@ -136,7 +141,10 @@ fun AddUserDialog(onDismiss: () -> Unit, onSave: (User) -> Unit) {
     var email by remember { mutableStateOf(TextFieldValue()) }
     var phone by remember { mutableStateOf(TextFieldValue()) }
     var role by remember { mutableStateOf("Editor") }
-    var birthDate by remember { mutableStateOf(TextFieldValue()) }
+    var birthDate by remember { mutableStateOf("") } // Cambiado a String para mostrar la fecha
+
+    val context = LocalContext.current // Para acceder al contexto de Android
+    val calendar = Calendar.getInstance()
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -177,17 +185,25 @@ fun AddUserDialog(onDismiss: () -> Unit, onSave: (User) -> Unit) {
                     selectedOption = role,
                     onOptionSelected = { role = it }
                 )
+
+                // Campo para seleccionar la fecha de nacimiento
                 OutlinedTextField(
                     value = birthDate,
                     onValueChange = { birthDate = it },
                     label = { Text("Fecha de Nacimiento") },
                     modifier = Modifier.fillMaxWidth(),
+                    readOnly = true,
                     trailingIcon = {
-                        IconButton(onClick = { /* Handle date picker */ }) {
-                            Icon(imageVector = Icons.Default.Edit, contentDescription = "Select Date")
+                        IconButton(onClick = {
+                            showDatePicker(context, calendar) { selectedDate ->
+                                birthDate = selectedDate
+                            }
+                        }) {
+                            Icon(imageVector = Icons.Default.CalendarToday, contentDescription = "Select Date")
                         }
                     }
                 )
+
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss) {
@@ -195,14 +211,14 @@ fun AddUserDialog(onDismiss: () -> Unit, onSave: (User) -> Unit) {
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(onClick = {
-                        if (firstName.text.isNotBlank() && lastName.text.isNotBlank() && email.text.isNotBlank() && phone.text.isNotBlank() && birthDate.text.isNotBlank()) {
+                        if (firstName.text.isNotBlank() && lastName.text.isNotBlank() && email.text.isNotBlank() && phone.text.isNotBlank() && birthDate.isNotBlank()) {
                             val newUser = User(
                                 firstName = firstName.text,
                                 lastName = lastName.text,
                                 email = email.text,
                                 phone = phone.text,
                                 role = role,
-                                birthDate = birthDate.text
+                                birthDate = birthDate
                             )
                             onSave(newUser)
                         }
@@ -213,6 +229,24 @@ fun AddUserDialog(onDismiss: () -> Unit, onSave: (User) -> Unit) {
             }
         }
     }
+}
+
+// Función auxiliar para mostrar el DatePickerDialog
+private fun showDatePicker(context: Context, calendar: Calendar, onDateSelected: (String) -> Unit) {
+    val year = calendar.get(Calendar.YEAR)
+    val month = calendar.get(Calendar.MONTH)
+    val day = calendar.get(Calendar.DAY_OF_MONTH)
+
+    DatePickerDialog(
+        context,
+        { _, selectedYear, selectedMonth, selectedDay ->
+            val selectedDate = "$selectedDay/${selectedMonth + 1}/$selectedYear"
+            onDateSelected(selectedDate)
+        },
+        year,
+        month,
+        day
+    ).show()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
