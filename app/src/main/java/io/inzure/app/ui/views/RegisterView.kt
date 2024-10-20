@@ -16,7 +16,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,12 +40,12 @@ import androidx.compose.ui.text.input.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.firebase.firestore.FirebaseFirestore
 import io.inzure.app.MainActivity
 import io.inzure.app.R
 import io.inzure.app.ui.theme.InzureTheme
-import java.text.SimpleDateFormat
 import java.util.*
+import com.google.firebase.firestore.FirebaseFirestore
+import java.text.SimpleDateFormat
 
 class RegisterView : ComponentActivity() {
 
@@ -53,19 +61,20 @@ class RegisterView : ComponentActivity() {
         setContent {
             InzureTheme {
                 Scaffold { paddingValues ->
-                    registerView(
+                    RegisterView(
                         paddingValues,
-                        onBackClick = {
+
+                        OnBackClick = {
                             val intent = Intent(this@RegisterView, MainActivity::class.java)
                             startActivity(intent)
                             finish()
                         },
-                        onLoginClick = {
+                        OnLoginClick = {
                             val intent = Intent(this@RegisterView, LoginView::class.java)
                             startActivity(intent)
                             finish()
                         },
-                        onRegister = { userData, isInsurer ->
+                        OnRegister = { userData, isInsurer ->
                             saveUserToFirestore(userData, isInsurer)
                         }
                     )
@@ -94,22 +103,23 @@ class RegisterView : ComponentActivity() {
     }
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun registerView(
+fun RegisterView(
     paddingValues: PaddingValues,
-    onBackClick: () -> Unit,
-    onLoginClick: () -> Unit,
-    onRegister: (Map<String, Any>, Boolean) -> Unit
+    OnBackClick: () -> Unit,
+    OnLoginClick: () -> Unit,
+    OnRegister: (Map<String, Any>, Boolean) -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
-    var lastName by remember { mutableStateOf("") }
+    var last_name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
-    var companyName by remember { mutableStateOf("") }
-    var fiscalId by remember { mutableStateOf("") }
+    var company_name by remember { mutableStateOf("") }
+    var fiscal_id by remember { mutableStateOf("") }
     var direction by remember { mutableStateOf("") }
-    var licenseNumber by remember { mutableStateOf("") }
+    var license_number by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -117,6 +127,7 @@ fun registerView(
     var isInsurer by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf("") }
 
+    val scrollState = rememberScrollState()
     val context = LocalContext.current
 
     // FocusRequesters para cada campo
@@ -183,21 +194,24 @@ fun registerView(
     var hasUpperCase by remember { mutableStateOf(false) }
     var hasLowerCase by remember { mutableStateOf(false) }
     var hasDigit by remember { mutableStateOf(false) }
+    var hasTwoDigits by remember { mutableStateOf(false) }
     var hasSpecialChar by remember { mutableStateOf(false) }
     var hasMinLength by remember { mutableStateOf(false) }
     var hasNoRepeatedDigits by remember { mutableStateOf(false) }
 
-
     // Función para validar la contraseña
-    fun validatePassword(password: String) {
+    fun validatePassword(password: String): Boolean {
         hasUpperCase = password.any { it.isUpperCase() }
         hasLowerCase = password.any { it.isLowerCase() }
         hasDigit = password.any { it.isDigit() }
+        hasTwoDigits = password.count { it.isDigit() } >= 2
         hasSpecialChar = password.any { !it.isLetterOrDigit() }
         hasMinLength = password.length >= 8
         hasNoRepeatedDigits = !password.contains(Regex("(\\d)\\1{1,}"))
+
+        return hasUpperCase && hasLowerCase && hasTwoDigits && hasSpecialChar && hasMinLength && hasNoRepeatedDigits
     }
-    // Función para mostrar el estado de cada requisito de la contraseña
+    // Función para mostrar el estado de cada criterio de la contraseña
     @Composable
     fun PasswordCriteriaRow(isValid: Boolean, text: String) {
         Row(
@@ -237,14 +251,24 @@ fun registerView(
                 Toast.makeText(context, "El campo Nombre es requerido", Toast.LENGTH_SHORT).show()
                 false
             }
-            lastName.isEmpty() -> {
+            last_name.isEmpty() -> {
                 lastNameFocusRequester.requestFocus()
                 Toast.makeText(context, "El campo Apellidos es requerido", Toast.LENGTH_SHORT).show()
                 false
             }
-            email.isEmpty() || !isEmailValid(email) -> {
+            email.isEmpty() -> {
+                emailFocusRequester.requestFocus()
+                Toast.makeText(context, "El campo Correo Electrónico es requerido", Toast.LENGTH_SHORT).show()
+                false
+            }
+            !isEmailValid(email) -> {
                 emailFocusRequester.requestFocus()
                 Toast.makeText(context, "Ingrese un correo electrónico válido", Toast.LENGTH_SHORT).show()
+                false
+            }
+            phone.isEmpty() -> {
+                phoneFocusRequester.requestFocus()
+                Toast.makeText(context, "El campo Télefono es requerido", Toast.LENGTH_SHORT).show()
                 false
             }
             phone.length != 10 -> {
@@ -252,7 +276,12 @@ fun registerView(
                 Toast.makeText(context, "El teléfono debe tener exactamente 10 dígitos", Toast.LENGTH_SHORT).show()
                 false
             }
-            selectedDate.isEmpty() || !isAdult(selectedDate) -> {
+            selectedDate.isEmpty() -> {
+                selectedDateFocusRequester.requestFocus()
+                Toast.makeText(context, "El campo Fecha de Nacimiento es requerido", Toast.LENGTH_SHORT).show()
+                false
+            }
+            !isAdult(selectedDate) -> {
                 selectedDateFocusRequester.requestFocus()
                 Toast.makeText(context, "Debes tener al menos 18 años para registrarte", Toast.LENGTH_SHORT).show()
                 false
@@ -260,6 +289,11 @@ fun registerView(
             password.isEmpty() -> {
                 passwordFocusRequester.requestFocus()
                 Toast.makeText(context, "El campo Contraseña es requerido", Toast.LENGTH_SHORT).show()
+                false
+            }
+            !validatePassword(password) -> {
+                passwordFocusRequester.requestFocus()
+                Toast.makeText(context, "La contraseña no cumple con los requisitos", Toast.LENGTH_SHORT).show()
                 false
             }
             confirmPassword.isEmpty() -> {
@@ -272,12 +306,12 @@ fun registerView(
                 Toast.makeText(context, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show()
                 false
             }
-            isInsurer && companyName.isEmpty() -> {
+            isInsurer && company_name.isEmpty() -> {
                 companyNameFocusRequester.requestFocus()
                 Toast.makeText(context, "El campo Nombre de la Compañía Aseguradora es requerido", Toast.LENGTH_SHORT).show()
                 false
             }
-            isInsurer && fiscalId.isEmpty() -> {
+            isInsurer && fiscal_id.isEmpty() -> {
                 fiscalIdFocusRequester.requestFocus()
                 Toast.makeText(context, "El campo Número de Identificación Fiscal es requerido", Toast.LENGTH_SHORT).show()
                 false
@@ -287,7 +321,7 @@ fun registerView(
                 Toast.makeText(context, "El campo Dirección de la Sede Principal es requerido", Toast.LENGTH_SHORT).show()
                 false
             }
-            isInsurer && licenseNumber.isEmpty() -> {
+            isInsurer && license_number.isEmpty() -> {
                 licenseNumberFocusRequester.requestFocus()
                 Toast.makeText(context, "El campo Número de Licencia es requerido", Toast.LENGTH_SHORT).show()
                 false
@@ -301,40 +335,76 @@ fun registerView(
             .fillMaxSize()
             .padding(paddingValues)
             .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(scrollState),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Imagen de registro
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = "Volver",
+            modifier = Modifier
+                .align(Alignment.Start)
+                .clickable { OnBackClick() }
+        )
+
         Image(
             painter = painterResource(id = R.drawable.register_image),
-            contentDescription = "Registro",
-            modifier = Modifier.size(150.dp),
+            contentDescription = "Login illustration",
+            modifier = Modifier.size(250.dp),
             contentScale = ContentScale.Crop
         )
+
+        Text(
+            text = "Registrate",
+            fontWeight = FontWeight.Bold,
+            fontSize = 28.sp,
+            modifier = Modifier
+                .padding(top = 16.dp, bottom = 12.dp)
+                .align(Alignment.Start)
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
 
         // Campo de nombre
         TextField(
             value = name,
             onValueChange = { name = it },
             label = { Text("Nombre") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(nameFocusRequester),
-            shape = RoundedCornerShape(8.dp)
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(R.drawable.ic_name),
+                    contentDescription = null,
+                    modifier = Modifier.size(15.dp)
+                )
+            },
+            modifier = Modifier.fillMaxWidth().focusRequester(nameFocusRequester),
+            shape = RoundedCornerShape(8.dp),
+            colors = TextFieldDefaults.colors(
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent
+            )
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Campo de apellidos
         TextField(
-            value = lastName,
-            onValueChange = { lastName = it },
+            value = last_name,
+            onValueChange = { last_name = it },
             label = { Text("Apellidos") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(lastNameFocusRequester),
-            shape = RoundedCornerShape(8.dp)
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(R.drawable.ic_name),
+                    contentDescription = null,
+                    modifier = Modifier.size(15.dp)
+                )
+            },
+            modifier = Modifier.fillMaxWidth().focusRequester(lastNameFocusRequester),
+            shape = RoundedCornerShape(8.dp),
+            colors = TextFieldDefaults.colors(
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent
+            )
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -414,15 +484,26 @@ fun registerView(
             },
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             modifier = Modifier
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .focusRequester(passwordFocusRequester),
             shape = RoundedCornerShape(8.dp)
         )
 
-
+// Indicador de criterios de contraseña
+        Column(
+            modifier = Modifier.padding(start = 8.dp, top = 8.dp)
+        ) {
+            PasswordCriteriaRow(hasMinLength, "Mínimo 8 caracteres")
+            PasswordCriteriaRow(hasUpperCase, "Al menos una letra mayúscula")
+            PasswordCriteriaRow(hasLowerCase, "Al menos una letra minúscula")
+            PasswordCriteriaRow(hasTwoDigits, "Al menos dos números")
+            PasswordCriteriaRow(hasSpecialChar, "Al menos un carácter especial")
+            PasswordCriteriaRow(hasNoRepeatedDigits, "No contener dígitos repetidos consecutivamente")
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Confirmación de contraseña
+// Confirmación de contraseña
         TextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
@@ -435,7 +516,7 @@ fun registerView(
                 }
             },
             visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().focusRequester(confirmPasswordFocusRequester),
             shape = RoundedCornerShape(8.dp)
         )
 
@@ -453,24 +534,46 @@ fun registerView(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Campos adicionales para aseguradores
+        // Mostrar campos adicionales si el switch está activado
         if (isInsurer) {
             TextField(
-                value = companyName,
-                onValueChange = { companyName = it },
-                label = { Text("Nombre de la Compañía Aseguradora") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp)
+                value = company_name,
+                onValueChange = { company_name = it },
+                label = { Text("Nombre de la compañia asegurdadora") },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.register_image),
+                        contentDescription = null,
+                        modifier = Modifier.size(15.dp)
+                    )
+                },
+                modifier = Modifier.fillMaxWidth().focusRequester(companyNameFocusRequester),
+                shape = RoundedCornerShape(8.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                )
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             TextField(
-                value = fiscalId,
-                onValueChange = { fiscalId = it },
-                label = { Text("Número de Identificación Fiscal") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp)
+                value = fiscal_id,
+                onValueChange = { fiscal_id = it },
+                label = { Text("Numero de identificacion fiscal") },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.register_image),
+                        contentDescription = null,
+                        modifier = Modifier.size(15.dp)
+                    )
+                },
+                modifier = Modifier.fillMaxWidth().focusRequester(fiscalIdFocusRequester),
+                shape = RoundedCornerShape(8.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                )
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -478,49 +581,105 @@ fun registerView(
             TextField(
                 value = direction,
                 onValueChange = { direction = it },
-                label = { Text("Dirección de la Sede Principal") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp)
+                label = { Text("Direccion de la sede principal") },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.register_image),
+                        contentDescription = null,
+                        modifier = Modifier.size(15.dp)
+                    )
+                },
+                modifier = Modifier.fillMaxWidth().focusRequester(directionFocusRequester),
+                shape = RoundedCornerShape(8.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                )
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             TextField(
-                value = licenseNumber,
-                onValueChange = { licenseNumber = it },
-                label = { Text("Número de Licencia") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp)
+                value = license_number,
+                onValueChange = { license_number = it },
+                label = { Text("Numero de licencia") },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.register_image),
+                        contentDescription = null,
+                        modifier = Modifier.size(15.dp)
+                    )
+                },
+                modifier = Modifier.fillMaxWidth().focusRequester(licenseNumberFocusRequester),
+                shape = RoundedCornerShape(8.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                )
             )
 
             Spacer(modifier = Modifier.height(16.dp))
         }
-// Botón de registro
+
         Button(
             onClick = {
                 if (validateFields()) {
                     val userData = hashMapOf(
                         "email" to email,
                         "name" to name,
-                        "lastName" to lastName,
+                        "lastName" to last_name,
                         "phone" to phone,
                         "birthDate" to selectedDate
                     ).apply {
                         if (isInsurer) {
-                            put("companyName", companyName)
-                            put("fiscalId", fiscalId)
+                            put("companyName", company_name)
+                            put("fiscalId", fiscal_id)
                             put("direction", direction)
-                            put("licenseNumber", licenseNumber)
+                            put("licenseNumber", license_number)
                         }
                     }
-                    onRegister(userData, isInsurer)
+                    OnRegister(userData, isInsurer)
                 }
             },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp)
         ) {
-            Text(text = "Registrar", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(text = "Registrarse", fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text(text = "Al registrarte estas aceptando los",
+                fontSize = 12.sp)
+            Spacer(modifier = Modifier.width(4.dp))
+
+            Text(
+                text = "Terminos y condiciones",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable { /* TODO: Navegar a terminos y condiciones */ }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text(text = "¿Ya tienes una cuenta?")
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = "Inicia Sesion",
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable { OnLoginClick() }
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
@@ -528,6 +687,6 @@ fun registerView(
 @Composable
 fun RegisterViewPreview() {
     InzureTheme {
-        registerView(PaddingValues(0.dp), onBackClick = {}, onLoginClick = {}, onRegister = { _, _ -> })
+        RegisterView(PaddingValues(0.dp), OnBackClick = {}, OnLoginClick = {}, OnRegister = { _, _ -> })
     }
 }
