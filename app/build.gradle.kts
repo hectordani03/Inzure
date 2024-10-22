@@ -89,12 +89,12 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.activity.compose)
     implementation(libs.firebase.firestore.ktx)
-<<<<<<< HEAD
-    implementation(libs.firebase.auth)
-=======
     implementation(libs.firebase.firestore)
->>>>>>> 4397f5c (users crud mvvm)
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.storage.ktx)
+    implementation(libs.firebase.storage)
     debugImplementation(libs.androidx.compose.ui.tooling)
+    implementation(libs.coil.compose)  // Usa la referencia del archivo `libs.toml`
 
     // Lifecycle
     implementation(libs.androidx.lifecycle.viewmodel.compose)
