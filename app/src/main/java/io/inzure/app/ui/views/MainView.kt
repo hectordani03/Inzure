@@ -1,5 +1,7 @@
 package io.inzure.app.ui.views
 
+import android.util.Log
+import androidx.activity.result.launch
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -9,6 +11,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,6 +30,50 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.geometry.CornerRadius
 import io.inzure.app.R
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import kotlin.io.path.exists
+
+
+suspend fun getUserName(): String {
+    return withContext(Dispatchers.IO) {
+        val firestore = FirebaseFirestore.getInstance()
+        val user = FirebaseAuth.getInstance().currentUser
+        val uid = user?.uid
+        var firstName: String? = null
+        var lastName: String? = null
+
+        if (uid != null) {
+            try {
+                val querySnapshot = firestore.collection("Users").get().await()
+                for (document in querySnapshot.documents) {
+                    val documentPath = document.id
+                    val userDoc = firestore.collection("Users")
+                        .document(documentPath)
+                        .collection("userData")
+                        .document(uid)
+                        .get()
+                        .await()
+
+                    if (userDoc.exists()) {
+                        firstName = userDoc.getString("firstName") ?: ""
+                        lastName = userDoc.getString("lastName") ?: ""
+                        break // Salir del bucle una vez encontrado el usuario
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("Firestore", "Error al obtener datos del usuario: ", e)
+            }
+        } else {
+            Log.e("Auth", "ID del usuario no disponible")
+        }
+        "¡Bienvenido $firstName $lastName!".ifBlank { "Bienvenido" } // Nombre o "Bienvenido" si no se encuentra
+    }
+}
 
 @Composable
 fun MainView(
@@ -122,13 +173,17 @@ fun BottomBarIcon(iconResId: Int, contentDescription: String, onClick: () -> Uni
 
 @Composable
 fun WelcomeMessage() {
+    var welcomeMessage by remember { mutableStateOf("Bienvenido") }
+    LaunchedEffect(key1 = Unit) {
+        welcomeMessage = getUserName()
+    }
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
     ) {
         Text(
-            text = "¡Buenas tardes, Gilberto Ceja!",
+            text = welcomeMessage,
             modifier = Modifier
                 .align(Alignment.Center)
                 .background(color = Color(0xFF072A4A), shape = RoundedCornerShape(8.dp))

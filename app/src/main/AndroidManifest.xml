@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
     <application
@@ -15,7 +16,6 @@
         <activity
             android:name="io.inzure.app.ui.views.LoginView"
             android:exported="true"
-            android:label="@string/title_activity_login_screen"
             android:theme="@style/Theme.Inzure">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -26,7 +26,6 @@
         <activity
             android:name="io.inzure.app.ui.views.RegisterView"
             android:exported="true"
-            android:label="@string/title_activity_login_screen"
             android:theme="@style/Theme.Inzure">
         </activity>
 
@@ -58,7 +57,6 @@
             android:name="io.inzure.app.ui.views.CarInsuranceView"
             android:exported="true"
             android:theme="@style/Theme.Inzure">
-
         </activity>
 
         <activity
@@ -67,12 +65,9 @@
             android:theme="@style/Theme.Inzure">
         </activity>
 
-
         <activity
             android:name="io.inzure.app.MainActivity"
             android:exported="true">
         </activity>
-
     </application>
-
 </manifest>
