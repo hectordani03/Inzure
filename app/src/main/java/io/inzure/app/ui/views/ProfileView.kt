@@ -1,6 +1,7 @@
 package io.inzure.app.ui.views
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -27,8 +28,16 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.compose.foundation.border
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.zIndex
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import io.inzure.app.R
+import io.inzure.app.data.model.User
 
 class ProfileView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,6 +61,61 @@ fun MainScreen() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(navController: NavController) {
+
+    val auth = FirebaseAuth.getInstance()
+    val firestore = FirebaseFirestore.getInstance()
+    val userId = auth.currentUser?.uid ?: return
+
+    var firstName by remember { mutableStateOf("No disponible") }
+    var lastName by remember { mutableStateOf("No disponible") }
+    var imageUri by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(userId) {
+        if (userId != null) {
+            firestore.collection("Users")
+                .get()
+                .addOnSuccessListener { querySnapshot ->
+                    var userRole: String? = null
+                    for (document in querySnapshot.documents) {
+                        val documentPath = document.id
+                        firestore.collection("Users")
+                            .document(documentPath)
+                            .collection("userData")
+                            .document(userId)
+                            .get()
+                            .addOnSuccessListener { userDoc ->
+                                if (userDoc.exists()) {
+                                    userRole = documentPath
+                                    val userData = userDoc.toObject(User::class.java)
+                                    if (userData != null) {
+                                        firstName = userData.firstName
+                                        lastName = userData.lastName
+                                        imageUri = userData.image
+                                    }
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("Firestore", "Error al obtener usuario en $documentPath: ", e)
+                            }
+
+                        // Si encontramos el rol, dejamos de buscar
+                        if (userRole != null) break
+                    }
+
+                    if (userRole == null) {
+                        Log.e("Firestore", "No se pudo determinar el rol del usuario")
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Log.e("Firestore", "Error al obtener los documentos de usuarios: ", e)
+                }
+        } else {
+            Log.e("Auth", "ID del usuario no disponible")
+        }
+    }
+
+
+
     Scaffold(
         topBar = { TopBar() },
         bottomBar = { BottomNavigationBar() }
@@ -73,7 +137,7 @@ fun ProfileScreen(navController: NavController) {
             ) {
                 // Imagen de perfil
                 Image(
-                    painter = painterResource(R.drawable.profile_2), // Reemplaza con tu imagen
+                    painter = painterResource(R.drawable.profile_2),
                     contentDescription = "Foto de Perfil",
                     modifier = Modifier
                         .size(140.dp)
@@ -86,7 +150,7 @@ fun ProfileScreen(navController: NavController) {
 
             // Nombre del usuario
             Text(
-                text = "Jose Joshua",
+                text = "$firstName $lastName",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.CenterHorizontally)

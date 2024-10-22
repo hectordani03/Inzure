@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import io.inzure.app.ui.views.CarInsuranceView
 import io.inzure.app.ui.views.ProfileView
+import io.inzure.app.ui.views.UsersView
 import io.inzure.app.ui.views.MainView
 
 class MainActivity : ComponentActivity() {
@@ -37,7 +38,7 @@ class MainActivity : ComponentActivity() {
                         onNavigateToCarInsurance = {
                             val intent = Intent(this@MainActivity, CarInsuranceView::class.java)
                             startActivity(intent)
-                        }
+                        },
                     )
                 }
             }
