@@ -31,10 +31,23 @@ import androidx.compose.ui.unit.sp
 import io.inzure.app.MainActivity
 import io.inzure.app.R
 import io.inzure.app.ui.theme.InzureTheme
+import io.inzure.app.auth.AuthManager
+import android.widget.Toast
 
 
 class LoginView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Comprobamos si el usuario está logueado, en caso de que sí, lo redireccionamos a la pantalla principal
+        val am = AuthManager(this)
+        if (am.isUserLoggedIn()) {
+            if (Intent.ACTION_MAIN == intent.action && intent.hasCategory(Intent.CATEGORY_LAUNCHER)){
+                val intent = Intent(this, MainActivity::class.java)
+                startActivity(intent)
+                finish()
+            } else {
+                finish()
+            }
+        }
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
@@ -47,6 +60,26 @@ class LoginView : ComponentActivity() {
                     }, onRegisterClick = {
                         val intent = Intent(this@LoginView, RegisterView::class.java)
                         startActivity(intent)
+                    }, onLoginClick = { email: String, password: String ->
+                        // Evento a ejecutar al hacer click en el botón de inicio de sesión
+                        // Aquí se implementa la logica de inicio de sesión
+                        // Verificamos que los campos no estén vacíos
+                        if (email.isEmpty() || password.isEmpty()) {
+                            Toast.makeText(this@LoginView, "Por favor, rellene todos los campos", Toast.LENGTH_SHORT).show()
+                            return@loginView
+                        }
+                        // Si los campos no están vacíos, iniciamos sesión
+                        val authManager = AuthManager(this@LoginView)
+                        authManager.login(email, password, onSuccess = {
+                            // Si la autenticación es exitosa, redireccionamos a la pantalla principal
+                            // La sesion queda guardada en el dispositivo, pudes utlizar la clase AuthManager para obtener la sesion actual
+                            val intent = Intent(this@LoginView, MainActivity::class.java)
+                            startActivity(intent)
+                            finish()
+                        }, onError = {
+                            // En caso de que los datos sean incorrectos, mostramos que sus credenciales son incorrectas
+                            Toast.makeText(this@LoginView, "Credenciales incorrectas", Toast.LENGTH_SHORT).show()
+                        })
                     })
                 }
             }
@@ -60,7 +93,7 @@ fun loginView(
     paddingValues: PaddingValues,
     onBackClick: () -> Unit,
     onRegisterClick: () -> Unit,
-
+    onLoginClick: (String, String) -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -169,7 +202,7 @@ fun loginView(
         Spacer(modifier = Modifier.height(20.dp))
 
         Button(
-            onClick = { /* TODO: Lógica de inicio de sesión */ },
+            onClick = { onLoginClick(email, password) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp)
         ) {
@@ -217,6 +250,6 @@ fun loginView(
 @Composable
 fun LoginViewPreview() {
     InzureTheme {
-        loginView(PaddingValues(0.dp), onBackClick = {}, onRegisterClick = {})
+        loginView(PaddingValues(0.dp), onBackClick = {}, onRegisterClick = {}, onLoginClick = ({ _, _ ->}))
     }
 }
