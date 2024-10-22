@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">inzure</string>
     <string name="title_activity_login_screen">LoginScreen</string>
+    <string name="default_web_client_id">128506299824-27slbv38mt7t11t325bqea8v8dlhhcoc.apps.googleusercontent.com</string>
 </resources>
