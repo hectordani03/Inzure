@@ -66,7 +66,8 @@ data class InsuranceData(
 @Composable
 fun MainView(
     onNavigateToProfile: () -> Unit,
-    onNavigateToCarInsurance: () -> Unit
+    onNavigateToCarInsurance: () -> Unit,
+    onNavigateToUsers: () -> Unit // Añadido nuevo parámetro
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -152,7 +153,7 @@ fun MainView(
 
                         // Sección de perfil
                         Image(
-                            painter = painterResource(id = R.drawable.ic_profile),
+                            painter = painterResource(id = R.drawable.ic_profile3),
                             contentDescription = "User Avatar",
                             modifier = Modifier
                                 .size(50.dp)
@@ -230,12 +231,13 @@ fun MainView(
                     BottomBar(
                         onSwipeUp = {
                             scope.launch {
-                                bottomSheetScaffoldState.bottomSheetState.expand() // Expandir el Bottom Sheet al deslizar hacia arriba
+                                bottomSheetScaffoldState.bottomSheetState.expand() // Expandir el Bottom Sheet
                             }
-                        }
+                        },
+                        onNavigateToUsers = onNavigateToUsers // Pasa el parámetro aquí
                     )
                 }
-            ) { innerPadding ->
+            ){ innerPadding ->
                 // Contenido principal de la pantalla
                 Column(
                     modifier = Modifier
@@ -287,7 +289,7 @@ fun TopBar(
         // Botón de perfil
         IconButton(onClick = onNavigateToProfile) {
             Image(
-                painter = painterResource(id = R.drawable.ic_profile),
+                painter = painterResource(id = R.drawable.ic_profile3),
                 contentDescription = "Profile",
                 modifier = Modifier.size(40.dp)
             )
@@ -484,15 +486,17 @@ fun InsuranceCardWithImage(imageRes: Int, companyLogo: Int, companyName: String,
 }
 
 
-// Función BottomBar
 @Composable
-fun BottomBar(onSwipeUp: () -> Unit) {
+fun BottomBar(
+    onSwipeUp: () -> Unit,
+    onNavigateToUsers: () -> Unit // Añadir el nuevo parámetro aquí
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp))
-            .background(Color(0xFF072A4A)) // Fondo azul
-            .navigationBarsPadding() // Ajusta la posición para evitar superposición con la barra de navegación del sistema
+            .background(Color(0xFF072A4A))
+            .navigationBarsPadding()
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -528,7 +532,7 @@ fun BottomBar(onSwipeUp: () -> Unit) {
                 )
             }
 
-            IconButton(onClick = onSwipeUp) {
+            IconButton(onClick = onNavigateToUsers) { // Ahora sí se reconoce la referencia
                 Icon(
                     painter = painterResource(id = R.drawable.ic_profile2),
                     contentDescription = "Settings",
@@ -539,6 +543,7 @@ fun BottomBar(onSwipeUp: () -> Unit) {
         }
     }
 }
+
 
 @Composable
 fun MenuOption(iconRes: Int, text: String, spacerHeight: Dp) {

@@ -73,7 +73,7 @@ fun ProfileScreen(navController: NavController) {
             ) {
                 // Imagen de perfil
                 Image(
-                    painter = painterResource(R.drawable.profile_2), // Reemplaza con tu imagen
+                    painter = painterResource(R.drawable.ic_profile3), // Reemplaza con tu imagen
                     contentDescription = "Foto de Perfil",
                     modifier = Modifier
                         .size(140.dp)

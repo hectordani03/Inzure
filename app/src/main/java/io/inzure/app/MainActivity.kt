@@ -15,19 +15,20 @@ import androidx.compose.ui.graphics.Color
 import io.inzure.app.ui.views.CarInsuranceView
 import io.inzure.app.ui.views.ProfileView
 import io.inzure.app.ui.views.MainView
+import io.inzure.app.ui.views.UsersView // Importa la vista de usuarios
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0), // Íconos oscuros en barra de estado
-            navigationBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0) // Íconos oscuros en barra de navegación
+            statusBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0),
+            navigationBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0)
         )
         setContent {
             InzureTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = Color.White // Fondo blanco en toda la pantalla
+                    color = Color.White
                 ) {
                     MainView(
                         onNavigateToProfile = {
@@ -36,6 +37,10 @@ class MainActivity : ComponentActivity() {
                         },
                         onNavigateToCarInsurance = {
                             val intent = Intent(this@MainActivity, CarInsuranceView::class.java)
+                            startActivity(intent)
+                        },
+                        onNavigateToUsers = { // Nueva función para navegar a UsersView
+                            val intent = Intent(this@MainActivity, UsersView::class.java)
                             startActivity(intent)
                         }
                     )
