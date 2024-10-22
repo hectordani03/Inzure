@@ -34,6 +34,9 @@ import io.inzure.app.ui.theme.InzureTheme
 import io.inzure.app.auth.AuthManager
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import io.inzure.app.viewmodel.UserViewModel
+import io.inzure.app.viewmodel.GlobalUserSession
 
 class LoginView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -124,6 +127,7 @@ fun loginView(
     var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val auth = AuthManager(context)
+    val userViewModel: UserViewModel = viewModel()
 
     // Se añade scrollState para hacer la columna scrolleable
     val scrollState = rememberScrollState()
@@ -232,14 +236,19 @@ fun loginView(
             onClick = {
                 onLoginClick(email, password)
                 val user = auth.getCurrentUser()
-                if (!password.isEmpty() && !email.isEmpty()) {
+
+                if (email.isNotEmpty() && password.isNotEmpty()) {
                     auth.login(email, password, onSuccess = {
-                        if (user != null && !user.isEmailVerified) {
-                            showDialog = true
+                        val userId = auth.getCurrentUser()?.uid
+                        if (userId != null) {
+                            GlobalUserSession.userId = userId
+                            userViewModel.loadLoggedUser(userId)
                         }
                     }, onError = {
-                        // Añadir algo si se necesita
+                        // Manejo de errores
                     })
+
+
                 }
             },
             modifier = Modifier.fillMaxWidth(),

@@ -1,5 +1,6 @@
 package io.inzure.app.ui.views
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,16 +24,92 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.rememberAsyncImagePainter
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import io.inzure.app.R
+import io.inzure.app.data.model.User
+import io.inzure.app.viewmodel.GlobalUserSession
+import io.inzure.app.viewmodel.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PersonalInformationView() {
+fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
+    val auth = FirebaseAuth.getInstance()
+    val firestore = FirebaseFirestore.getInstance()
+
+    // Obtener el ID del usuario autenticado
+    val userId = auth.currentUser?.uid ?: return
+
+    // Variables de estado para almacenar los datos del usuario
+    var firstName by remember { mutableStateOf("Nombre no disponible") }
+    var lastName by remember { mutableStateOf("Apellido no disponible") }
+    var birthDate by remember { mutableStateOf("Fecha no disponible") }
+    var email by remember { mutableStateOf("Correo no disponible") }
+    var phone by remember { mutableStateOf("Teléfono no disponible") }
+    var imageUri by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(userId) {
+        if (userId != null) {
+            // Primero obtenemos el rol del usuario desde el documento base
+            firestore.collection("Users")
+                .get()
+                .addOnSuccessListener { querySnapshot ->
+                    var userRole: String? = null
+
+                    // Iterar sobre todos los documentos de primer nivel para encontrar el rol
+                    for (document in querySnapshot.documents) {
+                        val documentPath = document.id
+
+                        // Intentar obtener el usuario en cada documento de rol
+                        firestore.collection("Users")
+                            .document(documentPath)
+                            .collection("userData")
+                            .document(userId)
+                            .get()
+                            .addOnSuccessListener { userDoc ->
+                                if (userDoc.exists()) {
+                                    userRole = documentPath // Encontró el rol correcto
+
+                                    // Obtener los datos completos del usuario
+                                    val userData = userDoc.toObject(User::class.java)
+                                    if (userData != null) {
+                                        // Asignación de variables de estado para reflejar en la UI
+                                        firstName = userData.firstName ?: "Nombre no disponible"
+                                        lastName = userData.lastName ?: "Apellido no disponible"
+                                        birthDate = userData.birthDate ?: "Fecha no disponible"
+                                        email = userData.email ?: "Correo no disponible"
+                                        phone = userData.phone ?: "Teléfono no disponible"
+                                        imageUri = userData.image
+                                    }
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("Firestore", "Error al obtener usuario en $documentPath: ", e)
+                            }
+
+                        // Si encontramos el rol, dejamos de buscar
+                        if (userRole != null) break
+                    }
+
+                    if (userRole == null) {
+                        Log.e("Firestore", "No se pudo determinar el rol del usuario")
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Log.e("Firestore", "Error al obtener los documentos de usuarios: ", e)
+                }
+        } else {
+            Log.e("Auth", "ID del usuario no disponible")
+        }
+    }
+
+
     Scaffold(
         topBar = { TopBarProfile() },
         bottomBar = { BottomNavigationBarProfile() }
     ) { paddingValues ->
-        // Página scrolleable
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -49,14 +126,27 @@ fun PersonalInformationView() {
                         .background(Color(0xFF072A4A)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Image(
-                        painter = painterResource(R.drawable.ic_profile3), // Reemplaza con tu imagen
-                        contentDescription = "Foto de Perfil",
-                        modifier = Modifier
-                            .size(140.dp)
-                            .clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
+                    // Verifica si hay una imagen en el estado del usuario logueado
+                    if (!imageUri.isNullOrEmpty()) {
+                        Image(
+                            painter = rememberAsyncImagePainter(imageUri),
+                            contentDescription = "Foto de Perfil",
+                            modifier = Modifier
+                                .size(140.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        // Imagen predeterminada si no hay imagen del usuario
+                        Image(
+                            painter = painterResource(R.drawable.profile_2),
+                            contentDescription = "Foto de Perfil",
+                            modifier = Modifier
+                                .size(140.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -71,42 +161,47 @@ fun PersonalInformationView() {
                 Spacer(modifier = Modifier.height(20.dp))
             }
 
-            // Tarjetas de información mejoradas con funcionalidad de edición
+            // Tarjetas de información con valores obtenidos de Firestore
             item {
-                var nombre by remember { mutableStateOf("Jose Joshua") }
                 PersonalInfoCard(
-                    label = "Nombre",
-                    value = nombre,
-                    onEditClick = { newValue -> nombre = newValue }
+                    label = "Nombre(s)",
+                    value = firstName,
+                    onEditClick = { /* Lógica para editar el nombre */ }
                 )
             }
             item {
-                var intereses by remember { mutableStateOf("Me gustan los gatos") }
                 PersonalInfoCard(
-                    label = "Intereses",
-                    value = intereses,
-                    onEditClick = { newValue -> intereses = newValue }
+                    label = "Apellidos",
+                    value = lastName,
+                    onEditClick = { /* Lógica para editar el apellido */ }
                 )
             }
             item {
-                var correo by remember { mutableStateOf("jjemail01@gmail.com") }
                 PersonalInfoCard(
-                    label = "Correo",
-                    value = correo,
-                    onEditClick = { newValue -> correo = newValue }
+                    label = "Correo Electrónico",
+                    value = email,
+                    onEditClick = { /* Lógica para editar el correo */ }
                 )
             }
             item {
-                var telefono by remember { mutableStateOf("3141669964") }
                 PersonalInfoCard(
-                    label = "Teléfono",
-                    value = telefono,
-                    onEditClick = { newValue -> telefono = newValue }
+                    label = "Número telefónico",
+                    value = phone,
+                    onEditClick = { /* Lógica para editar el teléfono */ }
+                )
+            }
+            item {
+                PersonalInfoCard(
+                    label = "Fecha de Nacimiento",
+                    value = birthDate,
+                    onEditClick = { /* Lógica para editar la fecha de nacimiento */ }
                 )
             }
         }
     }
 }
+
+
 
 @Composable
 fun PersonalInfoCard(label: String, value: String, onEditClick: (String) -> Unit) {
