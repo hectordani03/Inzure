@@ -40,30 +40,38 @@ import androidx.compose.ui.text.input.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
 import io.inzure.app.MainActivity
 import io.inzure.app.R
 import io.inzure.app.ui.theme.InzureTheme
 import java.util.*
 import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
+import android.content.Context
+import com.opencsv.CSVReader
+import java.io.FileReader
+import java.io.InputStreamReader
+import java.util.regex.Pattern
+
 
 class RegisterView : ComponentActivity() {
 
     private lateinit var firestore: FirebaseFirestore
+    private lateinit var auth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Inicializa Firestore
+        // Inicializa Firestore y FirebaseAuth
         firestore = FirebaseFirestore.getInstance()
+        auth = FirebaseAuth.getInstance()
 
         setContent {
             InzureTheme {
                 Scaffold { paddingValues ->
                     RegisterView(
                         paddingValues,
-
                         OnBackClick = {
                             val intent = Intent(this@RegisterView, MainActivity::class.java)
                             startActivity(intent)
@@ -75,7 +83,7 @@ class RegisterView : ComponentActivity() {
                             finish()
                         },
                         OnRegister = { userData, isInsurer ->
-                            saveUserToFirestore(userData, isInsurer)
+                            registerUserWithFirebaseAuth(userData, isInsurer)
                         }
                     )
                 }
@@ -83,22 +91,90 @@ class RegisterView : ComponentActivity() {
         }
     }
 
-    private fun saveUserToFirestore(userData: Map<String, Any>, isInsurer: Boolean) {
+    private fun registerUserWithFirebaseAuth(userData: Map<String, Any>, isInsurer: Boolean) {
+        val email = userData["email"] as? String ?: ""
+        val password = userData["password"] as? String ?: ""
+
+        if (email.isNotEmpty() && password.isNotEmpty()) {
+            auth.createUserWithEmailAndPassword(email, password)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        val user = auth.currentUser
+                        user?.let {
+                            // Enviar correo de verificación
+                            it.sendEmailVerification()
+                                .addOnCompleteListener { verificationTask ->
+                                    if (verificationTask.isSuccessful) {
+                                        Toast.makeText(
+                                            this,
+                                            "Correo de verificación enviado a $email. Por favor verifica tu correo.",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                        val userId = it.uid
+                                        saveUserToFirestore(userId, userData, isInsurer)
+                                    } else {
+                                        Toast.makeText(
+                                            this,
+                                            "Error al enviar el correo de verificación: ${verificationTask.exception?.message}",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                }
+                        }
+                    } else {
+                        val errorMessage = getFirebaseAuthErrorMessage(task.exception)
+                        Toast.makeText(
+                            this,
+                            "Error al registrar usuario: $errorMessage",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+        } else {
+            Toast.makeText(this, "Correo electrónico o contraseña inválidos", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun getFirebaseAuthErrorMessage(exception: Exception?): String {
+        return when (exception?.message) {
+            "The email address is already in use by another account." ->
+                "La dirección de correo electrónico ya está en uso por otra cuenta."
+            "The email address is badly formatted." ->
+                "La dirección de correo electrónico tiene un formato incorrecto."
+            "The given password is invalid. [ Password should be at least 6 characters ]" ->
+                "La contraseña es inválida. Debe tener al menos 6 caracteres."
+            "There is no user record corresponding to this identifier. The user may have been deleted." ->
+                "No existe un registro de usuario con este correo. El usuario puede haber sido eliminado."
+            "The password is invalid or the user does not have a password." ->
+                "La contraseña es inválida o el usuario no tiene una contraseña."
+            else ->
+                exception?.message ?: "Error desconocido"
+        }
+    }
+
+    private fun saveUserToFirestore(userId: String, userData: Map<String, Any>, isInsurer: Boolean) {
+        // Crea una copia mutable de userData
+        val userDataToSave = userData.toMutableMap()
+
+        // Elimina la clave "password" si existe
+        userDataToSave.remove("password")
+
         val subCollectionName = if (isInsurer) "UserInsurer" else "UserClient"
-        val name = userData["name"] as? String ?: "Unknown"
-        val lastName = userData["lastName"] as? String ?: "User"
-        val customId = "${name}_${lastName}".replace(" ", "_").lowercase()
 
         firestore.collection("Users")
             .document(subCollectionName)
             .collection("userData")
-            .document(customId)
-            .set(userData)
+            .document(userId)
+            .set(userDataToSave)
             .addOnSuccessListener {
-                Toast.makeText(this, "Usuario registrado con éxito en $subCollectionName con ID $customId!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Usuario registrado exitosamente!", Toast.LENGTH_SHORT).show()
+                // Redirigir a MainActivity o cualquier otra actividad deseada
+                val intent = Intent(this@RegisterView, LoginView::class.java)
+                startActivity(intent)
+                finish()
             }
             .addOnFailureListener { e ->
-                Toast.makeText(this, "Error en el registro: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Error al guardar datos: ${e.message}", Toast.LENGTH_LONG).show()
             }
     }
 }
@@ -144,6 +220,35 @@ fun RegisterView(
     val fiscalIdFocusRequester = FocusRequester()
     val directionFocusRequester = FocusRequester()
     val licenseNumberFocusRequester = FocusRequester()
+
+    fun isRFCValid(rfc: String): Boolean {
+        // Expresión regular para validar el RFC de personas físicas y morales
+        val rfcPattern = "^[A-ZÑ&]{3,4}\\d{6}[A-Z0-9]{3}\$"
+        val pattern = Pattern.compile(rfcPattern)
+        val matcher = pattern.matcher(rfc)
+
+        return matcher.matches()
+    }
+
+    fun validarCedula(context: Context, cedula: String): Boolean {
+        return try {
+            // Abre el archivo CSV desde la carpeta assets
+            val inputStream = context.assets.open("listado_cedula.csv")
+            val reader = CSVReader(InputStreamReader(inputStream))
+
+            var line: Array<String>?
+            while (reader.readNext().also { line = it } != null) {
+                // Verifica si el número de cédula está en la cuarta columna (índice 3)
+                if (line?.size ?: 0 > 3 && line!![3] == cedula) {
+                    return true
+                }
+            }
+            false
+        } catch (e: Exception) {
+            Toast.makeText(context, "Error al leer el archivo CSV: ${e.message}", Toast.LENGTH_LONG).show()
+            false
+        }
+    }
 
     // Función para validar la estructura y dominio del correo electrónico
     fun isEmailValid(email: String): Boolean {
@@ -314,6 +419,11 @@ fun RegisterView(
             isInsurer && fiscal_id.isEmpty() -> {
                 fiscalIdFocusRequester.requestFocus()
                 Toast.makeText(context, "El campo Número de Identificación Fiscal es requerido", Toast.LENGTH_SHORT).show()
+                false
+            }
+            isInsurer && !isRFCValid(fiscal_id) -> {
+                fiscalIdFocusRequester.requestFocus()
+                Toast.makeText(context, "El RFC no tiene un formato válido", Toast.LENGTH_SHORT).show()
                 false
             }
             isInsurer && direction.isEmpty() -> {
@@ -560,7 +670,7 @@ fun RegisterView(
             TextField(
                 value = fiscal_id,
                 onValueChange = { fiscal_id = it },
-                label = { Text("Numero de identificacion fiscal") },
+                label = { Text("Número de identificacion fiscal (RFC)") },
                 leadingIcon = {
                     Icon(
                         painter = painterResource(R.drawable.register_image),
@@ -581,7 +691,7 @@ fun RegisterView(
             TextField(
                 value = direction,
                 onValueChange = { direction = it },
-                label = { Text("Direccion de la sede principal") },
+                label = { Text("Dirección de la sede principal") },
                 leadingIcon = {
                     Icon(
                         painter = painterResource(R.drawable.register_image),
@@ -602,7 +712,7 @@ fun RegisterView(
             TextField(
                 value = license_number,
                 onValueChange = { license_number = it },
-                label = { Text("Numero de licencia") },
+                label = { Text("Número de Cédula") },
                 leadingIcon = {
                     Icon(
                         painter = painterResource(R.drawable.register_image),
@@ -624,12 +734,23 @@ fun RegisterView(
         Button(
             onClick = {
                 if (validateFields()) {
+                    // Verificar el número de cédula solo si el usuario es asegurador
+                    if (isInsurer) {
+                        val isCedulaValid = validarCedula(context, license_number)
+
+                        if (!isCedulaValid) {
+                            Toast.makeText(context, "Número de Cédula no válido.", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                    }
+
                     val userData = hashMapOf(
                         "email" to email,
                         "name" to name,
                         "lastName" to last_name,
                         "phone" to phone,
-                        "birthDate" to selectedDate
+                        "birthDate" to selectedDate,
+                        "password" to password
                     ).apply {
                         if (isInsurer) {
                             put("companyName", company_name)

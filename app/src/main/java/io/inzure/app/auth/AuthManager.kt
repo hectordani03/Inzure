@@ -2,6 +2,7 @@ package io.inzure.app.auth
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 
@@ -10,17 +11,30 @@ class AuthManager(private val context: Context) {
     private val sharedPreferences: SharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
 
     // Iniciar sesión
-    fun login(email: String, password: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+    fun login(email: String, password: String, onSuccess: () -> Unit, onError: () -> Unit) {
         firebaseAuth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    saveSession()
-                    onSuccess()
+                    val user = firebaseAuth.currentUser
+                    if (user != null) {
+                        if (!user.isEmailVerified) {
+                            /*
+                            Toast.makeText(
+                                context,
+                                "Por favor, verifica tu correo electrónico para acceder a todas las funciones.",
+                                Toast.LENGTH_LONG
+                            ).show() */
+                        }
+                        onSuccess()
+                    } else {
+                        onError()
+                    }
                 } else {
-                    onError(task.exception?.message ?: "Login failed")
+                    onError()
                 }
             }
     }
+
 
     // Cerrar sesión
     fun logout() {

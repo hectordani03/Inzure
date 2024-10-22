@@ -33,14 +33,17 @@ import io.inzure.app.R
 import io.inzure.app.ui.theme.InzureTheme
 import io.inzure.app.auth.AuthManager
 import android.widget.Toast
-
+import androidx.compose.ui.platform.LocalContext
 
 class LoginView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+
         // Comprobamos si el usuario está logueado, en caso de que sí, lo redireccionamos a la pantalla principal
         val am = AuthManager(this)
         if (am.isUserLoggedIn()) {
-            if (Intent.ACTION_MAIN == intent.action && intent.hasCategory(Intent.CATEGORY_LAUNCHER)){
+            if (Intent.ACTION_MAIN == intent.action && intent.hasCategory(Intent.CATEGORY_LAUNCHER)) {
                 val intent = Intent(this, MainActivity::class.java)
                 startActivity(intent)
                 finish()
@@ -48,39 +51,48 @@ class LoginView : ComponentActivity() {
                 finish()
             }
         }
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
         setContent {
             InzureTheme {
                 Scaffold { paddingValues ->
-                    loginView(paddingValues, onBackClick = {
-                        val intent = Intent(this@LoginView, MainActivity::class.java)
-                        startActivity(intent)
-                        finish()
-                    }, onRegisterClick = {
-                        val intent = Intent(this@LoginView, RegisterView::class.java)
-                        startActivity(intent)
-                    }, onLoginClick = { email: String, password: String ->
-                        // Evento a ejecutar al hacer click en el botón de inicio de sesión
-                        // Aquí se implementa la logica de inicio de sesión
-                        // Verificamos que los campos no estén vacíos
-                        if (email.isEmpty() || password.isEmpty()) {
-                            Toast.makeText(this@LoginView, "Por favor, rellene todos los campos", Toast.LENGTH_SHORT).show()
-                            return@loginView
-                        }
-                        // Si los campos no están vacíos, iniciamos sesión
-                        val authManager = AuthManager(this@LoginView)
-                        authManager.login(email, password, onSuccess = {
-                            // Si la autenticación es exitosa, redireccionamos a la pantalla principal
-                            // La sesion queda guardada en el dispositivo, pudes utlizar la clase AuthManager para obtener la sesion actual
+                    loginView(
+                        paddingValues,
+                        onBackClick = {
                             val intent = Intent(this@LoginView, MainActivity::class.java)
                             startActivity(intent)
                             finish()
-                        }, onError = {
-                            // En caso de que los datos sean incorrectos, mostramos que sus credenciales son incorrectas
-                            Toast.makeText(this@LoginView, "Credenciales incorrectas", Toast.LENGTH_SHORT).show()
-                        })
-                    })
+                        },
+                        onRegisterClick = {
+                            val intent = Intent(this@LoginView, RegisterView::class.java)
+                            startActivity(intent)
+                        },
+                        onLoginClick = { email: String, password: String ->
+                            if (email.isEmpty() || password.isEmpty()) {
+                                Toast.makeText(this@LoginView, "Por favor, rellene todos los campos", Toast.LENGTH_SHORT).show()
+                                return@loginView
+                            }
+
+                            val authManager = AuthManager(this@LoginView)
+                            authManager.login(email, password, onSuccess = {
+                                val user = authManager.getCurrentUser()
+                                if (user != null && user.isEmailVerified) {
+                                    // Redirigir a MainActivity si el correo está verificado
+                                    val intent = Intent(this@LoginView, MainActivity::class.java)
+                                    startActivity(intent)
+                                    finish()
+                                } else {
+                                    // Mostrar el popup si el correo no está verificado
+                                    /*Toast.makeText(
+                                        this@LoginView,
+                                        "Por favor, verifica tu correo electrónico para acceder a todas las funciones.",
+                                        Toast.LENGTH_LONG
+                                    ).show()*/
+                                }
+                            }, onError = {
+                                Toast.makeText(this@LoginView, "Credenciales incorrectas", Toast.LENGTH_SHORT).show()
+                            })
+                        }
+                    )
                 }
             }
         }
@@ -98,6 +110,9 @@ fun loginView(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var showDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val auth = AuthManager(context)
 
     // Se añade scrollState para hacer la columna scrolleable
     val scrollState = rememberScrollState()
@@ -105,7 +120,7 @@ fun loginView(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(scrollState) // Hacemos el contenido scrolleable
+            .verticalScroll(scrollState)
             .padding(paddingValues)
             .padding(16.dp),
         verticalArrangement = Arrangement.Center,
@@ -170,9 +185,7 @@ fun loginView(
                 )
             },
             trailingIcon = {
-                val image = if (passwordVisible)
-                    Icons.Filled.Visibility
-                else Icons.Filled.VisibilityOff
+                val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
 
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(
@@ -193,20 +206,75 @@ fun loginView(
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // Sección para "¿Olvidaste tu contraseña?"
         Text(
             text = "¿Olvidaste tu contraseña?",
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.align(Alignment.End).clickable { /* TODO: Recuperar contraseña */ }
+            modifier = Modifier
+                .align(Alignment.End)
+                .clickable { /* TODO: Recuperar contraseña */ }
         )
 
         Spacer(modifier = Modifier.height(20.dp))
 
         Button(
-            onClick = { onLoginClick(email, password) },
+            onClick = {
+                onLoginClick(email, password)
+                val user = auth.getCurrentUser()
+                if (!password.isEmpty() && !email.isEmpty()) {
+                    auth.login(email, password, onSuccess = {
+                        if (user != null && !user.isEmailVerified) {
+                            showDialog = true
+                        }
+                    }, onError = {
+                    //Añadir algo si se necesita
+                    })
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp)
         ) {
             Text(text = "Iniciar Sesión", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+
+        // Mostrar el popup después del inicio de sesión si el correo no está verificado
+        if (showDialog) {
+            AlertDialog(
+                onDismissRequest = { showDialog = false },
+                title = { Text(text = "Verificación de Correo") },
+                text = { Text(text = "Por favor, verifica tu correo electrónico para acceder a todas las funciones.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            val user = auth.getCurrentUser()
+                            user?.sendEmailVerification()?.addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    showDialog = false
+                                    Toast.makeText(
+                                        context,
+                                        "Correo de verificación reenviado. Por favor revisa tu bandeja de entrada.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                } else {
+                                    showDialog = false
+                                    Toast.makeText(
+                                        context,
+                                        "Error al reenviar el correo de verificación.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Reenviar correo")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDialog = false }) {
+                        Text("Cerrar")
+                    }
+                }
+            )
         }
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -224,7 +292,11 @@ fun loginView(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp)
         ) {
-            Icon(painter = painterResource(R.drawable.google_icon), contentDescription = null, modifier = Modifier.size(24.dp))
+            Icon(
+                painter = painterResource(R.drawable.google_icon),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
             Spacer(modifier = Modifier.width(8.dp))
             Text(text = "Inicia con Google", fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
@@ -250,6 +322,6 @@ fun loginView(
 @Composable
 fun LoginViewPreview() {
     InzureTheme {
-        loginView(PaddingValues(0.dp), onBackClick = {}, onRegisterClick = {}, onLoginClick = ({ _, _ ->}))
+        loginView(PaddingValues(0.dp), onBackClick = {}, onRegisterClick = {}, onLoginClick = { _, _ -> })
     }
 }

@@ -1,5 +1,5 @@
 [versions]
-agp = "8.7.1"
+agp = "8.6.0"
 kotlin = "2.0.0"
 core-ktx = "1.13.1"
 junit = "4.13.2"
@@ -19,6 +19,7 @@ firebase-database = "21.0.0"
 google-gms-services = "4.4.2"
 firebase-firestore-ktx = "25.1.1"
 firebase-auth = "23.1.0"
+opencsv = "5.7.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
@@ -32,6 +33,7 @@ androidx-constraintlayout = { group = "androidx.constraintlayout", name = "const
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle-runtime-ktx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activity" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
+opencsv = { group = "com.opencsv", name = "opencsv", version.ref = "opencsv" }
 
 # Compose
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
