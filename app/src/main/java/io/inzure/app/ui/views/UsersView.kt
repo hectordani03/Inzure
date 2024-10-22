@@ -40,7 +40,11 @@ import android.content.Context
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.ui.platform.LocalContext
 import java.util.*
-
+import androidx.lifecycle.viewmodel.compose.viewModel
+import io.inzure.app.viewmodel.UserViewModel
+import io.inzure.app.data.model.User
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.AlertDialog
 
 class UsersView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,8 +57,15 @@ class UsersView : ComponentActivity() {
 
 @Composable
 fun UsersListView() {
+    val userViewModel: UserViewModel = viewModel()
+    val users by userViewModel.users.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
-    var users by remember { mutableStateOf(listOf<User>()) }
+    var userToEdit by remember { mutableStateOf<User?>(null) }
+    var showDeleteConfirmation by remember { mutableStateOf<User?>(null) }
+
+    LaunchedEffect(Unit) {
+        userViewModel.startRealtimeUpdates()
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -75,30 +86,72 @@ fun UsersListView() {
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
-                users.forEach { user ->
-                    UserCard(
-                        user = user,
-                        onEdit = { /* Handle edit */ },
-                        onDelete = {
-                            users = users.filter { it != user }
-                        }
+                if (users.isEmpty()) {
+                    Text(
+                        text = "No users found.",
+                        fontSize = 16.sp,
+                        modifier = Modifier.padding(top = 16.dp)
                     )
+                } else {
+                    users.forEach { user ->
+                        UserCard(
+                            user = user,
+                            onEdit = { userToEdit = user }, // Usa el usuario correcto
+                            onDelete = { showDeleteConfirmation = user } // Usa el usuario correcto
+                        )
+                    }
+
                 }
             }
         }
     )
 
+    // Diálogo para agregar usuario
     if (showDialog) {
         AddUserDialog(
             onDismiss = { showDialog = false },
             onSave = { newUser ->
-                users = users + newUser
+                userViewModel.addUser(newUser)
                 showDialog = false
             }
         )
     }
-}
 
+    // Diálogo para editar usuario
+    userToEdit?.let { user ->
+        EditUserDialog(
+            user = user,
+            onDismiss = { userToEdit = null },
+            onSave = { updatedUser ->
+                userViewModel.updateUser(updatedUser) // Actualiza el usuario en Firestore
+                userToEdit = null
+            }
+        )
+    }
+
+    showDeleteConfirmation?.let { user ->
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = null },
+            title = { Text(text = "Delete User") },
+            text = { Text(text = "Are you sure you want to delete this user?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    userViewModel.deleteUser(user) // Llama a la función de eliminación
+                    showDeleteConfirmation = null
+                }) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmation = null }) {
+                    Text("No")
+                }
+            }
+        )
+    }
+
+
+}
 
 @Composable
 fun UserCard(user: User, onEdit: () -> Unit, onDelete: () -> Unit) {
@@ -141,19 +194,127 @@ fun AddUserDialog(onDismiss: () -> Unit, onSave: (User) -> Unit) {
     var email by remember { mutableStateOf(TextFieldValue()) }
     var phone by remember { mutableStateOf(TextFieldValue()) }
     var role by remember { mutableStateOf("Editor") }
-    var birthDate by remember { mutableStateOf("") } // Cambiado a String para mostrar la fecha
+    var birthDate by remember { mutableStateOf("") }
 
-    val context = LocalContext.current // Para acceder al contexto de Android
+    val context = LocalContext.current
     val calendar = Calendar.getInstance()
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             color = Color.White
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = "Add User", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                // Campos de texto
+                OutlinedTextField(
+                    value = firstName,
+                    onValueChange = { firstName = it },
+                    label = { Text("Nombre") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = lastName,
+                    onValueChange = { lastName = it },
+                    label = { Text("Apellidos") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { phone = it },
+                    label = { Text("Número de Celular") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Menú desplegable para el rol
+                DropdownMenuField(
+                    label = "Rol",
+                    options = listOf("Editor", "Admin"),
+                    selectedOption = role,
+                    onOptionSelected = { role = it }
+                )
+
+                // Selector de fecha de nacimiento
+                OutlinedTextField(
+                    value = birthDate,
+                    onValueChange = { birthDate = it },
+                    label = { Text("Fecha de Nacimiento") },
+                    modifier = Modifier.fillMaxWidth(),
+                    readOnly = true,
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            showDatePicker(context, calendar) { selectedDate ->
+                                birthDate = selectedDate
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarToday,
+                                contentDescription = "Select Date"
+                            )
+                        }
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = {
+                        if (firstName.text.isNotBlank() && lastName.text.isNotBlank() && email.text.isNotBlank() && phone.text.isNotBlank() && birthDate.isNotBlank()) {
+                            val newUser = User(
+                                firstName = firstName.text,
+                                lastName = lastName.text,
+                                email = email.text,
+                                phone = phone.text,
+                                role = role,
+                                birthDate = birthDate
+                            )
+                            onSave(newUser) // Llama a la función para guardar el usuario
+                        }
+                    }) {
+                        Text("Save")
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun EditUserDialog(user: User,onDismiss: () -> Unit,onSave: (User) -> Unit) {
+    var firstName by remember { mutableStateOf(TextFieldValue(user.firstName)) }
+    var lastName by remember { mutableStateOf(TextFieldValue(user.lastName)) }
+    var email by remember { mutableStateOf(TextFieldValue(user.email)) }
+    var phone by remember { mutableStateOf(TextFieldValue(user.phone)) }
+    var role by remember { mutableStateOf(user.role) }
+    var birthDate by remember { mutableStateOf(user.birthDate) }
+
+    val context = LocalContext.current
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            color = Color.White
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(text = "Edit User", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(16.dp))
                 OutlinedTextField(
                     value = firstName,
@@ -186,33 +347,41 @@ fun AddUserDialog(onDismiss: () -> Unit, onSave: (User) -> Unit) {
                     onOptionSelected = { role = it }
                 )
 
-                // Campo para seleccionar la fecha de nacimiento
+                // Selector de fecha de nacimiento
                 OutlinedTextField(
                     value = birthDate,
-                    onValueChange = { birthDate = it },
+                    onValueChange = { },  // This field is read-only
                     label = { Text("Fecha de Nacimiento") },
                     modifier = Modifier.fillMaxWidth(),
                     readOnly = true,
                     trailingIcon = {
                         IconButton(onClick = {
-                            showDatePicker(context, calendar) { selectedDate ->
+                            showDatePicker(context, Calendar.getInstance()) { selectedDate ->
                                 birthDate = selectedDate
                             }
                         }) {
-                            Icon(imageVector = Icons.Default.CalendarToday, contentDescription = "Select Date")
+                            Icon(
+                                imageVector = Icons.Default.CalendarToday,
+                                contentDescription = "Select Date"
+                            )
                         }
                     }
                 )
 
+
                 Spacer(modifier = Modifier.height(16.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
                     TextButton(onClick = onDismiss) {
                         Text("Cancel")
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(onClick = {
                         if (firstName.text.isNotBlank() && lastName.text.isNotBlank() && email.text.isNotBlank() && phone.text.isNotBlank() && birthDate.isNotBlank()) {
-                            val newUser = User(
+                            val updatedUser = User(
+                                id = user.id,
                                 firstName = firstName.text,
                                 lastName = lastName.text,
                                 email = email.text,
@@ -220,10 +389,10 @@ fun AddUserDialog(onDismiss: () -> Unit, onSave: (User) -> Unit) {
                                 role = role,
                                 birthDate = birthDate
                             )
-                            onSave(newUser)
+                            onSave(updatedUser) // Llama al ViewModel para actualizar el usuario
                         }
                     }) {
-                        Text("Save")
+                        Text("Update")
                     }
                 }
             }
@@ -231,7 +400,7 @@ fun AddUserDialog(onDismiss: () -> Unit, onSave: (User) -> Unit) {
     }
 }
 
-// Función auxiliar para mostrar el DatePickerDialog
+
 private fun showDatePicker(context: Context, calendar: Calendar, onDateSelected: (String) -> Unit) {
     val year = calendar.get(Calendar.YEAR)
     val month = calendar.get(Calendar.MONTH)
@@ -284,11 +453,3 @@ fun DropdownMenuField(label: String, options: List<String>, selectedOption: Stri
     }
 }
 
-data class User(
-    val firstName: String,
-    val lastName: String,
-    val email: String,
-    val phone: String,
-    val role: String,
-    val birthDate: String
-)
