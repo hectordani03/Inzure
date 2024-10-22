@@ -23,55 +23,268 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.geometry.CornerRadius
 import io.inzure.app.R
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldColors
+import androidx.compose.material3.ExperimentalMaterial3Api
 
+
+
+
+// Clase de datos para la lista de seguros
+data class InsuranceData(
+    val imageRes: Int,
+    val companyLogo: Int,
+    val companyName: String,
+    val description: String
+)
+
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainView(
     onNavigateToProfile: () -> Unit,
     onNavigateToCarInsurance: () -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        TopBar(onNavigateToProfile)
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+    var isDrawerOpen by remember { mutableStateOf(false) }
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(12.dp)
-        ) {
-            WelcomeMessage()
-            InsuranceCategories(onNavigateToCarInsurance)
-            LearnAboutInsurance()
+    // Estado del BottomSheetScaffold
+    val bottomSheetScaffoldState = rememberBottomSheetScaffoldState()
+
+    // Animación de color para el sombreado al abrir el Drawer
+    val scrimColor by animateColorAsState(
+        targetValue = if (isDrawerOpen) Color.Black.copy(alpha = 0.5f) else Color.Transparent,
+        animationSpec = tween(durationMillis = 500)
+    )
+
+    // Lista de seguros de ejemplo
+    val insuranceList = listOf(
+        InsuranceData(
+            imageRes = R.drawable.aseguradora1,
+            companyLogo = R.drawable.ic_qualitas,
+            companyName = "Qualitas Seguros",
+            description = "Explora por los diversos seguros que tenemos"
+        ),
+
+        InsuranceData(
+            imageRes = R.drawable.aseguradora3,
+            companyLogo = R.drawable.ic_aseguradora3,
+            companyName = "MetLife",
+            description = "Descubriendo la vida juntos"
+        ),
+
+        InsuranceData(
+            imageRes = R.drawable.aseguradora2,
+            companyLogo = R.drawable.ic_aseguradora2,
+            companyName = "GNP Seguros",
+            description = "Cobertura completa para tu auto"
+        ),
+
+        InsuranceData(
+            imageRes = R.drawable.aseguradora4,
+            companyLogo = R.drawable.ic_aseguradora4,
+            companyName = "HDI Seguros",
+            description = "Hacer fáciles tus momentos dificiles"
+        ),
+        InsuranceData(
+            imageRes = R.drawable.aseguradora5,
+            companyLogo = R.drawable.ic_aseguradora5,
+            companyName = "Zurich Seguros",
+            description = "Cobertura total para tu hogar"
+        )
+    )
+
+    // Implementación del BottomSheetScaffold para manejar el comportamiento de la Bottom Bar
+    BottomSheetScaffold(
+        scaffoldState = bottomSheetScaffoldState,
+        sheetPeekHeight = 0.dp, // Comienza colapsado
+        containerColor = Color(0xFF072A4A), // Fondo azul del Bottom Sheet
+        sheetContent = {
+            BottomSheetContent(insuranceList)
         }
+    )
+    {
+        // Uso de ModalNavigationDrawer para el menú lateral
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            scrimColor = scrimColor,
+            drawerContent = {
+                // Contenido del menú lateral
+                Box(
+                    modifier = Modifier
+                        .width(screenWidth * 0.75f)
+                        .fillMaxHeight()
+                        .background(Color(0xFF072A4A))
+                ) {
+                    // Diseño del menú lateral
+                    Column(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Spacer(modifier = Modifier.height(40.dp))
 
-        BottomBar()
+                        // Sección de perfil
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_profile),
+                            contentDescription = "User Avatar",
+                            modifier = Modifier
+                                .size(50.dp)
+                                .clip(CircleShape)
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Información del usuario
+                        Text(
+                            text = "Jose Joshua",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = Color.White
+                        )
+
+                        Text(
+                            text = "josejoshua01@gmail.com",
+                            fontSize = 14.sp,
+                            color = Color.White
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // Opciones del menú lateral
+                        MenuOption(iconRes = R.drawable.ic_profile2, text = "Perfil", spacerHeight = 20.dp)
+                        MenuOption(iconRes = R.drawable.ic_file, text = "Mis Pólizas", spacerHeight = 20.dp)
+                        MenuOption(iconRes = R.drawable.ic_search, text = "Buscador", spacerHeight = 20.dp)
+                        MenuOption(iconRes = R.drawable.ic_history, text = "Historial", spacerHeight = 20.dp)
+                        MenuOption(iconRes = R.drawable.ic_chat, text = "Chat", spacerHeight = 20.dp)
+                        MenuOption(iconRes = R.drawable.ic_learn, text = "Educativo", spacerHeight = 20.dp)
+
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        // Botón de cerrar sesión
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_logout),
+                                contentDescription = "Cerrar sesión",
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Cerrar Sesión",
+                                fontSize = 16.sp,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        ) {
+            // Uso de Scaffold para mantener la TopBar y la BottomBar fijas
+            Scaffold(
+                topBar = {
+                    TopBar(
+                        onMenuClick = {
+                            scope.launch {
+                                isDrawerOpen = true
+                                drawerState.open() // Abrir el Drawer
+                            }
+                        },
+                        onNavigateToProfile = onNavigateToProfile
+                    )
+                },
+                bottomBar = {
+                    BottomBar(
+                        onSwipeUp = {
+                            scope.launch {
+                                bottomSheetScaffoldState.bottomSheetState.expand() // Expandir el Bottom Sheet al deslizar hacia arriba
+                            }
+                        }
+                    )
+                }
+            ) { innerPadding ->
+                // Contenido principal de la pantalla
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(innerPadding)
+                ) {
+                    WelcomeMessage()
+                    InsuranceCategories(onNavigateToCarInsurance)
+                    LearnAboutInsurance()
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
     }
 }
 
 
-
-
 @Composable
-fun TopBar(onNavigateToProfile: () -> Unit) {
+fun TopBar(
+    onMenuClick: () -> Unit, // Agregar el parámetro onMenuClick
+    onNavigateToProfile: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .background(Color.White) // Añadir fondo blanco a la TopBar
+            .statusBarsPadding() // Ajuste para evitar superposición con los íconos del sistema
+            .padding(16.dp), // Padding interno
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = { /* TODO: Handle menu click */ }) {
+        // Botón del menú de hamburguesa
+        IconButton(onClick = onMenuClick) { // Usar el parámetro onMenuClick
             Image(
                 painter = painterResource(id = R.drawable.ic_menu),
                 contentDescription = "Menú",
-                modifier = Modifier.size(80.dp)
+                modifier = Modifier.size(40.dp)
             )
         }
+
+        // Logo de la aplicación
         Image(
             painter = painterResource(id = R.drawable.logo),
             contentDescription = "Logo",
             modifier = Modifier.size(80.dp)
         )
+
+        // Botón de perfil
         IconButton(onClick = onNavigateToProfile) {
             Image(
                 painter = painterResource(id = R.drawable.ic_profile),
@@ -83,40 +296,275 @@ fun TopBar(onNavigateToProfile: () -> Unit) {
 }
 
 
+// Contenido del Bottom Sheet con lista de seguros
 @Composable
-fun BottomBar() {
-    // Barra inferior con color de fondo azul y bordes redondeados
+fun BottomSheetContent(insuranceList: List<InsuranceData>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(0.75f) // Cubre 3/4 de la pantalla
+            .background(Color(0xFF072A4A)) // Fondo azul
+    ) {
+        // Barra superior del Bottom Sheet
+        Spacer(modifier = Modifier.height(16.dp)) // Espacio superior para el texto "Buscar"
+        Text(
+            text = "Buscar",
+            color = Color.White,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
+
+        Spacer(modifier = Modifier.height(24.dp)) // Más espacio debajo del texto "Buscar"
+
+        // Campo de búsqueda
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Ícono de lupa
+            Icon(
+                painter = painterResource(id = R.drawable.ic_search), // Reemplaza con tu ícono de lupa
+                contentDescription = "Lupa",
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Texto de búsqueda (hint) en negrita
+            SearchField()
+        }
+
+        // Línea debajo del campo de búsqueda, más separada
+        Spacer(modifier = Modifier.height(8.dp)) // Espacio adicional antes de la línea
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .padding(horizontal = 16.dp)
+                .background(Color.White.copy(alpha = 0.6f))
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Lista de seguros desplazable con imagen en cada elemento
+        LazyColumn(
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 16.dp)
+        ) {
+            items(insuranceList) { insurance ->
+                InsuranceCardWithImage(
+                    imageRes = insurance.imageRes,
+                    companyLogo = insurance.companyLogo,
+                    companyName = insurance.companyName,
+                    description = insurance.description
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SearchField() {
+    var text by remember { mutableStateOf("") } // Estado para el texto ingresado
+
+    OutlinedTextField(
+        value = text,
+        onValueChange = { text = it },
+        placeholder = {
+            Text(
+                text = "Encuentra tu seguro", // Placeholder
+                color = Color.White.copy(alpha = 0.6f),
+                fontSize = 20.sp, // Tamaño de texto más grande
+                fontWeight = FontWeight.Bold // Texto en bold
+            )
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 0.dp), // Ajustar según el diseño
+        textStyle = TextStyle(
+            color = Color.White,
+            fontSize = 20.sp, // Tamaño de texto más grande
+            fontWeight = FontWeight.Bold // Texto en bold
+        ),
+        singleLine = true, // Limitar a una sola línea de texto
+        shape = RoundedCornerShape(8.dp), // Esquinas edondeadas
+        colors = TextFieldDefaults.colors(
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            unfocusedContainerColor = Color.Transparent,
+            cursorColor = Color.Black
+        )
+    )
+}
+
+
+// Función para mostrar una tarjeta de seguro con imagen
+@Composable
+fun InsuranceCardWithImage(imageRes: Int, companyLogo: Int, companyName: String, description: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .background(Color.White, RoundedCornerShape(12.dp))
+    ) {
+        Image(
+            painter = painterResource(id = imageRes),
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(150.dp)
+                .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
+            contentScale = ContentScale.Crop
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                painter = painterResource(id = companyLogo),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(40.dp)
+                    .padding(4.dp)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = companyName,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    text = description,
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+            }
+
+            // Íconos del corazón y de la flecha en la misma fila
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_personal), // Ícono de corazón
+                    contentDescription = null,
+                    tint = Color.Gray,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .padding(bottom = 4.dp) // Añade padding hacia abajo para mayor separación
+                )
+
+                Spacer(modifier = Modifier.height(8.dp)) // Aumenta la altura del espaciado
+
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_arrow), // Ícono de flecha hacia abajo
+                    contentDescription = "Desplegar más",
+                    tint = Color.Gray,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .padding(top = 4.dp) // Añade padding hacia arriba para mayor separación
+                )
+            }
+
+        }
+    }
+}
+
+
+// Función BottomBar
+@Composable
+fun BottomBar(onSwipeUp: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp))
-            .background(Color(0xFF072A4A)) // Color azul de fondo
-            .padding(vertical = 12.dp), // Padding interno
+            .background(Color(0xFF072A4A)) // Fondo azul
+            .navigationBarsPadding() // Ajusta la posición para evitar superposición con la barra de navegación del sistema
+            .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly, // Repartir los íconos equitativamente
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            BottomBarIcon(R.drawable.ic_file, "Home")
-            BottomBarIcon(R.drawable.ic_history, "Search")
-            BottomBarIcon(R.drawable.ic_search, "Notifications")
-            BottomBarIcon(R.drawable.ic_profile2, "Settings")
+            IconButton(onClick = onSwipeUp) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_file),
+                    contentDescription = "Home",
+                    tint = Color.White,
+                    modifier = Modifier.size(30.dp)
+                )
+            }
+
+            IconButton(onClick = onSwipeUp) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_history),
+                    contentDescription = "Search",
+                    tint = Color.White,
+                    modifier = Modifier.size(30.dp)
+                )
+            }
+
+            IconButton(onClick = onSwipeUp) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_search),
+                    contentDescription = "Notifications",
+                    tint = Color.White,
+                    modifier = Modifier.size(30.dp)
+                )
+            }
+
+            IconButton(onClick = onSwipeUp) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_profile2),
+                    contentDescription = "Settings",
+                    tint = Color.White,
+                    modifier = Modifier.size(30.dp)
+                )
+            }
         }
     }
 }
 
 @Composable
-fun BottomBarIcon(iconResId: Int, contentDescription: String) {
-    IconButton(onClick = { /* TODO: Handle click */ }) {
-        Image(
-            painter = painterResource(id = iconResId),
-            contentDescription = contentDescription,
-            modifier = Modifier.size(30.dp),
-            colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.White) // Cambiar el color a blanco
+fun MenuOption(iconRes: Int, text: String, spacerHeight: Dp) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .clickable { /* Acción de la opción */ },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start // Alinear opciones del menú a la izquierda
+    ) {
+        Icon(
+            painter = painterResource(id = iconRes),
+            contentDescription = text,
+            tint = Color.White,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            text = text,
+            fontSize = 16.sp,
+            color = Color.White,
+            fontWeight = FontWeight.Medium
         )
     }
+    Spacer(modifier = Modifier.height(spacerHeight)) // Espaciado adicional
 }
 
 @Composable
@@ -142,7 +590,8 @@ fun WelcomeMessage() {
 @Composable
 fun InsuranceCategories(onNavigateToCarInsurance: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -154,14 +603,13 @@ fun InsuranceCategories(onNavigateToCarInsurance: () -> Unit) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
+        )  {
             InsuranceCategory("Autos", R.drawable.ic_auto, onClick = onNavigateToCarInsurance)
             InsuranceCategory("Personal", R.drawable.ic_personal, onClick = { /* Navegación Personal */ })
             InsuranceCategory("Empresarial", R.drawable.ic_empresarial, onClick = { /* Navegación Empresarial */ })
         }
     }
 }
-
 
 @Composable
 fun InsuranceCategory(name: String, iconResId: Int, onClick: () -> Unit) {
@@ -184,10 +632,14 @@ fun InsuranceCategory(name: String, iconResId: Int, onClick: () -> Unit) {
     }
 }
 
-
 @Composable
 fun LearnAboutInsurance() {
-    Column(modifier = Modifier.padding(vertical = 16.dp)) {
+    // Agregar padding general de 16.dp alrededor de toda la sección
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
         Text(
             text = "Aprende sobre seguros",
             fontWeight = FontWeight.Bold,
@@ -195,11 +647,11 @@ fun LearnAboutInsurance() {
             modifier = Modifier.padding(bottom = 12.dp)
         )
         InsuranceImage()
-        Spacer(modifier = Modifier.height(20.dp)) // Espaciador aumentado
+        Spacer(modifier = Modifier.height(20.dp))
         InsuranceImage2()
-        Spacer(modifier = Modifier.height(10.dp)) // Espaciador aumentado
+        Spacer(modifier = Modifier.height(10.dp))
         InsuranceImage3()
-        Spacer(modifier = Modifier.height(10.dp)) // Espaciador aumentado
+        Spacer(modifier = Modifier.height(10.dp))
         InsuranceImage4()
     }
 }
@@ -210,9 +662,7 @@ fun InsuranceImage() {
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
-            // Aplicamos la sombra usando elevation
             .drawBehind {
-                // Dibujamos múltiples sombras con diferentes opacidades para crear efecto blur
                 for (i in 1..3) {
                     drawRoundRect(
                         color = Color.Gray.copy(alpha = .1f),
@@ -222,7 +672,6 @@ fun InsuranceImage() {
                         topLeft = Offset(0f, (i * 2).dp.toPx())
                     )
                 }
-                // Sombra principal
                 drawRoundRect(
                     color = Color.Gray.copy(alpha = .2f),
                     size = size.copy(height = size.height + .5.dp.toPx()),
@@ -258,7 +707,8 @@ fun InsuranceImage() {
                 color = Color.Black,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyLarge
             )
 
             // Imagen a la derecha del texto
@@ -482,5 +932,6 @@ fun InsuranceImage4() {
         }
     }
 }
+
 
 

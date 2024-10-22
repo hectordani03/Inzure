@@ -6,17 +6,17 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/logo3"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@drawable/logo3"
         android:supportsRtl="true"
         android:theme="@style/Theme.Inzure"
         tools:targetApi="31">
+        <!-- Nueva actividad SplashScreen -->
         <activity
-            android:name="io.inzure.app.ui.views.LoginView"
+            android:name=".SplashActivity"
             android:exported="true"
-            android:label="@string/title_activity_login_screen"
-            android:theme="@style/Theme.Inzure">
+            android:theme="@style/Theme.Inzure"> <!-- Ajustar el tema según tu diseño -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

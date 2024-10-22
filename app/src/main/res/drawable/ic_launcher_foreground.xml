@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <!-- Ajusta los márgenes para cambiar la posición -->
+        <bitmap
+            android:src="@drawable/logo3"
+            android:gravity="center" />
+    </item>
+</layer-list>
