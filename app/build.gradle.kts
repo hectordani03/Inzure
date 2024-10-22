@@ -64,6 +64,9 @@ android {
 dependencies {
     // val composeVersion = "1.5.2"  // Nota: esta variable no se está usando actualmente
 
+    // Google Sign-In
+    implementation(libs.play.services.auth)
+
     // AndroidX Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

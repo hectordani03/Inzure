@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.Composable
+import io.inzure.app.ui.views.AdminView
 import io.inzure.app.ui.views.CarInsuranceView
 import io.inzure.app.ui.views.ProfileView
 import io.inzure.app.ui.views.MainView
@@ -29,6 +30,10 @@ class MainActivity : ComponentActivity() {
                         },
                         onNavigateToCarInsurance = {
                             val intent = Intent(this@MainActivity, CarInsuranceView::class.java)
+                            startActivity(intent)
+                        },
+                        onNavigateToAdmin = {
+                            val intent = Intent(this@MainActivity, AdminView::class.java)
                             startActivity(intent)
                         }
                     )

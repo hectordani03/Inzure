@@ -13,7 +13,20 @@
           "package_name": "io.inzure.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "128506299824-7eicbsmbp016fbtvqhhll0a7gicnkudi.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "io.inzure.app",
+            "certificate_hash": "607f15f94d135d2827cb9037e8e1c7783bc460bc"
+          }
+        },
+        {
+          "client_id": "128506299824-27slbv38mt7t11t325bqea8v8dlhhcoc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyC2y4u-5tw6rF5Xq_J7lGMNR0oRU-lf-jo"
@@ -21,7 +34,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "128506299824-27slbv38mt7t11t325bqea8v8dlhhcoc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
