@@ -1,6 +1,7 @@
 package io.inzure.app.ui.views
 
 import android.app.DatePickerDialog
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Patterns
@@ -47,11 +48,9 @@ import io.inzure.app.R
 import io.inzure.app.ui.theme.InzureTheme
 import java.util.*
 import com.google.firebase.firestore.FirebaseFirestore
-import java.text.SimpleDateFormat
-import android.content.Context
 import com.opencsv.CSVReader
-import java.io.FileReader
 import java.io.InputStreamReader
+import java.text.SimpleDateFormat
 import java.util.regex.Pattern
 
 
