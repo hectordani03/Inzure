@@ -2,6 +2,7 @@ package io.inzure.app.ui.views
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,30 +25,34 @@ import androidx.compose.ui.geometry.CornerRadius
 import io.inzure.app.R
 
 @Composable
-fun MainView(onNavigateToLogin: () -> Unit) {
+fun MainView(
+    onNavigateToProfile: () -> Unit,
+    onNavigateToCarInsurance: () -> Unit
+) {
     Column(modifier = Modifier.fillMaxSize()) {
-        TopBar(onNavigateToLogin)
+        TopBar(onNavigateToProfile)
 
-        // Contenido scrolleable debajo del TopBar
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .weight(1f) // Para que el contenido scrolleable ocupe el espacio entre el TopBar y BottomBar
+                .weight(1f)
                 .verticalScroll(rememberScrollState())
                 .padding(12.dp)
         ) {
             WelcomeMessage()
-            InsuranceCategories()
+            InsuranceCategories(onNavigateToCarInsurance)
             LearnAboutInsurance()
         }
 
-        // Barra inferior con íconos y bordes redondeados
         BottomBar()
     }
 }
 
+
+
+
 @Composable
-fun TopBar(onNavigateToLogin: () -> Unit) {
+fun TopBar(onNavigateToProfile: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -67,7 +72,7 @@ fun TopBar(onNavigateToLogin: () -> Unit) {
             contentDescription = "Logo",
             modifier = Modifier.size(80.dp)
         )
-        IconButton(onClick = onNavigateToLogin) {
+        IconButton(onClick = onNavigateToProfile) {
             Image(
                 painter = painterResource(id = R.drawable.ic_profile),
                 contentDescription = "Profile",
@@ -76,6 +81,7 @@ fun TopBar(onNavigateToLogin: () -> Unit) {
         }
     }
 }
+
 
 @Composable
 fun BottomBar() {
@@ -134,10 +140,9 @@ fun WelcomeMessage() {
 }
 
 @Composable
-fun InsuranceCategories() {
+fun InsuranceCategories(onNavigateToCarInsurance: () -> Unit) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -150,18 +155,21 @@ fun InsuranceCategories() {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            InsuranceCategory("Autos", R.drawable.ic_auto)
-            InsuranceCategory("Personal", R.drawable.ic_personal)
-            InsuranceCategory("Empresarial", R.drawable.ic_empresarial)
+            InsuranceCategory("Autos", R.drawable.ic_auto, onClick = onNavigateToCarInsurance)
+            InsuranceCategory("Personal", R.drawable.ic_personal, onClick = { /* Navegación Personal */ })
+            InsuranceCategory("Empresarial", R.drawable.ic_empresarial, onClick = { /* Navegación Empresarial */ })
         }
     }
 }
 
+
 @Composable
-fun InsuranceCategory(name: String, iconResId: Int) {
+fun InsuranceCategory(name: String, iconResId: Int, onClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(8.dp)
+        modifier = Modifier
+            .padding(8.dp)
+            .clickable { onClick() } // Agregar la acción de clic
     ) {
         Image(
             painter = painterResource(id = iconResId),
@@ -175,6 +183,7 @@ fun InsuranceCategory(name: String, iconResId: Int) {
         )
     }
 }
+
 
 @Composable
 fun LearnAboutInsurance() {
