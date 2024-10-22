@@ -33,15 +33,38 @@ import io.inzure.app.R
 import io.inzure.app.ui.theme.InzureTheme
 import io.inzure.app.auth.AuthManager
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
+import com.google.firebase.auth.GoogleAuthProvider
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.firebase.auth.FirebaseAuth
 
 class LoginView : ComponentActivity() {
+    private lateinit var googleSignInClient: GoogleSignInClient
+    private lateinit var firebaseAuth: FirebaseAuth
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         // Comprobamos si el usuario está logueado, en caso de que sí, lo redireccionamos a la pantalla principal
         val am = AuthManager(this)
+
+        // Configura FirebaseAuth
+        firebaseAuth = FirebaseAuth.getInstance()
+
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.default_web_client_id))
+            .requestEmail()
+            .build()
+
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
+
+
         if (am.isUserLoggedIn()) {
             if (Intent.ACTION_MAIN == intent.action && intent.hasCategory(Intent.CATEGORY_LAUNCHER)) {
                 val intent = Intent(this, MainActivity::class.java)
@@ -101,11 +124,45 @@ class LoginView : ComponentActivity() {
                                     }
                                 )
                             }
+                        },
+                        onGoogleLoginClick = {
+                            signInWithGoogle()
                         }
                     )
                 }
             }
         }
+    }
+    private fun signInWithGoogle() {
+        val signInIntent = googleSignInClient.signInIntent
+        googleSignInLauncher.launch(signInIntent)
+    }
+
+    private val googleSignInLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            if (account != null) {
+                firebaseAuthWithGoogle(account)
+            }
+        } catch (e: ApiException) {
+            Toast.makeText(this, "Error al iniciar sesión con Google: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+    private fun firebaseAuthWithGoogle(account: GoogleSignInAccount) {
+        val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+        firebaseAuth.signInWithCredential(credential)
+            .addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) {
+                    val intent = Intent(this, MainActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                } else {
+                    Toast.makeText(this, "Error al iniciar sesión con Google", Toast.LENGTH_SHORT).show()
+                }
+            }
     }
 }
 
@@ -116,7 +173,8 @@ fun loginView(
     onBackClick: () -> Unit,
     onRegisterClick: () -> Unit,
     onLoginClick: (String, String) -> Unit,
-    onForgotPasswordClick: (String) -> Unit
+    onForgotPasswordClick: (String) -> Unit,
+    onGoogleLoginClick: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -299,7 +357,7 @@ fun loginView(
         Spacer(modifier = Modifier.height(10.dp))
 
         OutlinedButton(
-            onClick = { /* TODO: Lógica de inicio con Google */ },
+            onClick = { onGoogleLoginClick() },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp)
         ) {
@@ -338,7 +396,8 @@ fun LoginViewPreview() {
             onBackClick = {},
             onRegisterClick = {},
             onLoginClick = { _, _ -> },
-            onForgotPasswordClick = {}
+            onForgotPasswordClick = {},
+            onGoogleLoginClick = {}
         )
     }
 }
