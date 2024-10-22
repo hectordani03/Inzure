@@ -6,9 +6,12 @@ data class User(
     var lastName: String = "",
     var email: String = "",
     var phone: String = "",
-    var role: String = "",
-    var birthDate: String = ""
+    var interests: String = "",
+    var birthDate: String = "",
+    var image: String = "", 
+    var role: String = ""
 ) {
-    constructor() : this("", "", "", "", "", "", "")
+    constructor() : this("", "", "", "", "", "", "", "", "")
 }
+
 

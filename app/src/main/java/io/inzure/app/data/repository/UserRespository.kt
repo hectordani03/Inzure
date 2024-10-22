@@ -6,6 +6,7 @@ import com.google.firebase.firestore.ktx.toObject
 import io.inzure.app.data.model.User
 import kotlinx.coroutines.tasks.await
 import com.google.firebase.firestore.ListenerRegistration
+import io.inzure.app.viewmodel.GlobalUserSession
 
 class UserRepository {
 
@@ -101,6 +102,32 @@ class UserRepository {
         }
     }
 
+    suspend fun getUserById(userId: String): User? {
+        val role = GlobalUserSession.role ?: return null
+
+        val documentPath = when (role) {
+            "Client" -> "UserClient"
+            "Admin" -> "UserAdmin"
+            "Editor" -> "UserEditor"
+            "Insurer" -> "UserInsurer"
+            else -> return null
+        }
+
+        return try {
+            val snapshot = db.collection("Users")
+                .document(documentPath)
+                .collection("userData")
+                .document(userId)
+                .get()
+                .await()
+
+            snapshot.toObject(User::class.java)
+        } catch (e: Exception) {
+            Log.e("Firestore", "Error al obtener el usuario: ", e)
+            null
+        }
+    }
+
 
     fun getUsersRealtime(onUsersChanged: (List<User>) -> Unit) {
         listenerRegistration?.remove()
@@ -120,4 +147,31 @@ class UserRepository {
     fun removeListener() {
         listenerRegistration?.remove()
     }
+
+    suspend fun updateUserField(field: String, newValue: String): Boolean {
+        val userId = GlobalUserSession.userId ?: return false
+        val role = GlobalUserSession.role ?: return false
+
+        val documentPath = when (role) {
+            "Client" -> "UserClient"
+            "Admin" -> "UserAdmin"
+            "Editor" -> "UserEditor"
+            "Insurer" -> "UserInsurer"
+            else -> return false
+        }
+
+        return try {
+            db.collection("Users")
+                .document(documentPath)
+                .collection("userData")
+                .document(userId)
+                .update(field, newValue)
+                .await()
+            true
+        } catch (e: Exception) {
+            Log.e("Firestore", "Error al actualizar $field", e)
+            false
+        }
+    }
+
 }

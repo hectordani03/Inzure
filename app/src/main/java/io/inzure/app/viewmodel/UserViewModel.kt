@@ -15,6 +15,8 @@ class UserViewModel : ViewModel() {
 
     private val _users = MutableStateFlow<List<User>>(emptyList())
     val users: StateFlow<List<User>> get() = _users
+    private val _user = MutableStateFlow<User?>(null)
+    val user: StateFlow<User?> get() = _user
 
     fun startRealtimeUpdates() {
         repository.getUsersRealtime { usersList ->
@@ -57,6 +59,14 @@ class UserViewModel : ViewModel() {
         viewModelScope.launch {
             val success = repository.deleteUser(user.id, user.role)
             if (success) getUsers()
+        }
+    }
+
+    // Función para cargar el usuario logueado por ID
+    fun loadLoggedUser(userId: String) {
+        viewModelScope.launch {
+            val user = repository.getUserById(userId)
+            _user.value = user
         }
     }
 }

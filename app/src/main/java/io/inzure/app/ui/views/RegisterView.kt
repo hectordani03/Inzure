@@ -746,11 +746,13 @@ fun RegisterView(
 
                     val userData = hashMapOf(
                         "email" to email,
-                        "name" to name,
+                        "firstName" to name,
                         "lastName" to last_name,
                         "phone" to phone,
                         "birthDate" to selectedDate,
-                        "password" to password
+                        "password" to password,
+                        "image" to "",
+                        "role" to if (isInsurer) "Insurer" else "Client"
                     ).apply {
                         if (isInsurer) {
                             put("companyName", company_name)

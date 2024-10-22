@@ -119,4 +119,28 @@ class InsuranceRepository {
     fun removeListener() {
         listenerRegistration?.remove()
     }
+
+    suspend fun updateUserField(userId: String, role: String, fieldName: String, newValue: String): Boolean {
+        val documentPath = when (role) {
+            "Client" -> "UserClient"
+            "Admin" -> "UserAdmin"
+            "Editor" -> "UserEditor"
+            "Insurer" -> "UserInsurer"
+            else -> return false
+        }
+
+        return try {
+            db.collection("Users")
+                .document(documentPath)
+                .collection("userData")
+                .document(userId)
+                .update(fieldName, newValue)
+                .await()
+            true
+        } catch (e: Exception) {
+            Log.e("Firestore", "Error al actualizar el campo $fieldName: ", e)
+            false
+        }
+    }
+
 }
