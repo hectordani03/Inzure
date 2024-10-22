@@ -9,7 +9,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.Composable
-import io.inzure.app.ui.views.LoginView
+import io.inzure.app.ui.views.CarInsuranceView
+import io.inzure.app.ui.views.ProfileView
 import io.inzure.app.ui.views.MainView
 
 class MainActivity : ComponentActivity() {
@@ -22,8 +23,12 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     MainView(
-                        onNavigateToLogin = {
-                            val intent = Intent(this@MainActivity, LoginView::class.java)
+                        onNavigateToProfile = {
+                            val intent = Intent(this@MainActivity, ProfileView::class.java)
+                            startActivity(intent)
+                        },
+                        onNavigateToCarInsurance = {
+                            val intent = Intent(this@MainActivity, CarInsuranceView::class.java)
                             startActivity(intent)
                         }
                     )
