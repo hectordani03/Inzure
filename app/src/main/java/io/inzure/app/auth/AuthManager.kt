@@ -35,6 +35,18 @@ class AuthManager(private val context: Context) {
             }
     }
 
+    // Enviar correo de restablecimiento de contraseña
+    fun sendPasswordResetEmail(email: String, onSuccess: () -> Unit, onError: () -> Unit) {
+        firebaseAuth.sendPasswordResetEmail(email)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    onSuccess()
+                } else {
+                    onError()
+                }
+            }
+    }
+
 
     // Cerrar sesión
     fun logout() {

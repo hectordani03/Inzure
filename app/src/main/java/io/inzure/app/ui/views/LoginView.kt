@@ -82,15 +82,25 @@ class LoginView : ComponentActivity() {
                                     finish()
                                 } else {
                                     // Mostrar el popup si el correo no está verificado
-                                    /*Toast.makeText(
-                                        this@LoginView,
-                                        "Por favor, verifica tu correo electrónico para acceder a todas las funciones.",
-                                        Toast.LENGTH_LONG
-                                    ).show()*/
                                 }
                             }, onError = {
                                 Toast.makeText(this@LoginView, "Credenciales incorrectas", Toast.LENGTH_SHORT).show()
                             })
+                        },
+                        onForgotPasswordClick = { email ->
+                            if (email.isEmpty()) {
+                                Toast.makeText(this@LoginView, "Por favor, ingrese su correo electrónico", Toast.LENGTH_SHORT).show()
+                            } else {
+                                val authManager = AuthManager(this@LoginView)
+                                authManager.sendPasswordResetEmail(email,
+                                    onSuccess = {
+                                        Toast.makeText(this@LoginView, "Correo de restablecimiento enviado. Revisa tu bandeja de entrada.", Toast.LENGTH_LONG).show()
+                                    },
+                                    onError = {
+                                        Toast.makeText(this@LoginView, "Error al enviar el correo de restablecimiento, verifica que el correo sea válido", Toast.LENGTH_LONG).show()
+                                    }
+                                )
+                            }
                         }
                     )
                 }
@@ -105,7 +115,8 @@ fun loginView(
     paddingValues: PaddingValues,
     onBackClick: () -> Unit,
     onRegisterClick: () -> Unit,
-    onLoginClick: (String, String) -> Unit
+    onLoginClick: (String, String) -> Unit,
+    onForgotPasswordClick: (String) -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -212,7 +223,7 @@ fun loginView(
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier
                 .align(Alignment.End)
-                .clickable { /* TODO: Recuperar contraseña */ }
+                .clickable { onForgotPasswordClick(email) }
         )
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -227,7 +238,7 @@ fun loginView(
                             showDialog = true
                         }
                     }, onError = {
-                    //Añadir algo si se necesita
+                        // Añadir algo si se necesita
                     })
                 }
             },
@@ -322,6 +333,12 @@ fun loginView(
 @Composable
 fun LoginViewPreview() {
     InzureTheme {
-        loginView(PaddingValues(0.dp), onBackClick = {}, onRegisterClick = {}, onLoginClick = { _, _ -> })
+        loginView(
+            PaddingValues(0.dp),
+            onBackClick = {},
+            onRegisterClick = {},
+            onLoginClick = { _, _ -> },
+            onForgotPasswordClick = {}
+        )
     }
 }
