@@ -27,7 +27,8 @@ import io.inzure.app.R
 @Composable
 fun MainView(
     onNavigateToProfile: () -> Unit,
-    onNavigateToCarInsurance: () -> Unit
+    onNavigateToCarInsurance: () -> Unit,
+    onNavigateToAdmin: () -> Unit // Nuevo parámetro para navegación a AdminView
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         TopBar(onNavigateToProfile)
@@ -44,7 +45,7 @@ fun MainView(
             LearnAboutInsurance()
         }
 
-        BottomBar()
+        BottomBar(onNavigateToAdmin) // Llama a BottomBar con el nuevo parámetro
     }
 }
 
@@ -84,37 +85,37 @@ fun TopBar(onNavigateToProfile: () -> Unit) {
 
 
 @Composable
-fun BottomBar() {
-    // Barra inferior con color de fondo azul y bordes redondeados
+fun BottomBar(onNavigateToAdmin: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp))
-            .background(Color(0xFF072A4A)) // Color azul de fondo
-            .padding(vertical = 12.dp), // Padding interno
+            .background(Color(0xFF072A4A))
+            .padding(vertical = 12.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly, // Repartir los íconos equitativamente
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            BottomBarIcon(R.drawable.ic_file, "Home")
-            BottomBarIcon(R.drawable.ic_history, "Search")
-            BottomBarIcon(R.drawable.ic_search, "Notifications")
-            BottomBarIcon(R.drawable.ic_profile2, "Settings")
+            BottomBarIcon(R.drawable.ic_file, "Home", {})
+            BottomBarIcon(R.drawable.ic_history, "Search", {})
+            BottomBarIcon(R.drawable.ic_search, "Notifications", {})
+            BottomBarIcon(R.drawable.ic_profile2, "Admin", onNavigateToAdmin) // Actualizado para navegación
         }
     }
 }
 
+
 @Composable
-fun BottomBarIcon(iconResId: Int, contentDescription: String) {
-    IconButton(onClick = { /* TODO: Handle click */ }) {
+fun BottomBarIcon(iconResId: Int, contentDescription: String, onClick: () -> Unit) {
+    IconButton(onClick = onClick) {
         Image(
             painter = painterResource(id = iconResId),
             contentDescription = contentDescription,
             modifier = Modifier.size(30.dp),
-            colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.White) // Cambiar el color a blanco
+            colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.White)
         )
     }
 }

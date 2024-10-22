@@ -43,6 +43,12 @@
         </activity>
 
         <activity
+            android:name="io.inzure.app.ui.views.AdminView"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
+        </activity>
+
+        <activity
             android:name="io.inzure.app.ui.views.PostsView"
             android:exported="true"
             android:theme="@style/Theme.Inzure">
