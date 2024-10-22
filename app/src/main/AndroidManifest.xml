@@ -48,6 +48,19 @@
             android:theme="@style/Theme.Inzure">
         </activity>
 
+        <activity
+            android:name="io.inzure.app.ui.views.CarInsuranceView"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
+
+        </activity>
+
+        <activity
+            android:name="io.inzure.app.ui.views.ProfileView"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
+        </activity>
+
 
         <activity
             android:name="io.inzure.app.MainActivity"

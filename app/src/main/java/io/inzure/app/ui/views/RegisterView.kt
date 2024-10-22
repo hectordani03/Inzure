@@ -11,6 +11,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -649,20 +650,57 @@ fun RegisterView(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Row(
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        ) {
-            Text(text = "Al registrarte estas aceptando los",
-                fontSize = 12.sp)
-            Spacer(modifier = Modifier.width(4.dp))
+        var showTermsDialog by remember { mutableStateOf(false) }
 
-            Text(
-                text = "Terminos y condiciones",
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.clickable { /* TODO: Navegar a terminos y condiciones */ }
-            )
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                Text(
+                    text = "Al registrarte estas aceptando los",
+                    fontSize = 12.sp
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+
+                Text(
+                    text = "Términos y condiciones",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable {
+                        showTermsDialog = true
+                    }
+                )
+            }
+
+            if (showTermsDialog) {
+                AlertDialog(
+                    onDismissRequest = { showTermsDialog = false },
+                    text = {
+                        LazyColumn(
+                            modifier = Modifier.height(400.dp)
+                        ) {
+                            item {
+                                Text(text = getTermsAndConditionsText())
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = { showTermsDialog = false },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Aceptar")
+                        }
+                    }
+                )
+            }
+
         }
 
         Spacer(modifier = Modifier.height(16.dp))
