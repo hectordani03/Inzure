@@ -42,7 +42,8 @@ class MainActivity : ComponentActivity() {
                         onNavigateToUsers = { // Nueva función para navegar a UsersView
                             val intent = Intent(this@MainActivity, UsersView::class.java)
                             startActivity(intent)
-                        }
+                        },
+                        onNavigateToChat = {}
                     )
                 }
             }
