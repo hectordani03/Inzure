@@ -235,7 +235,6 @@ fun loginView(
         Button(
             onClick = {
                 onLoginClick(email, password)
-                val user = auth.getCurrentUser()
 
                 if (email.isNotEmpty() && password.isNotEmpty()) {
                     auth.login(email, password, onSuccess = {

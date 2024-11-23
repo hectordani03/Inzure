@@ -24,9 +24,15 @@
         </activity>
 
         <activity
-            android:name="io.inzure.app.ui.views.RegisterView"
+            android:name="io.inzure.app.ui.views.LoginView"
             android:exported="true"
             android:label="@string/title_activity_login_screen"
+            android:theme="@style/Theme.Inzure">
+        </activity>
+
+        <activity
+            android:name="io.inzure.app.ui.views.RegisterView"
+            android:exported="true"
             android:theme="@style/Theme.Inzure">
         </activity>
 

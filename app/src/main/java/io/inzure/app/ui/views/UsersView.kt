@@ -64,7 +64,7 @@ fun UsersListView() {
     var showDeleteConfirmation by remember { mutableStateOf<User?>(null) }
 
     LaunchedEffect(Unit) {
-        userViewModel.startRealtimeUpdates()
+        userViewModel.getUsers()
     }
 
     Scaffold(
@@ -96,8 +96,8 @@ fun UsersListView() {
                     users.forEach { user ->
                         UserCard(
                             user = user,
-                            onEdit = { userToEdit = user }, // Usa el usuario correcto
-                            onDelete = { showDeleteConfirmation = user } // Usa el usuario correcto
+                            onEdit = { userToEdit = user },
+                            onDelete = { showDeleteConfirmation = user }
                         )
                     }
 
@@ -117,13 +117,12 @@ fun UsersListView() {
         )
     }
 
-    // Diálogo para editar usuario
     userToEdit?.let { user ->
         EditUserDialog(
             user = user,
             onDismiss = { userToEdit = null },
             onSave = { updatedUser ->
-                userViewModel.updateUser(updatedUser) // Actualiza el usuario en Firestore
+                userViewModel.updateUser(updatedUser)
                 userToEdit = null
             }
         )
@@ -347,10 +346,9 @@ fun EditUserDialog(user: User,onDismiss: () -> Unit,onSave: (User) -> Unit) {
                     onOptionSelected = { role = it }
                 )
 
-                // Selector de fecha de nacimiento
                 OutlinedTextField(
                     value = birthDate,
-                    onValueChange = { },  // This field is read-only
+                    onValueChange = { },
                     label = { Text("Fecha de Nacimiento") },
                     modifier = Modifier.fillMaxWidth(),
                     readOnly = true,
@@ -389,7 +387,7 @@ fun EditUserDialog(user: User,onDismiss: () -> Unit,onSave: (User) -> Unit) {
                                 role = role,
                                 birthDate = birthDate
                             )
-                            onSave(updatedUser) // Llama al ViewModel para actualizar el usuario
+                            onSave(updatedUser)
                         }
                     }) {
                         Text("Update")

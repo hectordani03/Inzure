@@ -1,6 +1,32 @@
 package io.inzure.app.viewmodel
 
 import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.inzure.app.data.model.User
@@ -18,8 +44,8 @@ class UserViewModel : ViewModel() {
     private val _user = MutableStateFlow<User?>(null)
     val user: StateFlow<User?> get() = _user
 
-    fun startRealtimeUpdates() {
-        repository.getUsersRealtime { usersList ->
+    fun getUsers() {
+        repository.getUsers { usersList ->
             _users.value = usersList
         }
     }
@@ -29,44 +55,81 @@ class UserViewModel : ViewModel() {
         repository.removeListener()
     }
 
-    fun getUsers() {
-        viewModelScope.launch {
-            val usersList = repository.getUsers()
-            _users.value = usersList
-        }
-    }
-
     fun addUser(user: User) {
         viewModelScope.launch {
-            val success = repository.addUser(user)
-            if (success) getUsers()
+            try {
+                val success = repository.addUser(user)
+                if (!success) {
+                    Log.e("UserViewModel", "Error: El usuario no se pudo agregar. Verifica el repositorio.")
+                }
+            } catch (e: Exception) {
+                Log.e("UserViewModel", "Excepción al agregar usuario: ${e.message}")
+            }
         }
     }
 
     fun updateUser(user: User) {
         viewModelScope.launch {
-            val success = repository.updateUser(user)
-            if (success) {
-                Log.d("UserViewModel", "User updated successfully")
-                getUsers()
-            } else {
-                Log.e("UserViewModel", "Failed to update user")
+            try {
+                val success = repository.updateUser(user)
+                if (!success) {
+                    Log.e("UserViewModel", "Error: El usuario no se pudo actualizar. Verifica el repositorio.")
+                }
+            } catch (e: Exception) {
+                Log.e("UserViewModel", "Excepción al actualizar usuario: ${e.message}")
             }
         }
     }
 
     fun deleteUser(user: User) {
         viewModelScope.launch {
-            val success = repository.deleteUser(user.id, user.role)
-            if (success) getUsers()
+            try {
+                val success = repository.deleteUser(user)
+                if (!success) {
+                    Log.e("UserViewModel", "Error: El usuario no se pudo eliminar. Verifica el repositorio.")
+                }
+            } catch (e: Exception) {
+                Log.e("UserViewModel", "Excepción al eliminar usuario: ${e.message}")
+            }
         }
     }
 
-    // Función para cargar el usuario logueado por ID
     fun loadLoggedUser(userId: String) {
         viewModelScope.launch {
             val user = repository.getUserById(userId)
             _user.value = user
         }
     }
+
+    fun selectImage(onImageSelected: (String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                repository.selectImage { imageUri ->
+                    onImageSelected(imageUri)
+                }
+            } catch (e: Exception) {
+                Log.e("UserViewModel", "Error seleccionando imagen: ${e.message}")
+            }
+        }
+    }
+
+    fun updateProfileImage(userId: String, imageUri: String?, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
+        if (imageUri.isNullOrEmpty()) {
+            onError(IllegalArgumentException("No se seleccionó ninguna imagen"))
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                repository.updateProfileImage(userId, imageUri)
+                onSuccess()
+            } catch (e: Exception) {
+                Log.e("UserViewModel", "Error actualizando imagen: ${e.message}")
+                onError(e)
+            }
+        }
+    }
+
+
+
 }

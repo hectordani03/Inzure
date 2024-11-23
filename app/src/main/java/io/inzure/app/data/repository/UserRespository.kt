@@ -1,11 +1,13 @@
 package io.inzure.app.data.repository
 
+import android.net.Uri
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.toObject
 import io.inzure.app.data.model.User
 import kotlinx.coroutines.tasks.await
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.storage.FirebaseStorage
 import io.inzure.app.viewmodel.GlobalUserSession
 
 class UserRepository {
@@ -15,18 +17,8 @@ class UserRepository {
 
     suspend fun addUser(user: User): Boolean {
         return try {
-            val document = if (user.role == "Admin") "UserAdmin" else "UserEditor"
-            val ref = db.collection("Users")
-                .document(document)
-                .collection("userData")
-                .add(user)
-                .await()
-            user.id = ref.id
             db.collection("Users")
-                .document(document)
-                .collection("userData")
-                .document(ref.id)
-                .update("id", ref.id)
+                .add(user)
                 .await()
             true
         } catch (e: Exception) {
@@ -37,11 +29,8 @@ class UserRepository {
 
     suspend fun updateUser(user: User): Boolean {
         return try {
-            val document = if (user.role == "Admin") "UserAdmin" else "UserEditor"
             db.collection("Users")
-                .document(document)
-                .collection("userData")
-                .document(user.id) // Asegúrate de usar el ID del usuario
+                .document(user.id)
                 .set(user)
                 .await()
             true
@@ -51,54 +40,16 @@ class UserRepository {
         }
     }
 
-    suspend fun deleteUser(userId: String, role: String): Boolean {
+    suspend fun deleteUser(user: User): Boolean {
         return try {
-            val document = if (role == "Admin") "UserAdmin" else "UserEditor"
             db.collection("Users")
-                .document(document)
-                .collection("userData")
-                .document(userId)
+                .document(user.id)
                 .delete()
                 .await()
             true
         } catch (e: Exception) {
             Log.e("UserRepository", "Error deleting user: ${e.message}")
             false
-        }
-    }
-
-    suspend fun getUsers(): List<User> {
-        return try {
-            val adminSnapshot = db.collection("Users")
-                .document("UserAdmin")
-                .collection("userData")
-                .get()
-                .await()
-
-            val editorSnapshot = db.collection("Users")
-                .document("UserEditor")
-                .collection("userData")
-                .get()
-                .await()
-
-            // Log de tamaño de snapshots
-            Log.d("UserRepository", "Admin snapshot size: ${adminSnapshot.size()} | Editor snapshot size: ${editorSnapshot.size()}")
-
-            // Mapear los documentos a objetos User
-            val adminUsers = adminSnapshot.documents.mapNotNull { it.toObject<User>() }
-            val editorUsers = editorSnapshot.documents.mapNotNull { it.toObject<User>() }
-
-            Log.d("UserRepository", "Admin Users: $adminUsers")
-            Log.d("UserRepository", "Editor Users: $editorUsers")
-
-            // Retorna la lista combinada
-            val totalUsers = adminUsers + editorUsers
-            Log.d("UserRepository", "Total Users Retrieved: ${totalUsers.size}")
-
-            totalUsers
-        } catch (e: Exception) {
-            Log.e("UserRepository", "Error retrieving users: ${e.message}")
-            emptyList()
         }
     }
 
@@ -128,50 +79,79 @@ class UserRepository {
         }
     }
 
-
-    fun getUsersRealtime(onUsersChanged: (List<User>) -> Unit) {
+    fun getUsers(onUsersChanged: (List<User>) -> Unit) {
         listenerRegistration?.remove()
 
-        listenerRegistration = db.collectionGroup("userData")
+        listenerRegistration = db.collection("Users")
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     Log.e("UserRepository", "Error fetching users: ${error.message}")
                     return@addSnapshotListener
                 }
 
-                val usersList = snapshot?.documents?.mapNotNull { it.toObject<User>() } ?: emptyList()
+                val usersList = snapshot?.documents?.mapNotNull { document ->
+                    val user = document.toObject<User>()
+                    user?.copy(id = document.id)
+                } ?: emptyList()
+
                 onUsersChanged(usersList)
             }
+    }
+
+    suspend fun selectImage(onImageSelected: (String?) -> Unit) {
+        try {
+            // Aquí puedes usar un ActivityResultLauncher para abrir la galería y seleccionar una imagen
+            val imageUri = "file:///path/to/selected/image.jpg" // Simula una URI para la imagen seleccionada.
+            onImageSelected(imageUri)
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error seleccionando imagen: ${e.message}")
+            onImageSelected(null)
+        }
+    }
+
+    suspend fun updateProfileImage(userId: String, imageUri: String) {
+        try {
+            val storageReference = FirebaseStorage.getInstance().reference
+            val fileUri = Uri.parse(imageUri)
+
+            // Obtener la URL de la imagen anterior
+            val userDoc = FirebaseFirestore.getInstance().collection("Users").document(userId).get().await()
+            val oldImageUrl = userDoc.getString("image") // URL anterior, puede ser nula o vacía
+
+            // Eliminar la imagen anterior solo si existe
+            if (!oldImageUrl.isNullOrEmpty()) {
+                try {
+                    val oldImageRef = FirebaseStorage.getInstance().getReferenceFromUrl(oldImageUrl)
+                    oldImageRef.delete().await() // Elimina la imagen anterior
+                } catch (e: Exception) {
+                    Log.e("UserRepository", "Error eliminando la imagen anterior: ${e.message}")
+                }
+            }
+
+            // Subir la nueva imagen con el nombre del `userId` y su extensión original
+            val fileExtension = fileUri.lastPathSegment?.substringAfterLast('.', "jpg") ?: "jpg" // Extensión predeterminada
+            val newImageRef = storageReference.child("profile_images/$userId.$fileExtension")
+
+            // Subir archivo
+            newImageRef.putFile(fileUri).await()
+
+            // Obtener URL de descarga
+            val downloadUrl = newImageRef.downloadUrl.await()
+
+            // Actualizar el campo `image` en Firestore
+            FirebaseFirestore.getInstance().collection("Users")
+                .document(userId)
+                .update("image", downloadUrl.toString())
+                .await()
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error actualizando imagen: ${e.message}")
+            throw e
+        }
     }
 
     fun removeListener() {
         listenerRegistration?.remove()
     }
 
-    suspend fun updateUserField(field: String, newValue: String): Boolean {
-        val userId = GlobalUserSession.userId ?: return false
-        val role = GlobalUserSession.role ?: return false
-
-        val documentPath = when (role) {
-            "Client" -> "UserClient"
-            "Admin" -> "UserAdmin"
-            "Editor" -> "UserEditor"
-            "Insurer" -> "UserInsurer"
-            else -> return false
-        }
-
-        return try {
-            db.collection("Users")
-                .document(documentPath)
-                .collection("userData")
-                .document(userId)
-                .update(field, newValue)
-                .await()
-            true
-        } catch (e: Exception) {
-            Log.e("Firestore", "Error al actualizar $field", e)
-            false
-        }
-    }
 
 }
