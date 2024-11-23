@@ -1,64 +1,38 @@
 package io.inzure.app.ui.views
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.geometry.CornerRadius
-import io.inzure.app.R
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldColors
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.unit.dp
-
-
+import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.*
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.*
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.runtime.*
+import androidx.compose.ui.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.*
+import androidx.compose.ui.geometry.*
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.*
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.*
+import io.inzure.app.R
+import io.inzure.app.ui.components.SideMenu
+import io.inzure.app.ui.components.TopBar
+import io.inzure.app.ui.views.BottomBar
+import kotlinx.coroutines.launch
 
 // Clase de datos para la lista de seguros
 data class InsuranceData(
@@ -66,6 +40,25 @@ data class InsuranceData(
     val companyLogo: Int,
     val companyName: String,
     val description: String
+)
+
+// Clase de datos para chats
+data class Chat(
+    val userName: String,
+    val userCompany: String,
+    val userImageRes: Int
+)
+
+// Data class para representar un mensaje
+data class Message(val text: String, val isSentByUser: Boolean)
+
+// Lista de ejemplo de mensajes
+val sampleMessages = listOf(
+    Message("Hola, Buen día, está interesado en algún seguro?", false),
+    Message("Sí, me interesa el seguro automovilístico", true),
+    Message("Me podría dar más información", true),
+    Message("Claro, por el momento estamos manejando un seguro de cobertura total que incluye...", false),
+    Message("Perfecto, ¿cuáles son los precios?", true)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,13 +69,11 @@ fun MainView(
     onNavigateToUsers: () -> Unit,
     onNavigateToChat: () -> Unit
 ) {
-
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     var isDrawerOpen by remember { mutableStateOf(false) }
-    var showChatView by remember { mutableStateOf(false) }
-
+    val showChatView = remember { mutableStateOf(false) }
 
     // Estado del BottomSheetScaffold
     val bottomSheetScaffoldState = rememberBottomSheetScaffoldState()
@@ -101,26 +92,23 @@ fun MainView(
             companyName = "Qualitas Seguros",
             description = "Explora por los diversos seguros que tenemos"
         ),
-
         InsuranceData(
             imageRes = R.drawable.aseguradora3,
             companyLogo = R.drawable.ic_aseguradora3,
             companyName = "MetLife",
             description = "Descubriendo la vida juntos"
         ),
-
         InsuranceData(
             imageRes = R.drawable.aseguradora2,
             companyLogo = R.drawable.ic_aseguradora2,
             companyName = "GNP Seguros",
             description = "Cobertura completa para tu auto"
         ),
-
         InsuranceData(
             imageRes = R.drawable.aseguradora4,
             companyLogo = R.drawable.ic_aseguradora4,
             companyName = "HDI Seguros",
-            description = "Hacer fáciles tus momentos dificiles"
+            description = "Hacer fáciles tus momentos difíciles"
         ),
         InsuranceData(
             imageRes = R.drawable.aseguradora5,
@@ -136,7 +124,7 @@ fun MainView(
         sheetPeekHeight = 0.dp, // Comienza colapsado
         containerColor = Color(0xFF072A4A), // Fondo azul del Bottom Sheet
         sheetContent = {
-            BottomSheetContent(insuranceList) // Pasa la lista de seguros aquí si la tienes
+            BottomSheetContent(insuranceList)
         }
     ) {
         // Uso de ModalNavigationDrawer para el menú lateral
@@ -144,121 +132,20 @@ fun MainView(
             drawerState = drawerState,
             scrimColor = scrimColor,
             drawerContent = {
-                // Contenido del menú lateral
-                Box(
-                    modifier = Modifier
-                        .width(screenWidth * 0.75f)
-                        .fillMaxHeight()
-                        .background(Color(0xFF072A4A))
-                ) {
-                    // Diseño del menú lateral
-                    Column(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.Start
-                    ) {
-                        Spacer(modifier = Modifier.height(40.dp))
-
-                        // Sección de perfil
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_profile3),
-                            contentDescription = "User Avatar",
-                            modifier = Modifier
-                                .size(50.dp)
-                                .clip(CircleShape)
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Información del usuario
-                        Text(
-                            text = "Jose Joshua",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            color = Color.White
-                        )
-
-                        Text(
-                            text = "josejoshua01@gmail.com",
-                            fontSize = 14.sp,
-                            color = Color.White
-                        )
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        // Opciones del menú lateral con la función MenuOption
-                        MenuOption(
-                            iconRes = R.drawable.ic_profile2,
-                            text = "Perfil",
-                            spacerHeight = 20.dp,
-                            onClick = { onNavigateToProfile() }
-                        )
-                        MenuOption(
-                            iconRes = R.drawable.ic_file,
-                            text = "Mis Pólizas",
-                            spacerHeight = 20.dp,
-                            onClick = { /* Acción para "Mis Pólizas" */ }
-                        )
-                        MenuOption(
-                            iconRes = R.drawable.ic_search,
-                            text = "Buscador",
-                            spacerHeight = 20.dp,
-                            onClick = { /* Acción para "Buscador" */ }
-                        )
-                        MenuOption(
-                            iconRes = R.drawable.ic_history,
-                            text = "Historial",
-                            spacerHeight = 20.dp,
-                            onClick = { /* Acción para "Historial" */ }
-                        )
-                        MenuOption(
-                            iconRes = R.drawable.ic_chat,
-                            text = "Chat",
-                            spacerHeight = 20.dp,
-                            onClick = {
-                                showChatView = true // Actualizar el estado para mostrar la vista de chat
-                                scope.launch { drawerState.close() } // Cerrar el drawer
-                            }
-                        )
-                        MenuOption(
-                            iconRes = R.drawable.ic_learn,
-                            text = "Educativo",
-                            spacerHeight = 20.dp,
-                            onClick = { /* Acción para "Educativo" */ }
-                        )
-
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        // Botón de cerrar sesión
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Start
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_logout),
-                                contentDescription = "Cerrar sesión",
-                                tint = Color.White,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Cerrar Sesión",
-                                fontSize = 16.sp,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
+                // Uso del componente SideMenu importado desde SideMenu.kt
+                SideMenu(
+                    screenWidth = screenWidth,
+                    onNavigateToProfile = onNavigateToProfile,
+                    showChatView = showChatView,
+                    scope = scope,
+                    drawerState = drawerState
+                )
             }
         ) {
             // Uso de Scaffold para mantener la TopBar y la BottomBar fijas
             Scaffold(
                 topBar = {
+                    // Importa TopBar desde SideMenu.kt
                     TopBar(
                         onMenuClick = {
                             scope.launch {
@@ -273,21 +160,21 @@ fun MainView(
                     BottomBar(
                         onSwipeUp = {
                             scope.launch {
-                                bottomSheetScaffoldState.bottomSheetState.expand() // Expandir el Bottom Sheet
+                                bottomSheetScaffoldState.bottomSheetState.expand()
                             }
                         },
-                        onNavigateToUsers = onNavigateToUsers // Pasa el parámetro aquí
+                        onNavigateToUsers = onNavigateToUsers
                     )
                 }
             ) { innerPadding ->
-                if (showChatView) {
+                if (showChatView.value) {
                     // Mostrar la vista de chats si el estado está activado
                     val chatList = listOf(
                         Chat("Jose Joshua", "Asegurador de Qualitas", R.drawable.ic_profile5),
                         Chat("Maria Lopez", "Asegurador de MetLife", R.drawable.ic_profile4),
                         Chat("Carlos Perez", "Asegurador de HDI", R.drawable.ic_profile)
                     )
-                    ChatListView(chats = chatList, onClose = { showChatView = false })
+                    ChatListView(chats = chatList, onClose = { showChatView.value = false })
                 } else {
                     // Contenido principal de la pantalla
                     Column(
@@ -306,12 +193,6 @@ fun MainView(
         }
     }
 }
-
-data class Chat(
-    val userName: String,
-    val userCompany: String,
-    val userImageRes: Int
-)
 
 @Composable
 fun ChatListView(chats: List<Chat>, onClose: () -> Unit) {
@@ -448,9 +329,13 @@ fun ChatItem(
 
 @Composable
 fun IndividualChatView(chat: Chat, onClose: () -> Unit) {
-    // Estado para el mensaje actual y la lista de mensajes mutable
+    val listState = rememberLazyListState()
     var currentMessage by remember { mutableStateOf("") }
     val messages = remember { mutableStateListOf<Message>().apply { addAll(sampleMessages) } }
+
+    LaunchedEffect(messages.size) {
+        listState.animateScrollToItem(messages.size - 1)
+    }
 
     Column(
         modifier = Modifier
@@ -509,12 +394,13 @@ fun IndividualChatView(chat: Chat, onClose: () -> Unit) {
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
+                .padding(start = 16.dp, top = 0.dp, end = 16.dp, bottom = 50.dp)
         ) {
             LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 70.dp), // Espacio para la caja de entrada de texto
+                    .padding(bottom = 70.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(messages) { message ->
@@ -526,9 +412,9 @@ fun IndividualChatView(chat: Chat, onClose: () -> Unit) {
         // Caja de texto para enviar mensajes
         Row(
             modifier = Modifier
-                .fillMaxWidth() // Asegura que esté en la parte inferior
+                .fillMaxWidth()
                 .padding(vertical = 4.dp)
-                .offset(y = (-120).dp) // Ajusta este valor para subir el contenedor verticalmente
+                .offset(y = (-120).dp)
                 .background(Color(0xFF04305A), RoundedCornerShape(24.dp))
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -557,7 +443,9 @@ fun IndividualChatView(chat: Chat, onClose: () -> Unit) {
                     focusedPlaceholderColor = Color.LightGray,
                     unfocusedTextColor = Color.White,
                     focusedTextColor = Color.White
-                )
+                ),
+                keyboardOptions = KeyboardOptions.Default,
+                keyboardActions = KeyboardActions.Default
             )
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -581,14 +469,12 @@ fun IndividualChatView(chat: Chat, onClose: () -> Unit) {
     }
 }
 
-
 @Composable
 fun ChatBubble(message: Message) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (message.isSentByUser) Arrangement.End else Arrangement.Start
     ) {
-        // Contenedor del globo de texto con el pico
         Box(
             contentAlignment = if (message.isSentByUser) Alignment.CenterEnd else Alignment.CenterStart,
             modifier = Modifier
@@ -607,7 +493,7 @@ fun ChatBubble(message: Message) {
                         )
                     )
                     .padding(12.dp)
-                    .widthIn(max = 250.dp) // Limita el ancho de la burbuja
+                    .widthIn(max = 250.dp)
             ) {
                 Text(
                     text = message.text,
@@ -640,72 +526,15 @@ fun ChatBubble(message: Message) {
     }
 }
 
-// Data class para representar un mensaje
-data class Message(val text: String, val isSentByUser: Boolean)
-
-// Lista de ejemplo de mensajes
-val sampleMessages = listOf(
-    Message("Hola, Buen día, está interesado en algún seguro?", false),
-    Message("Sí, me interesa el seguro automovilístico", true),
-    Message("Me podría dar más información", true),
-    Message("Claro, por el momento estamos manejando un seguro de cobertura total que incluye...", false),
-    Message("Perfecto, ¿cuáles son los precios?", true)
-)
-
-
-@Composable
-fun TopBar(
-    onMenuClick: () -> Unit, // Agregar el parámetro onMenuClick
-    onNavigateToProfile: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White) // Añadir fondo blanco a la TopBar
-            .statusBarsPadding() // Ajuste para evitar superposición con los íconos del sistema
-            .padding(16.dp), // Padding interno
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Botón del menú de hamburguesa
-        IconButton(onClick = onMenuClick) { // Usar el parámetro onMenuClick
-            Image(
-                painter = painterResource(id = R.drawable.ic_menu),
-                contentDescription = "Menú",
-                modifier = Modifier.size(40.dp)
-            )
-        }
-
-        // Logo de la aplicación
-        Image(
-            painter = painterResource(id = R.drawable.logo),
-            contentDescription = "Logo",
-            modifier = Modifier.size(80.dp)
-        )
-
-        // Botón de perfil
-        IconButton(onClick = onNavigateToProfile) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_profile3),
-                contentDescription = "Profile",
-                modifier = Modifier.size(40.dp)
-            )
-        }
-    }
-}
-
-
-// Contenido del Bottom Sheet con lista de seguros
 @Composable
 fun BottomSheetContent(insuranceList: List<InsuranceData>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight(0.75f) // Cubre 3/4 de la pantalla
-            .background(Color(0xFF072A4A)) // Fondo azul
+            .fillMaxHeight(0.75f)
+            .background(Color(0xFF072A4A))
     ) {
-        // Barra superior del Bottom Sheet
-        Spacer(modifier = Modifier.height(16.dp)) // Espacio superior para el texto "Buscar"
+        Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "Buscar",
             color = Color.White,
@@ -714,7 +543,7 @@ fun BottomSheetContent(insuranceList: List<InsuranceData>) {
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
 
-        Spacer(modifier = Modifier.height(24.dp)) // Más espacio debajo del texto "Buscar"
+        Spacer(modifier = Modifier.height(24.dp))
 
         // Campo de búsqueda
         Row(
@@ -723,9 +552,8 @@ fun BottomSheetContent(insuranceList: List<InsuranceData>) {
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Ícono de lupa
             Icon(
-                painter = painterResource(id = R.drawable.ic_search), // Reemplaza con tu ícono de lupa
+                painter = painterResource(id = R.drawable.ic_search),
                 contentDescription = "Lupa",
                 tint = Color.White,
                 modifier = Modifier.size(24.dp)
@@ -733,12 +561,10 @@ fun BottomSheetContent(insuranceList: List<InsuranceData>) {
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Texto de búsqueda (hint) en negrita
             SearchField()
         }
 
-        // Línea debajo del campo de búsqueda, más separada
-        Spacer(modifier = Modifier.height(8.dp)) // Espacio adicional antes de la línea
+        Spacer(modifier = Modifier.height(8.dp))
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -749,7 +575,6 @@ fun BottomSheetContent(insuranceList: List<InsuranceData>) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Lista de seguros desplazable con imagen en cada elemento
         LazyColumn(
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 16.dp)
         ) {
@@ -769,40 +594,38 @@ fun BottomSheetContent(insuranceList: List<InsuranceData>) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchField() {
-    var text by remember { mutableStateOf("") } // Estado para el texto ingresado
+    var text by remember { mutableStateOf("") }
 
     OutlinedTextField(
         value = text,
         onValueChange = { text = it },
         placeholder = {
             Text(
-                text = "Encuentra tu seguro", // Placeholder
+                text = "Encuentra tu seguro",
                 color = Color.White.copy(alpha = 0.6f),
-                fontSize = 20.sp, // Tamaño de texto más grande
-                fontWeight = FontWeight.Bold // Texto en bold
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
             )
         },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 0.dp), // Ajustar según el diseño
+            .padding(horizontal = 0.dp),
         textStyle = TextStyle(
             color = Color.White,
-            fontSize = 20.sp, // Tamaño de texto más grande
-            fontWeight = FontWeight.Bold // Texto en bold
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold
         ),
-        singleLine = true, // Limitar a una sola línea de texto
-        shape = RoundedCornerShape(8.dp), // Esquinas edondeadas
+        singleLine = true,
+        shape = RoundedCornerShape(8.dp),
         colors = TextFieldDefaults.colors(
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
             unfocusedContainerColor = Color.Transparent,
-            cursorColor = Color.Black
+            cursorColor = Color.White
         )
     )
 }
 
-
-// Función para mostrar una tarjeta de seguro con imagen
 @Composable
 fun InsuranceCardWithImage(imageRes: Int, companyLogo: Int, companyName: String, description: String) {
     Column(
@@ -853,126 +676,33 @@ fun InsuranceCardWithImage(imageRes: Int, companyLogo: Int, companyName: String,
                 )
             }
 
-            // Íconos del corazón y de la flecha en la misma fila
+            // Íconos del corazón y de la flecha
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_personal), // Ícono de corazón
+                    painter = painterResource(id = R.drawable.ic_personal),
                     contentDescription = null,
                     tint = Color.Gray,
                     modifier = Modifier
                         .size(24.dp)
-                        .padding(bottom = 4.dp) // Añade padding hacia abajo para mayor separación
+                        .padding(bottom = 4.dp)
                 )
 
-                Spacer(modifier = Modifier.height(8.dp)) // Aumenta la altura del espaciado
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_arrow), // Ícono de flecha hacia abajo
+                    painter = painterResource(id = R.drawable.ic_arrow),
                     contentDescription = "Desplegar más",
                     tint = Color.Gray,
                     modifier = Modifier
                         .size(24.dp)
-                        .padding(top = 4.dp) // Añade padding hacia arriba para mayor separación
-                )
-            }
-
-        }
-    }
-}
-
-
-@Composable
-fun BottomBar(
-    onSwipeUp: () -> Unit,
-    onNavigateToUsers: () -> Unit // Añadir el nuevo parámetro aquí
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp))
-            .background(Color(0xFF072A4A))
-            .navigationBarsPadding()
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onSwipeUp) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_file),
-                    contentDescription = "Home",
-                    tint = Color.White,
-                    modifier = Modifier.size(30.dp)
-                )
-            }
-
-            IconButton(onClick = onSwipeUp) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_history),
-                    contentDescription = "Search",
-                    tint = Color.White,
-                    modifier = Modifier.size(30.dp)
-                )
-            }
-
-            IconButton(onClick = onSwipeUp) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_search),
-                    contentDescription = "Notifications",
-                    tint = Color.White,
-                    modifier = Modifier.size(30.dp)
-                )
-            }
-
-            IconButton(onClick = onNavigateToUsers) { // Ahora sí se reconoce la referencia
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_profile2),
-                    contentDescription = "Settings",
-                    tint = Color.White,
-                    modifier = Modifier.size(30.dp)
+                        .padding(top = 4.dp)
                 )
             }
         }
     }
 }
-
-@Composable
-fun MenuOption(
-    iconRes: Int,
-    text: String,
-    spacerHeight: Dp,
-    onClick: () -> Unit // Agregar este parámetro para aceptar una lambda
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .clickable { onClick() }, // Usar el onClick aquí para que la opción responda al clic
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start
-    ) {
-        Icon(
-            painter = painterResource(id = iconRes),
-            contentDescription = text,
-            tint = Color.White,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = text,
-            fontSize = 16.sp,
-            color = Color.White,
-            fontWeight = FontWeight.Medium
-        )
-    }
-    Spacer(modifier = Modifier.height(spacerHeight))
-}
-
 
 @Composable
 fun WelcomeMessage() {
@@ -1010,7 +740,7 @@ fun InsuranceCategories(onNavigateToCarInsurance: () -> Unit) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
-        )  {
+        ) {
             InsuranceCategory("Autos", R.drawable.ic_auto, onClick = onNavigateToCarInsurance)
             InsuranceCategory("Personal", R.drawable.ic_personal, onClick = { /* Navegación Personal */ })
             InsuranceCategory("Empresarial", R.drawable.ic_empresarial, onClick = { /* Navegación Empresarial */ })
@@ -1024,7 +754,7 @@ fun InsuranceCategory(name: String, iconResId: Int, onClick: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .padding(8.dp)
-            .clickable { onClick() } // Agregar la acción de clic
+            .clickable { onClick() }
     ) {
         Image(
             painter = painterResource(id = iconResId),
@@ -1041,7 +771,6 @@ fun InsuranceCategory(name: String, iconResId: Int, onClick: () -> Unit) {
 
 @Composable
 fun LearnAboutInsurance() {
-    // Agregar padding general de 16.dp alrededor de toda la sección
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1092,7 +821,7 @@ fun InsuranceImage() {
     ) {
         // Imagen principal
         Image(
-            painter = painterResource(id = R.drawable.insurance_image4),
+            painter = painterResource(id = R.drawable.aprende_desde_0),
             contentDescription = "Insurance Image",
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
@@ -1110,12 +839,11 @@ fun InsuranceImage() {
         ) {
             // Texto dentro de la caja
             Text(
-                text = "Aprende todo sobre seguros desde cero y fácil",
+                text = "Aprende todo sobre seguros desde cero",
                 color = Color.Black,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyLarge
+                modifier = Modifier.weight(1f)
             )
 
             // Imagen a la derecha del texto
@@ -1181,7 +909,7 @@ fun InsuranceImage2() {
         ) {
             // Texto dentro de la caja
             Text(
-                text = "Contamos con todo tipo de cobertura para tu vehiculo",
+                text = " Aprende sobre seguros automovilísticos",
                 color = Color.Black,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
@@ -1251,7 +979,7 @@ fun InsuranceImage3() {
         ) {
             // Texto dentro de la caja
             Text(
-                text = "Protege a los tuyos desde ahora",
+                text = "Aprende sobre seguros personales",
                 color = Color.Black,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
@@ -1321,7 +1049,7 @@ fun InsuranceImage4() {
         ) {
             // Texto dentro de la caja
             Text(
-                text = "Protege tu empresa y evita riesgos",
+                text = "Aprende sobre seguros empresariales",
                 color = Color.Black,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
@@ -1339,6 +1067,5 @@ fun InsuranceImage4() {
         }
     }
 }
-
 
 

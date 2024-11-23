@@ -6,14 +6,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,17 +26,13 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.compose.foundation.border
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.zIndex
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import io.inzure.app.R
 import io.inzure.app.data.model.User
+
+// Importa el componente BottomBar
+import io.inzure.app.ui.views.BottomBar
 
 class ProfileView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,7 +51,6 @@ fun MainScreen() {
         composable("personal_information") { PersonalInformationView() }
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -114,11 +108,14 @@ fun ProfileScreen(navController: NavController) {
         }
     }
 
-
-
     Scaffold(
         topBar = { TopBar() },
-        bottomBar = { BottomNavigationBar() }
+        bottomBar = {
+            BottomBar(
+                onSwipeUp = { /* Acción al deslizar hacia arriba */ },
+                onNavigateToUsers = { /* Acción de navegación */ }
+            )
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -167,7 +164,7 @@ fun ProfileScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(24.dp))
 
             // Botones de opciones estilizados
-            OptionButton("Informacion Personal", R.drawable.ic_profile2) {
+            OptionButton("Información Personal", R.drawable.ic_profile2) {
                 navController.navigate("personal_information")
             }
             OptionButton("Mis Seguros", R.drawable.ic_profile2) {
@@ -179,8 +176,6 @@ fun ProfileScreen(navController: NavController) {
         }
     }
 }
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -203,29 +198,6 @@ fun TopBar() {
             containerColor = Color(0xFF0D47A1)
         )
     )
-}
-
-@Composable
-fun BottomNavigationBar() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp))
-            .background(Color(0xFF072A4A))
-            .padding(vertical = 12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            BottomBarIconCar(R.drawable.ic_file, "Home")
-            BottomBarIconCar(R.drawable.ic_history, "Search")
-            BottomBarIconCar(R.drawable.ic_search, "Notifications")
-            BottomBarIconCar(R.drawable.ic_profile2, "Settings")
-        }
-    }
 }
 
 @Composable
@@ -253,7 +225,7 @@ fun OptionButton(text: String, icon: Int, onClick: () -> Unit) {
             Text(
                 text = text,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black // Cambiado a negro
+                color = Color.Black
             )
         }
     }

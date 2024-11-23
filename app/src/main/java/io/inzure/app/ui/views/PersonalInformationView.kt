@@ -3,7 +3,6 @@ package io.inzure.app.ui.views
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
@@ -20,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,8 +30,10 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import io.inzure.app.R
 import io.inzure.app.data.model.User
-import io.inzure.app.viewmodel.GlobalUserSession
 import io.inzure.app.viewmodel.UserViewModel
+
+// Importa la función BottomBar
+import io.inzure.app.ui.views.BottomBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,10 +107,14 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
         }
     }
 
-
     Scaffold(
         topBar = { TopBarProfile() },
-        bottomBar = { BottomNavigationBarProfile() }
+        bottomBar = {
+            BottomBar(
+                onSwipeUp = { /* Acción al deslizar hacia arriba */ },
+                onNavigateToUsers = { /* Acción de navegación */ }
+            )
+        }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -153,7 +159,7 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
 
                 // Título de la sección
                 Text(
-                    text = "Informacion Personal",
+                    text = "Información Personal",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                 )
@@ -200,8 +206,6 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
         }
     }
 }
-
-
 
 @Composable
 fun PersonalInfoCard(label: String, value: String, onEditClick: (String) -> Unit) {
@@ -301,7 +305,7 @@ fun TopBarProfile() {
     TopAppBar(
         title = {
             Text(
-                "Mi Informacion Personal",
+                "Mi Información Personal",
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp
@@ -316,27 +320,4 @@ fun TopBarProfile() {
             containerColor = Color(0xFF0D47A1)
         )
     )
-}
-
-@Composable
-fun BottomNavigationBarProfile() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp))
-            .background(Color(0xFF072A4A))
-            .padding(vertical = 12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            BottomBarIconCar(R.drawable.ic_file, "Home")
-            BottomBarIconCar(R.drawable.ic_history, "Search")
-            BottomBarIconCar(R.drawable.ic_search, "Notifications")
-            BottomBarIconCar(R.drawable.ic_profile2, "Settings")
-        }
-    }
 }
