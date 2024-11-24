@@ -85,6 +85,23 @@ class UserViewModel : ViewModel() {
         }
     }
 
+    fun deleteProfileImage(
+        userId: String,
+        imageUri: String,
+        onSuccess: () -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                repository.deleteImageFromStorage(imageUri)
+                repository.clearImageUriInFirestore(userId)
+                onSuccess()
+            } catch (e: Exception) {
+                onError(e)
+            }
+        }
+    }
+
     fun updateEmail(
         newEmail: String,
         onSuccess: () -> Unit,

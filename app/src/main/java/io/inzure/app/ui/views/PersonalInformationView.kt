@@ -73,6 +73,8 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
     var currentEditAction: ((String) -> Unit)? by remember { mutableStateOf(null) }
 
     var showEditPhotoDialog by remember { mutableStateOf(false) }
+    var showDeleteImageDialog by remember { mutableStateOf(false) }
+
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             tempImageUri = it.toString() // Actualiza la URI temporal
@@ -211,6 +213,28 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
                                 modifier = Modifier.size(24.dp)
                             )
                         }
+                        // Botón para eliminar imagen (solo si existe una imagen)
+                        if (!imageUri.isNullOrEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp) // Tamaño del botón circular
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFE57373)) // Rojo claro
+                                    .align(Alignment.BottomStart) // Posicionado al lado izquierdo
+                                    .clickable {
+                                        showDeleteImageDialog = true // Mostrar diálogo de confirmación
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_remove), // El "-" blanco
+                                    contentDescription = "Eliminar foto",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+
                     }
                 }
 
@@ -302,6 +326,7 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
         )
     }
 
+    // Mostrar el diálogo de edición de imagen
     if (showEditPhotoDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -356,6 +381,46 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
                 TextButton(onClick = {
                     showEditPhotoDialog = false
                     tempImageUri = null // Restablece la URI temporal al cancelar
+                }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    // Mostrar el diálogo de eliminación de imagen
+    if (showDeleteImageDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteImageDialog = false
+            },
+            title = { Text("Eliminar Foto de Perfil") },
+            text = {
+                Text("¿Estás seguro de que deseas eliminar tu foto de perfil?")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    // Lógica para eliminar la imagen
+                    userViewModel.deleteProfileImage(
+                        userId = userId,
+                        imageUri = imageUri!!,
+                        onSuccess = {
+                            imageUri = null // Limpia la URI de la imagen actual
+                            showDeleteImageDialog = false
+                            Log.d("Delete", "Imagen eliminada correctamente")
+                        },
+                        onError = { e ->
+                            showDeleteImageDialog = false
+                            Log.e("Delete", "Error eliminando imagen: ${e.message}")
+                        }
+                    )
+                }) {
+                    Text("Eliminar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showDeleteImageDialog = false
                 }) {
                     Text("Cancelar")
                 }

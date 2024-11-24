@@ -112,6 +112,42 @@ class UserRepository {
         }
     }
 
+    private fun extractStoragePathFromUrl(url: String): String? {
+        if (url.isBlank()) return null // Si la URL está vacía, no hay path que extraer
+
+        val baseUrl = "https://firebasestorage.googleapis.com/v0/b/"
+        if (url.startsWith(baseUrl)) {
+            val startIndex = url.indexOf("/o/") + 3
+            val endIndex = url.indexOf("?alt=")
+            if (startIndex != -1 && endIndex != -1) {
+                return url.substring(startIndex, endIndex).replace("%2F", "/")
+            }
+        }
+        return null // URL no válida
+    }
+    
+    suspend fun deleteImageFromStorage(imageUri: String) {
+        if (imageUri.isBlank()) {
+            Log.w("Delete", "La URI de la imagen está vacía, no se intentará eliminar del Storage.")
+            return
+        }
+        val storagePath = extractStoragePathFromUrl(imageUri)
+        if (storagePath != null) {
+            val storageReference = FirebaseStorage.getInstance().getReference(storagePath)
+            storageReference.delete().await()
+        } else {
+            throw IllegalArgumentException("El path del Storage no es válido.")
+        }
+    }
+
+    suspend fun clearImageUriInFirestore(userId: String) {
+        FirebaseFirestore.getInstance()
+            .collection("Users")
+            .document(userId)
+            .update("image", "") // Usar cadena vacía para indicar "sin imagen"
+            .await()
+    }
+
     suspend fun updateEmail(newEmail: String): Boolean {
         return try {
             val currentUser = FirebaseAuth.getInstance().currentUser
