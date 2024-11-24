@@ -1,7 +1,6 @@
 package io.inzure.app.viewmodel
 
 import android.util.Log
-import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.inzure.app.data.model.User
@@ -87,21 +86,12 @@ class UserViewModel : ViewModel() {
     }
 
     fun updateEmail(
-        userId: String,
         newEmail: String,
         onSuccess: () -> Unit,
         onError: (Exception) -> Unit
     ) {
         viewModelScope.launch {
             try {
-                val isUnique = repository.verifyEmail(newEmail, userId)
-                if (!isUnique) {
-                    // Si el email no es único, lanzar un error
-                    onError(Exception("El email ya está registrado."))
-                    return@launch
-                }
-
-                // Si el email es único, proceder a actualizar
                 val success = repository.updateEmail(newEmail)
                 if (success) {
                     onSuccess()
@@ -113,5 +103,4 @@ class UserViewModel : ViewModel() {
             }
         }
     }
-
 }

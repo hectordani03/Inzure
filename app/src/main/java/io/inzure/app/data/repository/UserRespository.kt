@@ -9,7 +9,6 @@ import io.inzure.app.data.model.User
 import kotlinx.coroutines.tasks.await
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.storage.FirebaseStorage
-import io.inzure.app.viewmodel.GlobalUserSession
 
 class UserRepository {
 
@@ -133,29 +132,6 @@ class UserRepository {
             false
         }
     }
-
-    suspend fun verifyEmail(email: String, userId: String): Boolean {
-        return try {
-            val result = FirebaseAuth.getInstance().fetchSignInMethodsForEmail(email).await()
-            val signInMethods = result.signInMethods
-            // Si hay métodos de inicio de sesión asociados al email, está registrado
-            if (signInMethods != null && signInMethods.isNotEmpty()) {
-                val currentUser = FirebaseAuth.getInstance().currentUser
-                // Si el email pertenece al usuario actual, se considera válido
-                if (currentUser != null && currentUser.uid == userId && currentUser.email == email) {
-                    true // El email es del usuario actual
-                } else {
-                    false // El email pertenece a otro usuario
-                }
-            } else {
-                true // El email no está registrado
-            }
-        } catch (e: Exception) {
-            Log.e("verifyEmail", "Error al verificar el email: ${e.message}")
-            false
-        }
-    }
-
 
     fun removeListener() {
         listenerRegistration?.remove()

@@ -122,19 +122,8 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
             lastName = newValue
             updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, imageUri)
         },
-
         "Correo Electrónico" to email to { newValue: String ->
             email = newValue
-            userViewModel.updateEmail(
-                userId = userId,
-                newEmail = email,
-                onSuccess = {
-                    showSuccessDialog = true
-                },
-                onError = { exception ->
-                    errorMessage = exception.message.toString()
-                }
-            )
         },
         "Número telefónico" to phone to { newValue: String ->
             phone = newValue
@@ -245,13 +234,6 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
         }
     }
 
-    errorMessage.let { message ->
-        val context = LocalContext.current
-        LaunchedEffect(message) {
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-            errorMessage = null.toString()
-        }
-    }
     // Mostrar el diálogo de edición
     if (showDialog) {
         EditPersonalInfoDialog(
@@ -262,6 +244,24 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
                 // Realizar validación
                 coroutineScope.launch {
                     when (editingLabel) {
+                        "Correo Electrónico" -> {
+                            val isUnique = isEmailUnique(newValue, userId, firestore)
+                            if (!isUnique) {
+                                errorMessage = "El email ya está registrado."
+                            } else {
+                                // Email válido, proceder a guardar
+                                userViewModel.updateEmail(
+                                    newEmail = email,
+                                    onSuccess = {
+                                        showSuccessDialog = true
+                                    },
+                                    onError = { exception ->
+                                        errorMessage = exception.message.toString() // Guarda el mensaje de error
+                                    }
+                                )
+                                showDialog = false
+                            }
+                        }
                         "Número telefónico" -> {
                             val isUnique = isPhoneUnique(newValue, userId, firestore)
                             if (!isUnique) {
@@ -293,6 +293,7 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
             onCancel = { showDialog = false }
         )
     }
+
     if (showEditPhotoDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -395,6 +396,26 @@ fun updateUserInfo(
         image = imageUri ?: ""
     )
     userViewModel.updateUser(updatedUser)
+}
+
+suspend fun isEmailUnique(email: String, currentUserId: String, firestore: FirebaseFirestore): Boolean {
+    return try {
+        val querySnapshot = firestore.collection("Users")
+            .whereEqualTo("email", email)
+            .get()
+            .await()
+
+        if (querySnapshot.isEmpty) {
+            true // El email no está registrado
+        } else {
+            // Verificar si el email pertenece al usuario actual
+            val otherUsers = querySnapshot.documents.filter { it.id != currentUserId }
+            otherUsers.isEmpty()
+        }
+    } catch (e: Exception) {
+        Log.e("Validation", "Error al verificar la unicidad del email: ${e.message}")
+        false
+    }
 }
 
 suspend fun isPhoneUnique(phone: String, currentUserId: String, firestore: FirebaseFirestore): Boolean {
