@@ -172,3 +172,7 @@ fun MenuOption(
     }
     Spacer(modifier = Modifier.height(spacerHeight))
 }
+
+class SideMenu {
+
+}

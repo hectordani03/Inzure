@@ -4,21 +4,27 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -27,17 +33,14 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.compose.foundation.border
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.zIndex
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import io.inzure.app.R
 import io.inzure.app.data.model.User
+import io.inzure.app.ui.components.SideMenu
+import io.inzure.app.ui.components.TopBar
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 class ProfileView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,22 +57,24 @@ fun MainScreen() {
     NavHost(navController, startDestination = "profile") {
         composable("profile") { ProfileScreen(navController) }
         composable("personal_information") { PersonalInformationView() }
+        // Agrega más composables según tus necesidades
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(navController: NavController) {
-
+    // Inicializar Firebase
     val auth = FirebaseAuth.getInstance()
     val firestore = FirebaseFirestore.getInstance()
     val userId = auth.currentUser?.uid ?: return
 
+    // Estados para almacenar información del usuario
     var firstName by remember { mutableStateOf("No disponible") }
     var lastName by remember { mutableStateOf("No disponible") }
     var imageUri by remember { mutableStateOf<String?>(null) }
 
+    // Obtener datos del usuario desde Firestore
     LaunchedEffect(userId) {
         if (userId != null) {
             firestore.collection("Users")
@@ -114,112 +119,109 @@ fun ProfileScreen(navController: NavController) {
         }
     }
 
+    // Inicializar DrawerState y CoroutineScope para el SideMenu
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+    val showChatView = remember { mutableStateOf(false) }
 
+    // Animación de color para el sombreado al abrir el Drawer
+    val scrimColor by animateColorAsState(
+        targetValue = if (drawerState.isOpen) Color.Black.copy(alpha = 0.5f) else Color.Transparent,
+        animationSpec = tween(durationMillis = 500)
+    )
 
-    Scaffold(
-        topBar = { TopBar() },
-        bottomBar = { BottomNavigationBar() }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(Color.White),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Fondo azul con imagen de perfil centrada
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(220.dp)
-                    .background(Color(0xFF072A4A)),
-                contentAlignment = Alignment.Center
-            ) {
-                // Imagen de perfil
-                Image(
-                    painter = painterResource(R.drawable.ic_profile3),
-                    contentDescription = "Foto de Perfil",
-                    modifier = Modifier
-                        .size(140.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
+    // Uso de ModalNavigationDrawer para el menú lateral
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        scrimColor = scrimColor,
+        drawerContent = {
+            SideMenu(
+                screenWidth = screenWidth,
+                onNavigateToProfile = { /* Navegación a perfil si es necesario */ },
+                showChatView = showChatView,
+                scope = scope,
+                drawerState = drawerState
+            )
+        }
+    ) {
+        // Uso de Scaffold para mantener la TopBar y la BottomBar fijas
+        Scaffold(
+            topBar = {
+                TopBar(
+                    onMenuClick = {
+                        scope.launch {
+                            drawerState.open() // Abrir el Drawer al hacer clic en el menú
+                        }
+                    },
+                    onNavigateToProfile = { /* Implementar si es necesario */ }
+                )
+            },
+            bottomBar = {
+                BottomBar(
+                    onSwipeUp = { /* Implementar acción si es necesario */ },
+                    onNavigateToUsers = { /* Implementar navegación a Users si es necesario */ }
                 )
             }
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(innerPadding)
+                    .background(Color.White),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Fondo azul con imagen de perfil centrada
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp)
+                        .background(Color(0xFF072A4A)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Imagen de perfil
+                    Image(
+                        painter = painterResource(R.drawable.ic_profile3),
+                        contentDescription = "Foto de Perfil",
+                        modifier = Modifier
+                            .size(140.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            // Nombre del usuario
-            Text(
-                text = "$firstName $lastName",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
+                // Nombre del usuario
+                Text(
+                    text = "$firstName $lastName",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
 
-            // Descripción del usuario
-            Text(
-                text = "Me gustan los gatos",
-                fontSize = 16.sp,
-                color = Color.Gray,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
+                // Descripción del usuario
+                Text(
+                    text = "Me gustan los gatos",
+                    fontSize = 16.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            // Botones de opciones estilizados
-            OptionButton("Informacion Personal", R.drawable.ic_profile2) {
-                navController.navigate("personal_information")
+                // Botones de opciones estilizados
+                OptionButton("Información Personal", R.drawable.ic_profile2) {
+                    navController.navigate("personal_information")
+                }
+                OptionButton("Mis Seguros", R.drawable.ic_profile2) {
+                    // Implementar navegación a 'Mis Seguros'
+                }
+                OptionButton("Mis Agentes", R.drawable.ic_profile2) {
+                    // Implementar navegación a 'Mis Agentes'
+                }
             }
-            OptionButton("Mis Seguros", R.drawable.ic_profile2) {
-                // Implementar navegación a 'Mis Seguros'
-            }
-            OptionButton("Mis agentes", R.drawable.ic_profile2) {
-                // Implementar navegación a 'Mis agentes'
-            }
-        }
-    }
-}
-
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TopBar() {
-    TopAppBar(
-        title = {
-            Text(
-                "Mi perfil",
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
-            )
-        },
-        navigationIcon = {
-            IconButton(onClick = { /* Lógica del menú */ }) {
-                Icon(Icons.Filled.Menu, contentDescription = "Menú", tint = Color.White)
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color(0xFF0D47A1)
-        )
-    )
-}
-
-@Composable
-fun BottomNavigationBar() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp))
-            .background(Color(0xFF072A4A))
-            .padding(vertical = 12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
         }
     }
 }
@@ -249,7 +251,7 @@ fun OptionButton(text: String, icon: Int, onClick: () -> Unit) {
             Text(
                 text = text,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black // Cambiado a negro
+                color = Color.Black // Texto en negro
             )
         }
     }
