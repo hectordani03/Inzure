@@ -13,8 +13,10 @@
         android:theme="@style/Theme.Inzure"
         tools:targetApi="31">
         <!-- Nueva actividad SplashScreen -->
-        <activity android:name=".SplashActivity"
-            android:exported="true">
+        <activity
+            android:name=".SplashActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure"> <!-- Ajustar el tema según tu diseño -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -24,6 +26,7 @@
         <activity
             android:name="io.inzure.app.ui.views.LoginView"
             android:exported="true"
+            android:label="@string/title_activity_login_screen"
             android:theme="@style/Theme.Inzure">
         </activity>
 

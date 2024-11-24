@@ -18,8 +18,8 @@ class UserViewModel : ViewModel() {
     private val _user = MutableStateFlow<User?>(null)
     val user: StateFlow<User?> get() = _user
 
-    fun startRealtimeUpdates() {
-        repository.getUsersRealtime { usersList ->
+    fun getUsers() {
+        repository.getUsers { usersList ->
             _users.value = usersList
         }
     }
@@ -29,44 +29,78 @@ class UserViewModel : ViewModel() {
         repository.removeListener()
     }
 
-    fun getUsers() {
-        viewModelScope.launch {
-            val usersList = repository.getUsers()
-            _users.value = usersList
-        }
-    }
-
     fun addUser(user: User) {
         viewModelScope.launch {
-            val success = repository.addUser(user)
-            if (success) getUsers()
+            try {
+                val success = repository.addUser(user)
+                if (!success) {
+                    Log.e("UserViewModel", "Error: El usuario no se pudo agregar. Verifica el repositorio.")
+                }
+            } catch (e: Exception) {
+                Log.e("UserViewModel", "Excepción al agregar usuario: ${e.message}")
+            }
         }
     }
 
     fun updateUser(user: User) {
         viewModelScope.launch {
-            val success = repository.updateUser(user)
-            if (success) {
-                Log.d("UserViewModel", "User updated successfully")
-                getUsers()
-            } else {
-                Log.e("UserViewModel", "Failed to update user")
+            try {
+                val success = repository.updateUser(user)
+                if (!success) {
+                    Log.e("UserViewModel", "Error: El usuario no se pudo actualizar. Verifica el repositorio.")
+                }
+            } catch (e: Exception) {
+                Log.e("UserViewModel", "Excepción al actualizar usuario: ${e.message}")
             }
         }
     }
 
     fun deleteUser(user: User) {
         viewModelScope.launch {
-            val success = repository.deleteUser(user.id, user.role)
-            if (success) getUsers()
+            try {
+                val success = repository.deleteUser(user)
+                if (!success) {
+                    Log.e("UserViewModel", "Error: El usuario no se pudo eliminar. Verifica el repositorio.")
+                }
+            } catch (e: Exception) {
+                Log.e("UserViewModel", "Excepción al eliminar usuario: ${e.message}")
+            }
         }
     }
 
-    // Función para cargar el usuario logueado por ID
-    fun loadLoggedUser(userId: String) {
+    fun updateProfileImage(userId: String, imageUri: String?, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
+        if (imageUri.isNullOrEmpty()) {
+            onError(IllegalArgumentException("No se seleccionó ninguna imagen"))
+            return
+        }
+
         viewModelScope.launch {
-            val user = repository.getUserById(userId)
-            _user.value = user
+            try {
+                repository.updateProfileImage(userId, imageUri)
+                onSuccess()
+            } catch (e: Exception) {
+                Log.e("UserViewModel", "Error actualizando imagen: ${e.message}")
+                onError(e)
+            }
+        }
+    }
+
+    fun updateEmail(
+        newEmail: String,
+        onSuccess: () -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val success = repository.updateEmail(newEmail)
+                if (success) {
+                    onSuccess()
+                } else {
+                    onError(Exception("No se pudo enviar el correo de verificación para actualizar el correo electrónico."))
+                }
+            } catch (e: Exception) {
+                onError(e)
+            }
         }
     }
 }

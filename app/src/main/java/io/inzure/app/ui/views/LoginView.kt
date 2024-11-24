@@ -35,8 +35,9 @@ import io.inzure.app.auth.AuthManager
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.firebase.auth.FirebaseAuth
 import io.inzure.app.viewmodel.UserViewModel
-import io.inzure.app.viewmodel.GlobalUserSession
+import com.google.firebase.firestore.FirebaseFirestore
 
 class LoginView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -121,6 +122,7 @@ fun loginView(
     onLoginClick: (String, String) -> Unit,
     onForgotPasswordClick: (String) -> Unit
 ) {
+    val db = FirebaseFirestore.getInstance()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -235,20 +237,23 @@ fun loginView(
         Button(
             onClick = {
                 onLoginClick(email, password)
-                val user = auth.getCurrentUser()
 
                 if (email.isNotEmpty() && password.isNotEmpty()) {
+
+
                     auth.login(email, password, onSuccess = {
-                        val userId = auth.getCurrentUser()?.uid
-                        if (userId != null) {
-                            GlobalUserSession.userId = userId
-                            userViewModel.loadLoggedUser(userId)
+                        val currentUser = FirebaseAuth.getInstance().currentUser
+                        val authEmail = currentUser?.email
+                        val userDocRef = db.collection("Users").document(currentUser!!.uid)
+                        userDocRef.get().addOnSuccessListener { document ->
+                            val firestoreEmail = document.getString("email")
+                            if (authEmail != null && authEmail != firestoreEmail) {
+                                userDocRef.update("email", authEmail)
+                            }
                         }
                     }, onError = {
                         // Manejo de errores
                     })
-
-
                 }
             },
             modifier = Modifier.fillMaxWidth(),

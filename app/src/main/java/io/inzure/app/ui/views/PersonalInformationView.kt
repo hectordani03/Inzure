@@ -1,10 +1,18 @@
 package io.inzure.app.ui.views
 
+import android.annotation.SuppressLint
+import android.app.DatePickerDialog
+import android.net.Uri
 import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
@@ -17,9 +25,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -31,9 +40,11 @@ import com.google.firebase.firestore.FirebaseFirestore
 import io.inzure.app.R
 import io.inzure.app.data.model.User
 import io.inzure.app.viewmodel.UserViewModel
-
-// Importa la función BottomBar
-import io.inzure.app.ui.views.BottomBar
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import java.time.LocalDate
+import java.time.Period
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,76 +56,87 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
     val userId = auth.currentUser?.uid ?: return
 
     // Variables de estado para almacenar los datos del usuario
-    var firstName by remember { mutableStateOf("Nombre no disponible") }
-    var lastName by remember { mutableStateOf("Apellido no disponible") }
-    var birthDate by remember { mutableStateOf("Fecha no disponible") }
-    var email by remember { mutableStateOf("Correo no disponible") }
-    var phone by remember { mutableStateOf("Teléfono no disponible") }
+    var firstName by remember { mutableStateOf("Cargando...") }
+    var lastName by remember { mutableStateOf("Cargando...") }
+    var birthDate by remember { mutableStateOf("Cargando...") }
+    var email by remember { mutableStateOf("Cargando...") }
+    var phone by remember { mutableStateOf("Cargando...") }
     var imageUri by remember { mutableStateOf<String?>(null) }
+    var tempImageUri by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(userId) {
-        if (userId != null) {
-            // Primero obtenemos el rol del usuario desde el documento base
-            firestore.collection("Users")
-                .get()
-                .addOnSuccessListener { querySnapshot ->
-                    var userRole: String? = null
+    // Estado para el diálogo de edición
+    var showDialog by remember { mutableStateOf(false) }
+    var editingLabel by remember { mutableStateOf("") }
+    var editingValue by remember { mutableStateOf("") }
+    var currentEditAction: ((String) -> Unit)? by remember { mutableStateOf(null) }
 
-                    // Iterar sobre todos los documentos de primer nivel para encontrar el rol
-                    for (document in querySnapshot.documents) {
-                        val documentPath = document.id
-
-                        // Intentar obtener el usuario en cada documento de rol
-                        firestore.collection("Users")
-                            .document(documentPath)
-                            .collection("userData")
-                            .document(userId)
-                            .get()
-                            .addOnSuccessListener { userDoc ->
-                                if (userDoc.exists()) {
-                                    userRole = documentPath // Encontró el rol correcto
-
-                                    // Obtener los datos completos del usuario
-                                    val userData = userDoc.toObject(User::class.java)
-                                    if (userData != null) {
-                                        // Asignación de variables de estado para reflejar en la UI
-                                        firstName = userData.firstName ?: "Nombre no disponible"
-                                        lastName = userData.lastName ?: "Apellido no disponible"
-                                        birthDate = userData.birthDate ?: "Fecha no disponible"
-                                        email = userData.email ?: "Correo no disponible"
-                                        phone = userData.phone ?: "Teléfono no disponible"
-                                        imageUri = userData.image
-                                    }
-                                }
-                            }
-                            .addOnFailureListener { e ->
-                                Log.e("Firestore", "Error al obtener usuario en $documentPath: ", e)
-                            }
-
-                        // Si encontramos el rol, dejamos de buscar
-                        if (userRole != null) break
-                    }
-
-                    if (userRole == null) {
-                        Log.e("Firestore", "No se pudo determinar el rol del usuario")
-                    }
-                }
-                .addOnFailureListener { e ->
-                    Log.e("Firestore", "Error al obtener los documentos de usuarios: ", e)
-                }
-        } else {
-            Log.e("Auth", "ID del usuario no disponible")
+    var showEditPhotoDialog by remember { mutableStateOf(false) }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            tempImageUri = it.toString() // Actualiza la URI temporal
         }
     }
 
+    // Estado para el mensaje de success
+    var showSuccessDialog by remember { mutableStateOf(false) }
+
+    // Estado para el mensaje de error
+    var errorMessage by remember { mutableStateOf("") }
+
+    // Coroutine scope para operaciones asíncronas
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(userId) {
+        firestore.collection("Users")
+            .document(userId)
+            .get()
+            .addOnSuccessListener { userDoc ->
+                if (userDoc.exists()) {
+                    val userData = userDoc.toObject(User::class.java)
+                    if (userData != null) {
+                        firstName = userData.firstName
+                        lastName = userData.lastName
+                        birthDate = userData.birthDate
+                        email = userData.email
+                        phone = userData.phone
+                        imageUri = userData.image
+                    } else {
+                        Log.e("Firestore", "El documento existe, pero no se pudo mapear a un objeto User")
+                    }
+                } else {
+                    Log.e("Firestore", "El documento del usuario no existe en Firestore")
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Error al obtener el documento del usuario: ", e)
+            }
+    }
+
+    // Lista de información del usuario
+    val userInfo = listOf(
+        "Nombre(s)" to firstName to { newValue: String ->
+            firstName = newValue
+            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, imageUri)
+        },
+        "Apellidos" to lastName to { newValue: String ->
+            lastName = newValue
+            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, imageUri)
+        },
+        "Correo Electrónico" to email to { newValue: String ->
+            email = newValue
+        },
+        "Número telefónico" to phone to { newValue: String ->
+            phone = newValue
+            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, imageUri)
+        },
+        "Fecha de Nacimiento" to birthDate to { newValue: String ->
+            birthDate = newValue
+            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, imageUri)
+        }
+    )
+
     Scaffold(
         topBar = { TopBarProfile() },
-        bottomBar = {
-            BottomBar(
-                onSwipeUp = { /* Acción al deslizar hacia arriba */ },
-                onNavigateToUsers = { /* Acción de navegación */ }
-            )
-        }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -124,7 +146,6 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             item {
-                // Fondo azul con imagen de perfil centrada
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -132,91 +153,442 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
                         .background(Color(0xFF072A4A)),
                     contentAlignment = Alignment.Center
                 ) {
-                    // Verifica si hay una imagen en el estado del usuario logueado
-                    if (!imageUri.isNullOrEmpty()) {
-                        Image(
-                            painter = rememberAsyncImagePainter(imageUri),
-                            contentDescription = "Foto de Perfil",
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(220.dp)
+                            .background(Color(0xFF072A4A)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val displayedImageUri = tempImageUri ?: imageUri
+
+                        if (!displayedImageUri.isNullOrEmpty()) {
+                            Image(
+                                painter = rememberAsyncImagePainter(displayedImageUri),
+                                contentDescription = "Foto de Perfil",
+                                modifier = Modifier
+                                    .size(140.dp)
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(R.drawable.ic_profile_default),
+                                contentDescription = "Foto de Perfil",
+                                modifier = Modifier
+                                    .size(140.dp)
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+
+
+                        // Botón para editar imagen
+                        Box(
                             modifier = Modifier
-                                .size(140.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        // Imagen predeterminada si no hay imagen del usuario
-                        Image(
-                            painter = painterResource(R.drawable.profile_2),
-                            contentDescription = "Foto de Perfil",
-                            modifier = Modifier
-                                .size(140.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
+                                .size(40.dp) // Tamaño del botón circular
+                                .clip(CircleShape)
+                                .background(Color(0xFF64B5F6)) // Azul claro
+                                .align(Alignment.BottomEnd)
+                                .clickable {
+                                    showEditPhotoDialog = true
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_add), // El "+" blanco
+                                contentDescription = "Editar foto",
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-
-                // Título de la sección
                 Text(
                     text = "Información Personal",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                 )
-
                 Spacer(modifier = Modifier.height(20.dp))
             }
 
-            // Tarjetas de información con valores obtenidos de Firestore
-            item {
+            // Iterar sobre userInfo para crear las tarjetas dinámicamente
+            items(userInfo) { (data, onEdit) ->
+                val (label, value) = data
                 PersonalInfoCard(
-                    label = "Nombre(s)",
-                    value = firstName,
-                    onEditClick = { /* Lógica para editar el nombre */ }
-                )
-            }
-            item {
-                PersonalInfoCard(
-                    label = "Apellidos",
-                    value = lastName,
-                    onEditClick = { /* Lógica para editar el apellido */ }
-                )
-            }
-            item {
-                PersonalInfoCard(
-                    label = "Correo Electrónico",
-                    value = email,
-                    onEditClick = { /* Lógica para editar el correo */ }
-                )
-            }
-            item {
-                PersonalInfoCard(
-                    label = "Número telefónico",
-                    value = phone,
-                    onEditClick = { /* Lógica para editar el teléfono */ }
-                )
-            }
-            item {
-                PersonalInfoCard(
-                    label = "Fecha de Nacimiento",
-                    value = birthDate,
-                    onEditClick = { /* Lógica para editar la fecha de nacimiento */ }
+                    label = label,
+                    value = value,
+                    onEditClick = {
+                        // Configurar el diálogo de edición
+                        editingLabel = label
+                        editingValue = value
+                        currentEditAction = onEdit
+                        errorMessage = ""
+                        showDialog = true
+                    }
                 )
             }
         }
     }
+
+    // Mostrar el diálogo de edición
+    if (showDialog) {
+        EditPersonalInfoDialog(
+            label = editingLabel,
+            initialValue = editingValue,
+            errorMessage = errorMessage,
+            onSave = { newValue ->
+                // Realizar validación
+                coroutineScope.launch {
+                    when (editingLabel) {
+                        "Correo Electrónico" -> {
+                            val isUnique = isEmailUnique(newValue, userId, firestore)
+                            if (!isUnique) {
+                                errorMessage = "El email ya está registrado."
+                            } else {
+                                // Email válido, proceder a guardar
+                                userViewModel.updateEmail(
+                                    newEmail = email,
+                                    onSuccess = {
+                                        showSuccessDialog = true
+                                    },
+                                    onError = { exception ->
+                                        errorMessage = exception.message.toString() // Guarda el mensaje de error
+                                    }
+                                )
+                                showDialog = false
+                            }
+                        }
+                        "Número telefónico" -> {
+                            val isUnique = isPhoneUnique(newValue, userId, firestore)
+                            if (!isUnique) {
+                                errorMessage = "El número de teléfono ya está registrado o no es válido."
+                            } else {
+                                // Número válido, proceder a guardar
+                                currentEditAction?.invoke(newValue)
+                                showDialog = false
+                            }
+                        }
+                        "Fecha de Nacimiento" -> {
+                            val isValidAge = isAgeValid(newValue)
+                            if (!isValidAge) {
+                                errorMessage = "Debes ser mayor de 18 años."
+                            } else {
+                                // Fecha válida, proceder a guardar
+                                currentEditAction?.invoke(newValue)
+                                showDialog = false
+                            }
+                        }
+                        else -> {
+                            // No se requiere validación
+                            currentEditAction?.invoke(newValue)
+                            showDialog = false
+                        }
+                    }
+                }
+            },
+            onCancel = { showDialog = false }
+        )
+    }
+
+    if (showEditPhotoDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showEditPhotoDialog = false
+                tempImageUri = null // Restablece la URI temporal al cerrar el diálogo
+            },
+            title = { Text("Editar Foto de Perfil") },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .height(56.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFFE3F2FD))
+                            .clickable { launcher.launch("image/*") }
+                            .shadow(4.dp, RoundedCornerShape(12.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Seleccionar Imagen",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1976D2)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    tempImageUri?.let { selectedUri ->
+                        imageUri = selectedUri // Actualiza la imagen principal
+                        tempImageUri = null
+                        userViewModel.updateProfileImage(
+                            userId = userId,
+                            imageUri = imageUri!!,
+                            onSuccess = {
+                                Log.d("Update", "Imagen actualizada correctamente")
+                                showEditPhotoDialog = false
+                            },
+                            onError = { e ->
+                                Log.e("Update", "Error actualizando imagen: ${e.message}")
+                            }
+                        )
+                    }
+                }) {
+                    Text("Guardar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showEditPhotoDialog = false
+                    tempImageUri = null // Restablece la URI temporal al cancelar
+                }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = { /* Opcional: manejar la acción al cerrar el diálogo */ },
+            title = { Text("Correo Actualizado") },
+            text = {
+                Text("Hemos enviado un correo de verificación a $email. Por favor, verifica tu email antes de iniciar sesión nuevamente.")
+            },
+            confirmButton = {
+                Button(onClick = {
+                    showSuccessDialog = false
+                    // Opcional: Navegar o cerrar la pantalla si es necesario
+                }) {
+                    Text("Aceptar")
+                }
+            }
+        )
+    }
+
+}
+
+// Función para actualizar la información del usuario en Firestore a través del ViewModel
+fun updateUserInfo(
+    userId: String,
+    userViewModel: UserViewModel,
+    firstName: String,
+    lastName: String,
+    birthDate: String,
+    email: String,
+    phone: String,
+    imageUri: String?
+) {
+    val updatedUser = User(
+        id = userId,
+        firstName = firstName,
+        lastName = lastName,
+        birthDate = birthDate,
+        email = email,
+        phone = phone,
+        image = imageUri ?: ""
+    )
+    userViewModel.updateUser(updatedUser)
+}
+
+suspend fun isEmailUnique(email: String, currentUserId: String, firestore: FirebaseFirestore): Boolean {
+    return try {
+        val querySnapshot = firestore.collection("Users")
+            .whereEqualTo("email", email)
+            .get()
+            .await()
+
+        if (querySnapshot.isEmpty) {
+            true // El email no está registrado
+        } else {
+            // Verificar si el email pertenece al usuario actual
+            val otherUsers = querySnapshot.documents.filter { it.id != currentUserId }
+            otherUsers.isEmpty()
+        }
+    } catch (e: Exception) {
+        Log.e("Validation", "Error al verificar la unicidad del email: ${e.message}")
+        false
+    }
+}
+
+suspend fun isPhoneUnique(phone: String, currentUserId: String, firestore: FirebaseFirestore): Boolean {
+    // Validar que el número telefónico tenga exactamente 10 dígitos
+    val phoneRegex = Regex("^\\d{10}$")
+    if (!phoneRegex.matches(phone)) {
+        Log.e("Validation", "El número telefónico debe tener exactamente 10 dígitos.")
+        return false
+    }
+
+    return try {
+        val querySnapshot = firestore.collection("Users")
+            .whereEqualTo("phone", phone)
+            .get()
+            .await()
+
+        if (querySnapshot.isEmpty) {
+            true // El número no está registrado
+        } else {
+            // Verificar si el número pertenece al usuario actual
+            val otherUsers = querySnapshot.documents.filter { it.id != currentUserId }
+            otherUsers.isEmpty()
+        }
+    } catch (e: Exception) {
+        Log.e("Validation", "Error al verificar la unicidad del teléfono: ${e.message}")
+        false
+    }
+}
+
+// Función para validar que el usuario tenga al menos 18 años
+@SuppressLint("NewApi")
+fun isAgeValid(birthDateStr: String): Boolean {
+    return try {
+        val birthDate = LocalDate.parse(birthDateStr) // Asumiendo formato ISO: yyyy-MM-dd
+        val today = LocalDate.now()
+        val age = Period.between(birthDate, today).years
+        age >= 18
+    } catch (e: Exception) {
+        Log.e("Validation", "Error al analizar la fecha de nacimiento: ${e.message}")
+        false
+    }
+}
+
+@SuppressLint("NewApi")
+@Composable
+fun EditPersonalInfoDialog(
+    label: String,
+    initialValue: String,
+    errorMessage: String = "",
+    onSave: (String) -> Unit,
+    onCancel: () -> Unit
+) {
+    var editedValue by remember { mutableStateOf(initialValue) }
+
+    // Contexto para el DatePickerDialog
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    if (showDatePicker) {
+        var year: Int
+        var month: Int
+        var day: Int
+
+        try {
+            val parts = editedValue.split("-")
+            year = parts[0].toInt()
+            month = parts[1].toInt() - 1 // Los meses en Calendar son 0-based
+            day = parts[2].toInt()
+        } catch (e: Exception) {
+            year = calendar.get(Calendar.YEAR)
+            month = calendar.get(Calendar.MONTH)
+            day = calendar.get(Calendar.DAY_OF_MONTH)
+        }
+
+        DatePickerDialog(
+            context,
+            { _, selectedYear, selectedMonth, selectedDayOfMonth ->
+                // Formatear la fecha seleccionada
+                val selectedDate = LocalDate.of(selectedYear, selectedMonth + 1, selectedDayOfMonth)
+                editedValue = selectedDate.toString() // Formato ISO: yyyy-MM-dd
+                showDatePicker = false // Cierra el selector después de seleccionar
+            },
+            year,
+            month,
+            day
+        ).apply {
+            setOnDismissListener {
+                showDatePicker = false // Asegúrate de restablecer el estado al cerrar el diálogo
+            }
+        }.show()
+    }
+
+    TextButton(onClick = { showDatePicker = true }) {
+        Text(text = if (editedValue.isNotEmpty()) editedValue else "Seleccionar Fecha")
+    }
+
+
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = { Text("Editar $label") },
+        text = {
+            Column {
+                if (label == "Fecha de Nacimiento") {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .height(56.dp) // Altura del input
+                            .clip(RoundedCornerShape(8.dp)) // Bordes redondeados
+                            .background(Color.White) // Fondo blanco
+                            .clickable { showDatePicker = true } // Hacer clic en toda el área
+                            .shadow(4.dp, RoundedCornerShape(8.dp)), // Sombra
+                        contentAlignment = Alignment.CenterStart // Alinear contenido a la izquierda
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        ) {
+                            Text(
+                                text = if (editedValue.isNotEmpty()) editedValue else "Seleccionar Fecha",
+                                fontSize = 18.sp, // Tamaño más grande del texto
+                                color = if (editedValue.isNotEmpty()) Color.Black else Color.Gray,
+                                modifier = Modifier.weight(1f) // Ocupa el espacio disponible
+                            )
+                            Icon(
+                                painter = painterResource(id = R.drawable.date_range), // Tu vector asset
+                                contentDescription = "Selector de Fecha",
+                                tint = Color.Gray, // Color del ícono
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                } else {
+                    TextField(
+                        value = editedValue,
+                        onValueChange = { editedValue = it },
+                        label = { Text("Nuevo $label") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                if (errorMessage.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = errorMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(editedValue) }) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancel) {
+                Text("Cancelar")
+            }
+        }
+    )
 }
 
 @Composable
-fun PersonalInfoCard(label: String, value: String, onEditClick: (String) -> Unit) {
-    var showDialog by remember { mutableStateOf(false) }
-
+fun PersonalInfoCard(label: String, value: String, onEditClick: () -> Unit) {
     Card(
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 32.dp, vertical = 8.dp)
-            .height(80.dp), // Altura fija para las tarjetas
+            .height(80.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFCFD8DC))
     ) {
         Row(
@@ -226,11 +598,10 @@ fun PersonalInfoCard(label: String, value: String, onEditClick: (String) -> Unit
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Contenido de la tarjeta scrolleable
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .verticalScroll(rememberScrollState()) // Scrolling en caso de mucha información
+                    .verticalScroll(rememberScrollState())
             ) {
                 Text(
                     text = label,
@@ -247,56 +618,13 @@ fun PersonalInfoCard(label: String, value: String, onEditClick: (String) -> Unit
                 )
             }
             IconButton(
-                onClick = { showDialog = true },
+                onClick = onEditClick,
                 modifier = Modifier.size(24.dp)
             ) {
                 Icon(Icons.Filled.Edit, contentDescription = "Editar", tint = Color.Black)
             }
         }
     }
-
-    // Diálogo de edición de la tarjeta
-    if (showDialog) {
-        EditPersonalInfoDialog(
-            label = label,
-            initialValue = value,
-            onSave = {
-                onEditClick(it)
-                showDialog = false
-            },
-            onCancel = { showDialog = false }
-        )
-    }
-}
-
-@Composable
-fun EditPersonalInfoDialog(label: String, initialValue: String, onSave: (String) -> Unit, onCancel: () -> Unit) {
-    var editedValue by remember { mutableStateOf(initialValue) }
-
-    AlertDialog(
-        onDismissRequest = { onCancel() },
-        title = { Text("Editar $label") },
-        text = {
-            Column {
-                TextField(
-                    value = editedValue,
-                    onValueChange = { editedValue = it },
-                    label = { Text("Nuevo $label") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onSave(editedValue) }) {
-                Text("Guardar")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = { onCancel() }) {
-                Text("Cancelar")
-            }
-        }
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -321,3 +649,5 @@ fun TopBarProfile() {
         )
     )
 }
+
+

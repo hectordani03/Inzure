@@ -38,17 +38,17 @@ class SplashActivity : ComponentActivity() {
             SplashScreen()
         }
 
-        // Navegar a LoginView después de un tiempo (simulando carga)
+        // Navegar a MainActivity después de un tiempo (simulando carga)
         lifecycleScope.launch {
             delay(3000) // Espera 3 segundos
             navigateToLoginView()
         }
     }
+        private fun navigateToLoginView() {
+            startActivity(Intent(this, LoginView::class.java))
+            finish()
+        }
 
-    private fun navigateToLoginView() {
-        startActivity(Intent(this, LoginView::class.java)) // Cambiar a LoginView
-        finish()
-    }
 }
 
 @Composable

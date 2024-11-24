@@ -159,11 +159,7 @@ class RegisterView : ComponentActivity() {
         // Elimina la clave "password" si existe
         userDataToSave.remove("password")
 
-        val subCollectionName = if (isInsurer) "UserInsurer" else "UserClient"
-
         firestore.collection("Users")
-            .document(subCollectionName)
-            .collection("userData")
             .document(userId)
             .set(userDataToSave)
             .addOnSuccessListener {
