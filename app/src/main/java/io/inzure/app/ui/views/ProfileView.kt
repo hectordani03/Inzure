@@ -9,8 +9,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,9 +29,9 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import io.inzure.app.R
 import io.inzure.app.data.model.User
-
-// Importa el componente BottomBar
 import io.inzure.app.ui.views.BottomBar
+import io.inzure.app.ui.components.SideMenu // Importamos SideMenu
+import kotlinx.coroutines.launch
 
 class ProfileView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,6 +62,12 @@ fun ProfileScreen(navController: NavController) {
     var firstName by remember { mutableStateOf("No disponible") }
     var lastName by remember { mutableStateOf("No disponible") }
     var imageUri by remember { mutableStateOf<String?>(null) }
+
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+    var isDrawerOpen by remember { mutableStateOf(false) }
+    val showChatView = remember { mutableStateOf(false) } // Si necesitas manejar el chat
 
     LaunchedEffect(userId) {
         if (userId != null) {
@@ -108,78 +113,105 @@ fun ProfileScreen(navController: NavController) {
         }
     }
 
-    Scaffold(
-        topBar = { TopBar() },
-        bottomBar = {
-            BottomBar(
-                onSwipeUp = { /* Acción al deslizar hacia arriba */ },
-                onNavigateToUsers = { /* Acción de navegación */ }
+    // Uso de ModalNavigationDrawer para el menú lateral
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        scrimColor = Color.Black.copy(alpha = 0.5f),
+        drawerContent = {
+            // Contenido del menú lateral
+            SideMenu(
+                screenWidth = screenWidth,
+                onNavigateToProfile = { /* Acción al navegar al perfil */ },
+                showChatView = showChatView,
+                scope = scope,
+                drawerState = drawerState
             )
         }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(Color.White),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Fondo azul con imagen de perfil centrada
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(220.dp)
-                    .background(Color(0xFF072A4A)),
-                contentAlignment = Alignment.Center
-            ) {
-                // Imagen de perfil
-                Image(
-                    painter = painterResource(R.drawable.profile_2),
-                    contentDescription = "Foto de Perfil",
-                    modifier = Modifier
-                        .size(140.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
+    ) {
+        // Uso de Scaffold para mantener la TopBar y la BottomBar fijas
+        Scaffold(
+            topBar = {
+                TopBarProfile(
+                    onMenuClick = {
+                        scope.launch {
+                            isDrawerOpen = true
+                            drawerState.open() // Abrir el Drawer
+                        }
+                    }
+                )
+            },
+            bottomBar = {
+                BottomBar(
+                    onSwipeUp = { /* Acción al deslizar hacia arriba */ },
+                    onNavigateToUsers = { /* Acción de navegación */ }
                 )
             }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .background(Color.White),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Fondo azul con imagen de perfil centrada
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp)
+                        .background(Color(0xFF072A4A)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Imagen de perfil
+                    Image(
+                        painter = painterResource(R.drawable.profile_2),
+                        contentDescription = "Foto de Perfil",
+                        modifier = Modifier
+                            .size(140.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            // Nombre del usuario
-            Text(
-                text = "$firstName $lastName",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
+                // Nombre del usuario
+                Text(
+                    text = "$firstName $lastName",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
 
-            // Descripción del usuario
-            Text(
-                text = "Me gustan los gatos",
-                fontSize = 16.sp,
-                color = Color.Gray,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
+                // Descripción del usuario
+                Text(
+                    text = "Me gustan los gatos",
+                    fontSize = 16.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            // Botones de opciones estilizados
-            OptionButton("Información Personal", R.drawable.ic_profile2) {
-                navController.navigate("personal_information")
-            }
-            OptionButton("Mis Seguros", R.drawable.ic_profile2) {
-                // Implementar navegación a 'Mis Seguros'
-            }
-            OptionButton("Mis agentes", R.drawable.ic_profile2) {
-                // Implementar navegación a 'Mis agentes'
+                // Botones de opciones estilizados
+                OptionButton("Información Personal", R.drawable.ic_profile2) {
+                    navController.navigate("personal_information")
+                }
+                OptionButton("Mis Seguros", R.drawable.ic_profile2) {
+                    // Implementar navegación a 'Mis Seguros'
+                }
+                OptionButton("Mis agentes", R.drawable.ic_profile2) {
+                    // Implementar navegación a 'Mis agentes'
+                }
             }
         }
     }
 }
 
+// Mantenemos tu TopBar original
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopBar() {
+fun TopBarProfile(onMenuClick: () -> Unit) {
     TopAppBar(
         title = {
             Text(
@@ -190,8 +222,12 @@ fun TopBar() {
             )
         },
         navigationIcon = {
-            IconButton(onClick = { /* Lógica del menú */ }) {
-                Icon(Icons.Filled.Menu, contentDescription = "Menú", tint = Color.White)
+            IconButton(onClick = onMenuClick) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_menu),
+                    contentDescription = "Menú",
+                    tint = Color.White
+                )
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(

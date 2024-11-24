@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
+import io.inzure.app.ui.views.LoginView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -37,15 +38,15 @@ class SplashActivity : ComponentActivity() {
             SplashScreen()
         }
 
-        // Navegar a MainActivity después de un tiempo (simulando carga)
+        // Navegar a LoginView después de un tiempo (simulando carga)
         lifecycleScope.launch {
             delay(3000) // Espera 3 segundos
-            navigateToMainActivity()
+            navigateToLoginView()
         }
     }
 
-    private fun navigateToMainActivity() {
-        startActivity(Intent(this, MainActivity::class.java))
+    private fun navigateToLoginView() {
+        startActivity(Intent(this, LoginView::class.java)) // Cambiar a LoginView
         finish()
     }
 }
