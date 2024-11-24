@@ -61,6 +61,8 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
     var birthDate by remember { mutableStateOf("Cargando...") }
     var email by remember { mutableStateOf("Cargando...") }
     var phone by remember { mutableStateOf("Cargando...") }
+    var description by remember { mutableStateOf("Cargando...") }
+    var role by remember { mutableStateOf("Cargando...") }
     var imageUri by remember { mutableStateOf<String?>(null) }
     var tempImageUri by remember { mutableStateOf<String?>(null) }
 
@@ -99,7 +101,9 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
                         birthDate = userData.birthDate
                         email = userData.email
                         phone = userData.phone
+                        description = userData.description
                         imageUri = userData.image
+                        role = userData.role
                     } else {
                         Log.e("Firestore", "El documento existe, pero no se pudo mapear a un objeto User")
                     }
@@ -116,23 +120,27 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
     val userInfo = listOf(
         "Nombre(s)" to firstName to { newValue: String ->
             firstName = newValue
-            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, imageUri)
+            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, description, imageUri, role)
         },
         "Apellidos" to lastName to { newValue: String ->
             lastName = newValue
-            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, imageUri)
+            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, description, imageUri, role)
         },
         "Correo Electrónico" to email to { newValue: String ->
             email = newValue
         },
         "Número telefónico" to phone to { newValue: String ->
             phone = newValue
-            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, imageUri)
+            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, description, imageUri, role)
+        },
+        "Descripción" to description to { newValue: String ->
+            description = newValue
+            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone,description, imageUri, role)
         },
         "Fecha de Nacimiento" to birthDate to { newValue: String ->
             birthDate = newValue
-            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, imageUri)
-        }
+            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, description, imageUri, role)
+        },
     )
 
     Scaffold(
@@ -384,7 +392,9 @@ fun updateUserInfo(
     birthDate: String,
     email: String,
     phone: String,
-    imageUri: String?
+    description: String,
+    imageUri: String?,
+    role: String,
 ) {
     val updatedUser = User(
         id = userId,
@@ -393,7 +403,9 @@ fun updateUserInfo(
         birthDate = birthDate,
         email = email,
         phone = phone,
-        image = imageUri ?: ""
+        description = description,
+        image = imageUri ?: "",
+        role = role,
     )
     userViewModel.updateUser(updatedUser)
 }

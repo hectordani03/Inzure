@@ -6,14 +6,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,17 +26,14 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.compose.foundation.border
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.zIndex
+import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import io.inzure.app.R
 import io.inzure.app.data.model.User
+
+// Importa el componente BottomBar
+import io.inzure.app.ui.views.BottomBar
 
 class ProfileView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,7 +53,6 @@ fun MainScreen() {
     }
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(navController: NavController) {
@@ -68,57 +63,40 @@ fun ProfileScreen(navController: NavController) {
 
     var firstName by remember { mutableStateOf("No disponible") }
     var lastName by remember { mutableStateOf("No disponible") }
+    var description by remember { mutableStateOf("No disponible") }
     var imageUri by remember { mutableStateOf<String?>(null) }
-
     LaunchedEffect(userId) {
-        if (userId != null) {
-            firestore.collection("Users")
-                .get()
-                .addOnSuccessListener { querySnapshot ->
-                    var userRole: String? = null
-                    for (document in querySnapshot.documents) {
-                        val documentPath = document.id
-                        firestore.collection("Users")
-                            .document(documentPath)
-                            .collection("userData")
-                            .document(userId)
-                            .get()
-                            .addOnSuccessListener { userDoc ->
-                                if (userDoc.exists()) {
-                                    userRole = documentPath
-                                    val userData = userDoc.toObject(User::class.java)
-                                    if (userData != null) {
-                                        firstName = userData.firstName
-                                        lastName = userData.lastName
-                                        imageUri = userData.image
-                                    }
-                                }
-                            }
-                            .addOnFailureListener { e ->
-                                Log.e("Firestore", "Error al obtener usuario en $documentPath: ", e)
-                            }
+        firestore.collection("Users")
+            .document(userId)
+            .get()
+            .addOnSuccessListener { userDoc ->
+                if (userDoc.exists()) {
+                    val userData = userDoc.toObject(User::class.java)
+                    if (userData != null) {
+                        firstName = userData.firstName
+                        lastName = userData.lastName
+                        description = userData.description
 
-                        // Si encontramos el rol, dejamos de buscar
-                        if (userRole != null) break
+                        imageUri = userData.image
+                    } else {
+                        Log.e("Firestore", "El documento existe, pero no se pudo mapear a un objeto User")
                     }
-
-                    if (userRole == null) {
-                        Log.e("Firestore", "No se pudo determinar el rol del usuario")
-                    }
+                } else {
+                    Log.e("Firestore", "El documento del usuario no existe en Firestore")
                 }
-                .addOnFailureListener { e ->
-                    Log.e("Firestore", "Error al obtener los documentos de usuarios: ", e)
-                }
-        } else {
-            Log.e("Auth", "ID del usuario no disponible")
-        }
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Error al obtener el documento del usuario: ", e)
+            }
     }
-
-
-
     Scaffold(
         topBar = { TopBar() },
-        bottomBar = { BottomNavigationBar() }
+        bottomBar = {
+            BottomBar(
+                onSwipeUp = { /* Acción al deslizar hacia arriba */ },
+                onNavigateToUsers = { /* Acción de navegación */ }
+            )
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -136,14 +114,25 @@ fun ProfileScreen(navController: NavController) {
                 contentAlignment = Alignment.Center
             ) {
                 // Imagen de perfil
-                Image(
-                    painter = painterResource(R.drawable.ic_profile3),
-                    contentDescription = "Foto de Perfil",
-                    modifier = Modifier
-                        .size(140.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
+                if (!imageUri.isNullOrEmpty()) {
+                    Image(
+                        painter = rememberAsyncImagePainter(imageUri),
+                        contentDescription = "Foto de Perfil",
+                        modifier = Modifier
+                            .size(140.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(R.drawable.ic_profile_default),
+                        contentDescription = "Foto de Perfil",
+                        modifier = Modifier
+                            .size(140.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -155,10 +144,11 @@ fun ProfileScreen(navController: NavController) {
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
+            Spacer(modifier = Modifier.height(4.dp))
 
             // Descripción del usuario
             Text(
-                text = "Me gustan los gatos",
+                text = description,
                 fontSize = 16.sp,
                 color = Color.Gray,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -167,7 +157,7 @@ fun ProfileScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(24.dp))
 
             // Botones de opciones estilizados
-            OptionButton("Informacion Personal", R.drawable.ic_profile2) {
+            OptionButton("Información Personal", R.drawable.ic_profile2) {
                 navController.navigate("personal_information")
             }
             OptionButton("Mis Seguros", R.drawable.ic_profile2) {
@@ -179,8 +169,6 @@ fun ProfileScreen(navController: NavController) {
         }
     }
 }
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -203,29 +191,6 @@ fun TopBar() {
             containerColor = Color(0xFF0D47A1)
         )
     )
-}
-
-@Composable
-fun BottomNavigationBar() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp))
-            .background(Color(0xFF072A4A))
-            .padding(vertical = 12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            BottomBarIconCar(R.drawable.ic_file, "Home")
-            BottomBarIconCar(R.drawable.ic_history, "Search")
-            BottomBarIconCar(R.drawable.ic_search, "Notifications")
-            BottomBarIconCar(R.drawable.ic_profile2, "Settings")
-        }
-    }
 }
 
 @Composable
@@ -253,7 +218,7 @@ fun OptionButton(text: String, icon: Int, onClick: () -> Unit) {
             Text(
                 text = text,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black // Cambiado a negro
+                color = Color.Black
             )
         }
     }
