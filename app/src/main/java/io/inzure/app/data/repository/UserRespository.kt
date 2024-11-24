@@ -2,6 +2,7 @@ package io.inzure.app.data.repository
 
 import android.net.Uri
 import android.util.Log
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.toObject
 import io.inzure.app.data.model.User
@@ -53,32 +54,6 @@ class UserRepository {
         }
     }
 
-    suspend fun getUserById(userId: String): User? {
-        val role = GlobalUserSession.role ?: return null
-
-        val documentPath = when (role) {
-            "Client" -> "UserClient"
-            "Admin" -> "UserAdmin"
-            "Editor" -> "UserEditor"
-            "Insurer" -> "UserInsurer"
-            else -> return null
-        }
-
-        return try {
-            val snapshot = db.collection("Users")
-                .document(documentPath)
-                .collection("userData")
-                .document(userId)
-                .get()
-                .await()
-
-            snapshot.toObject(User::class.java)
-        } catch (e: Exception) {
-            Log.e("Firestore", "Error al obtener el usuario: ", e)
-            null
-        }
-    }
-
     fun getUsers(onUsersChanged: (List<User>) -> Unit) {
         listenerRegistration?.remove()
 
@@ -96,17 +71,6 @@ class UserRepository {
 
                 onUsersChanged(usersList)
             }
-    }
-
-    suspend fun selectImage(onImageSelected: (String?) -> Unit) {
-        try {
-            // Aquí puedes usar un ActivityResultLauncher para abrir la galería y seleccionar una imagen
-            val imageUri = "file:///path/to/selected/image.jpg" // Simula una URI para la imagen seleccionada.
-            onImageSelected(imageUri)
-        } catch (e: Exception) {
-            Log.e("UserRepository", "Error seleccionando imagen: ${e.message}")
-            onImageSelected(null)
-        }
     }
 
     suspend fun updateProfileImage(userId: String, imageUri: String) {
@@ -148,6 +112,50 @@ class UserRepository {
             throw e
         }
     }
+
+    suspend fun updateEmail(newEmail: String): Boolean {
+        return try {
+            val currentUser = FirebaseAuth.getInstance().currentUser
+            if (currentUser != null) {
+                // Enviar correo de verificación antes de actualizar el email
+                currentUser.verifyBeforeUpdateEmail(newEmail).await()
+
+                // Cerrar sesión después de enviar el correo de verificación
+                FirebaseAuth.getInstance().signOut()
+
+                true
+            } else {
+                Log.e("UserRepository", "No hay usuario autenticado.")
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error al actualizar el correo: ${e.message}")
+            false
+        }
+    }
+
+    suspend fun verifyEmail(email: String, userId: String): Boolean {
+        return try {
+            val result = FirebaseAuth.getInstance().fetchSignInMethodsForEmail(email).await()
+            val signInMethods = result.signInMethods
+            // Si hay métodos de inicio de sesión asociados al email, está registrado
+            if (signInMethods != null && signInMethods.isNotEmpty()) {
+                val currentUser = FirebaseAuth.getInstance().currentUser
+                // Si el email pertenece al usuario actual, se considera válido
+                if (currentUser != null && currentUser.uid == userId && currentUser.email == email) {
+                    true // El email es del usuario actual
+                } else {
+                    false // El email pertenece a otro usuario
+                }
+            } else {
+                true // El email no está registrado
+            }
+        } catch (e: Exception) {
+            Log.e("verifyEmail", "Error al verificar el email: ${e.message}")
+            false
+        }
+    }
+
 
     fun removeListener() {
         listenerRegistration?.remove()
