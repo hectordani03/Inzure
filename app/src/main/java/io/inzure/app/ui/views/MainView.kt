@@ -1,60 +1,39 @@
 package io.inzure.app.ui.views
 
-import android.util.Log
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.geometry.CornerRadius
-import io.inzure.app.R
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.*
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.*
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldColors
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.ExperimentalMaterial3Api
-import coil.compose.rememberAsyncImagePainter
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import io.inzure.app.data.model.User
-
+import androidx.compose.runtime.*
+import androidx.compose.ui.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.*
+import androidx.compose.ui.geometry.*
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.*
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.*
+import androidx.navigation.compose.rememberNavController
+import io.inzure.app.R
+import io.inzure.app.ui.components.SideMenu
+import io.inzure.app.ui.components.TopBar
+import io.inzure.app.ui.components.BottomBar
+import kotlinx.coroutines.launch
 
 // Clase de datos para la lista de seguros
 data class InsuranceData(
@@ -64,50 +43,40 @@ data class InsuranceData(
     val description: String
 )
 
+// Clase de datos para chats
+data class Chat(
+    val userName: String,
+    val userCompany: String,
+    val userImageRes: Int
+)
+
+// Data class para representar un mensaje
+data class Message(val text: String, val isSentByUser: Boolean)
+
+// Lista de ejemplo de mensajes
+val sampleMessages = listOf(
+    Message("Hola, Buen día, está interesado en algún seguro?", false),
+    Message("Sí, me interesa el seguro automovilístico", true),
+    Message("Me podría dar más información", true),
+    Message("Claro, por el momento estamos manejando un seguro de cobertura total que incluye...", false),
+    Message("Perfecto, ¿cuáles son los precios?", true)
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainView(
     onNavigateToProfile: () -> Unit,
     onNavigateToCarInsurance: () -> Unit,
-    onNavigateToUsers: () -> Unit // Añadido nuevo parámetro
+    onNavigateToUsers: () -> Unit,
+    onNavigateToAdmin: () -> Unit, // Agrega esta función
+    onNavigateToChat: () -> Unit
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     var isDrawerOpen by remember { mutableStateOf(false) }
-    val auth = FirebaseAuth.getInstance()
-    val firestore = FirebaseFirestore.getInstance()
-    val userId = auth.currentUser?.uid ?: return
+    val showChatView = remember { mutableStateOf(false) }
 
-    var firstName by remember { mutableStateOf("No disponible") }
-    var lastName by remember { mutableStateOf("No disponible") }
-    var email by remember { mutableStateOf("No disponible") }
-    var imageUri by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(userId) {
-        firestore.collection("Users")
-            .document(userId)
-            .get()
-            .addOnSuccessListener { userDoc ->
-                if (userDoc.exists()) {
-                    val userData = userDoc.toObject(User::class.java)
-                    if (userData != null) {
-                        firstName = userData.firstName
-                        lastName = userData.lastName
-                        email = userData.email
-
-                        imageUri = userData.image
-                    } else {
-                        Log.e("Firestore", "El documento existe, pero no se pudo mapear a un objeto User")
-                    }
-                } else {
-                    Log.e("Firestore", "El documento del usuario no existe en Firestore")
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.e("Firestore", "Error al obtener el documento del usuario: ", e)
-            }
-    }
     // Estado del BottomSheetScaffold
     val bottomSheetScaffoldState = rememberBottomSheetScaffoldState()
 
@@ -125,26 +94,23 @@ fun MainView(
             companyName = "Qualitas Seguros",
             description = "Explora por los diversos seguros que tenemos"
         ),
-
         InsuranceData(
             imageRes = R.drawable.aseguradora3,
             companyLogo = R.drawable.ic_aseguradora3,
             companyName = "MetLife",
             description = "Descubriendo la vida juntos"
         ),
-
         InsuranceData(
             imageRes = R.drawable.aseguradora2,
             companyLogo = R.drawable.ic_aseguradora2,
             companyName = "GNP Seguros",
             description = "Cobertura completa para tu auto"
         ),
-
         InsuranceData(
             imageRes = R.drawable.aseguradora4,
             companyLogo = R.drawable.ic_aseguradora4,
             companyName = "HDI Seguros",
-            description = "Hacer fáciles tus momentos dificiles"
+            description = "Hacer fáciles tus momentos difíciles"
         ),
         InsuranceData(
             imageRes = R.drawable.aseguradora5,
@@ -162,105 +128,33 @@ fun MainView(
         sheetContent = {
             BottomSheetContent(insuranceList)
         }
-    )
-    {
+    ) {
         // Uso de ModalNavigationDrawer para el menú lateral
         ModalNavigationDrawer(
             drawerState = drawerState,
             scrimColor = scrimColor,
             drawerContent = {
-                // Contenido del menú lateral
-                Box(
-                    modifier = Modifier
-                        .width(screenWidth * 0.75f)
-                        .fillMaxHeight()
-                        .background(Color(0xFF072A4A))
-                ) {
-                    // Diseño del menú lateral
-                    Column(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.Start
-                    ) {
-                        Spacer(modifier = Modifier.height(40.dp))
-
-                        // Sección de perfil
-                        if (!imageUri.isNullOrEmpty()) {
-                            Image(
-                                painter = rememberAsyncImagePainter(imageUri),
-                                contentDescription = "User Avatar",
-                                modifier = Modifier
-                                    .size(50.dp)
-                                    .clip(CircleShape)
-                            )
-                        } else {
-                            Image(
-                                painter = painterResource(R.drawable.ic_profile_default),
-                                contentDescription = "User Avatar",
-                                modifier = Modifier
-                                    .size(50.dp)
-                                    .clip(CircleShape)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Información del usuario
-                        Text(
-                            text = firstName,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            color = Color.White
-                        )
-
-                        Text(
-                            text = email,
-                            fontSize = 14.sp,
-                            color = Color.White
-                        )
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        // Opciones del menú lateral
-                        MenuOption(iconRes = R.drawable.ic_profile2, text = "Perfil", spacerHeight = 20.dp)
-                        MenuOption(iconRes = R.drawable.ic_file, text = "Mis Pólizas", spacerHeight = 20.dp)
-                        MenuOption(iconRes = R.drawable.ic_search, text = "Buscador", spacerHeight = 20.dp)
-                        MenuOption(iconRes = R.drawable.ic_history, text = "Historial", spacerHeight = 20.dp)
-                        MenuOption(iconRes = R.drawable.ic_chat, text = "Chat", spacerHeight = 20.dp)
-                        MenuOption(iconRes = R.drawable.ic_learn, text = "Educativo", spacerHeight = 20.dp)
-
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        // Botón de cerrar sesión
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Start
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_logout),
-                                contentDescription = "Cerrar sesión",
-                                tint = Color.White,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Cerrar Sesión",
-                                fontSize = 16.sp,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                SideMenu(
+                    screenWidth = screenWidth,
+                    onNavigateToProfile = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToProfile()
+                    },
+                    showChatView = showChatView,
+                    scope = scope,
+                    drawerState = drawerState,
+                    onNavigateToAdmin = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToAdmin()
                     }
-                }
+                )
             }
-        ) {
+        )
+        {
             // Uso de Scaffold para mantener la TopBar y la BottomBar fijas
             Scaffold(
                 topBar = {
+                    // Importa TopBar desde SideMenu.kt
                     TopBar(
                         onMenuClick = {
                             scope.launch {
@@ -268,106 +162,388 @@ fun MainView(
                                 drawerState.open() // Abrir el Drawer
                             }
                         },
-                        onNavigateToProfile = onNavigateToProfile,
-                        userImageUri = imageUri // Pasa la URI de la imagen aquí
-
+                        onNavigateToProfile = onNavigateToProfile
                     )
                 },
                 bottomBar = {
                     BottomBar(
                         onSwipeUp = {
                             scope.launch {
-                                bottomSheetScaffoldState.bottomSheetState.expand() // Expandir el Bottom Sheet
+                                bottomSheetScaffoldState.bottomSheetState.expand()
                             }
                         },
-                        onNavigateToUsers = onNavigateToUsers // Pasa el parámetro aquí
+                        onNavigateToUsers = onNavigateToUsers
                     )
                 }
-            ){ innerPadding ->
-                // Contenido principal de la pantalla
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(innerPadding)
-                ) {
-                    WelcomeMessage(firstName = firstName, lastName = lastName)
-                    InsuranceCategories(onNavigateToCarInsurance)
-                    LearnAboutInsurance()
-                    Spacer(modifier = Modifier.weight(1f))
+            ) { innerPadding ->
+                if (showChatView.value) {
+                    // Mostrar la vista de chats si el estado está activado
+                    val chatList = listOf(
+                        Chat("Jose Joshua", "Asegurador de Qualitas", R.drawable.ic_profile5),
+                        Chat("Maria Lopez", "Asegurador de MetLife", R.drawable.ic_profile4),
+                        Chat("Carlos Perez", "Asegurador de HDI", R.drawable.ic_profile)
+                    )
+                    ChatListView(chats = chatList, onClose = { showChatView.value = false })
+                } else {
+                    // Contenido principal de la pantalla
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(innerPadding)
+                    ) {
+                        WelcomeMessage()
+                        InsuranceCategories(onNavigateToCarInsurance)
+                        LearnAboutInsurance()
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }
     }
 }
 
+@Composable
+fun ChatListView(chats: List<Chat>, onClose: () -> Unit) {
+    var selectedChat by remember { mutableStateOf<Chat?>(null) }
+
+    selectedChat?.let { chat ->
+        // Mostrar vista de chat individual solo si selectedChat no es null
+        IndividualChatView(chat = chat, onClose = { selectedChat = null })
+    } ?: run {
+        // Mostrar lista de chats cuando no hay chat seleccionado
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                .background(Color(0xFF072A4A))
+                .padding(top = (LocalConfiguration.current.screenHeightDp * 0.22).dp) // Mover la vista hacia abajo
+        ) {
+            // Encabezado del desplegable de chats con gesto de arrastre
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF04305A))
+                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                    .pointerInput(Unit) {
+                        detectVerticalDragGestures { _, dragAmount ->
+                            if (dragAmount > 20) {
+                                onClose()
+                            }
+                        }
+                    }
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .width(40.dp)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(Color.White)
+                        .padding(bottom = 8.dp)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Mis Chats",
+                        color = Color.White,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    IconButton(onClick = onClose) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_chat),
+                            contentDescription = "Cerrar",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+            }
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF072A4A))
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(chats) { chat ->
+                    ChatItem(
+                        userName = chat.userName,
+                        userCompany = chat.userCompany,
+                        userImageRes = chat.userImageRes,
+                        onClick = { selectedChat = chat } // Seleccionar el chat al hacer clic
+                    )
+                }
+            }
+        }
+    }
+}
 
 @Composable
-fun TopBar(
-    onMenuClick: () -> Unit, // Agregar el parámetro onMenuClick
-    onNavigateToProfile: () -> Unit,
-    userImageUri: String? // Agregar parámetro para la URI de la imagen del usuario
+fun ChatItem(
+    userName: String,
+    userCompany: String,
+    userImageRes: Int,
+    onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White) // Añadir fondo blanco a la TopBar
-            .statusBarsPadding() // Ajuste para evitar superposición con los íconos del sistema
-            .padding(16.dp), // Padding interno
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .background(Color(0xFF04305A), RoundedCornerShape(12.dp))
+            .padding(12.dp)
+            .clickable { onClick() }, // Acción de clic para seleccionar el chat
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Botón del menú de hamburguesa
-        IconButton(onClick = onMenuClick) { // Usar el parámetro onMenuClick
-            Image(
-                painter = painterResource(id = R.drawable.ic_menu),
-                contentDescription = "Menú",
-                modifier = Modifier.size(40.dp)
+        Image(
+            painter = painterResource(id = userImageRes),
+            contentDescription = null,
+            modifier = Modifier
+                .size(50.dp)
+                .clip(CircleShape)
+        )
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = userName,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+            Text(
+                text = userCompany,
+                fontSize = 14.sp,
+                color = Color.LightGray
             )
         }
 
-        // Logo de la aplicación
-        Image(
-            painter = painterResource(id = R.drawable.logo),
-            contentDescription = "Logo",
-            modifier = Modifier.size(80.dp)
+        Icon(
+            painter = painterResource(id = R.drawable.ic_chat),
+            contentDescription = "Chat",
+            tint = Color.White,
+            modifier = Modifier.size(24.dp)
         )
+    }
+}
 
-        // Botón de perfil
-        IconButton(onClick = onNavigateToProfile) {
-            if (!userImageUri.isNullOrEmpty()) {
-                Image(
-                    painter = rememberAsyncImagePainter(userImageUri),
-                    contentDescription = "User Avatar",
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
+@Composable
+fun IndividualChatView(chat: Chat, onClose: () -> Unit) {
+    val listState = rememberLazyListState()
+    var currentMessage by remember { mutableStateOf("") }
+    val messages = remember { mutableStateListOf<Message>().apply { addAll(sampleMessages) } }
+
+    LaunchedEffect(messages.size) {
+        listState.animateScrollToItem(messages.size - 1)
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF072A4A))
+            .padding(top = 170.dp) // Baja toda la vista un poco verticalmente
+            .padding(horizontal = 16.dp)
+    ) {
+        // Encabezado de chat individual
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Foto de perfil
+            Image(
+                painter = painterResource(id = chat.userImageRes),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(CircleShape)
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Nombre y descripción
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = chat.userName,
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
                 )
-            } else {
-                Image(
-                    painter = painterResource(R.drawable.ic_profile_default),
-                    contentDescription = "Default Avatar",
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
+                Text(
+                    text = chat.userCompany,
+                    color = Color.LightGray,
+                    fontSize = 14.sp
+                )
+            }
+
+            // Botón de cerrar
+            IconButton(onClick = onClose) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_close),
+                    contentDescription = "Cerrar",
+                    tint = Color.White
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Lista de mensajes en el chat
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(start = 16.dp, top = 0.dp, end = 16.dp, bottom = 50.dp)
+        ) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 70.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(messages) { message ->
+                    ChatBubble(message)
+                }
+            }
+        }
+
+        // Caja de texto para enviar mensajes
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+                .offset(y = (-120).dp)
+                .background(Color(0xFF04305A), RoundedCornerShape(24.dp))
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TextField(
+                value = currentMessage,
+                onValueChange = { currentMessage = it },
+                placeholder = {
+                    Text(
+                        text = "Escribe algo...",
+                        color = Color.LightGray
+                    )
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .background(Color.Transparent),
+                textStyle = TextStyle(color = Color.White),
+                maxLines = 1,
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedContainerColor = Color.Transparent,
+                    cursorColor = Color.White,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    unfocusedPlaceholderColor = Color.LightGray,
+                    focusedPlaceholderColor = Color.LightGray,
+                    unfocusedTextColor = Color.White,
+                    focusedTextColor = Color.White
+                ),
+                keyboardOptions = KeyboardOptions.Default,
+                keyboardActions = KeyboardActions.Default
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            IconButton(
+                onClick = {
+                    if (currentMessage.isNotBlank()) {
+                        messages.add(Message(currentMessage, true)) // Agrega el mensaje enviado
+                        currentMessage = "" // Limpia el campo de entrada
+                    }
+                }
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_send), // Reemplaza con tu ícono de enviar
+                    contentDescription = "Enviar",
+                    tint = Color(0xFF007AFF),
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
     }
 }
 
+@Composable
+fun ChatBubble(message: Message) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = if (message.isSentByUser) Arrangement.End else Arrangement.Start
+    ) {
+        Box(
+            contentAlignment = if (message.isSentByUser) Alignment.CenterEnd else Alignment.CenterStart,
+            modifier = Modifier
+                .padding(horizontal = 8.dp)
+        ) {
+            // Globo de texto
+            Box(
+                modifier = Modifier
+                    .background(
+                        if (message.isSentByUser) Color(0xFF007AFF) else Color(0xFF04305A),
+                        shape = RoundedCornerShape(
+                            topStart = 12.dp,
+                            topEnd = 12.dp,
+                            bottomEnd = if (message.isSentByUser) 0.dp else 12.dp,
+                            bottomStart = if (message.isSentByUser) 12.dp else 0.dp
+                        )
+                    )
+                    .padding(12.dp)
+                    .widthIn(max = 250.dp)
+            ) {
+                Text(
+                    text = message.text,
+                    color = Color.White,
+                    fontSize = 16.sp
+                )
+            }
 
-// Contenido del Bottom Sheet con lista de seguros
+            // Pico del globo de texto
+            Canvas(
+                modifier = Modifier
+                    .size(15.dp)
+                    .align(
+                        if (message.isSentByUser) Alignment.BottomEnd else Alignment.BottomStart
+                    )
+                    .offset(x = if (message.isSentByUser) (-5).dp else 5.dp, y = 0.dp)
+            ) {
+                val path = Path().apply {
+                    moveTo(0f, 0f)
+                    lineTo(size.width, 0f)
+                    lineTo(size.width / 2, size.height)
+                    close()
+                }
+                drawPath(
+                    path = path,
+                    color = if (message.isSentByUser) Color(0xFF007AFF) else Color(0xFF04305A)
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun BottomSheetContent(insuranceList: List<InsuranceData>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight(0.75f) // Cubre 3/4 de la pantalla
-            .background(Color(0xFF072A4A)) // Fondo azul
+            .fillMaxHeight(0.75f)
+            .background(Color(0xFF072A4A))
     ) {
-        // Barra superior del Bottom Sheet
-        Spacer(modifier = Modifier.height(16.dp)) // Espacio superior para el texto "Buscar"
+        Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "Buscar",
             color = Color.White,
@@ -376,7 +552,7 @@ fun BottomSheetContent(insuranceList: List<InsuranceData>) {
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
 
-        Spacer(modifier = Modifier.height(24.dp)) // Más espacio debajo del texto "Buscar"
+        Spacer(modifier = Modifier.height(24.dp))
 
         // Campo de búsqueda
         Row(
@@ -385,9 +561,8 @@ fun BottomSheetContent(insuranceList: List<InsuranceData>) {
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Ícono de lupa
             Icon(
-                painter = painterResource(id = R.drawable.ic_search), // Reemplaza con tu ícono de lupa
+                painter = painterResource(id = R.drawable.ic_search),
                 contentDescription = "Lupa",
                 tint = Color.White,
                 modifier = Modifier.size(24.dp)
@@ -395,12 +570,10 @@ fun BottomSheetContent(insuranceList: List<InsuranceData>) {
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Texto de búsqueda (hint) en negrita
             SearchField()
         }
 
-        // Línea debajo del campo de búsqueda, más separada
-        Spacer(modifier = Modifier.height(8.dp)) // Espacio adicional antes de la línea
+        Spacer(modifier = Modifier.height(8.dp))
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -411,7 +584,6 @@ fun BottomSheetContent(insuranceList: List<InsuranceData>) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Lista de seguros desplazable con imagen en cada elemento
         LazyColumn(
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 16.dp)
         ) {
@@ -431,40 +603,38 @@ fun BottomSheetContent(insuranceList: List<InsuranceData>) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchField() {
-    var text by remember { mutableStateOf("") } // Estado para el texto ingresado
+    var text by remember { mutableStateOf("") }
 
     OutlinedTextField(
         value = text,
         onValueChange = { text = it },
         placeholder = {
             Text(
-                text = "Encuentra tu seguro", // Placeholder
+                text = "Encuentra tu seguro",
                 color = Color.White.copy(alpha = 0.6f),
-                fontSize = 20.sp, // Tamaño de texto más grande
-                fontWeight = FontWeight.Bold // Texto en bold
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
             )
         },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 0.dp), // Ajustar según el diseño
+            .padding(horizontal = 0.dp),
         textStyle = TextStyle(
             color = Color.White,
-            fontSize = 20.sp, // Tamaño de texto más grande
-            fontWeight = FontWeight.Bold // Texto en bold
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold
         ),
-        singleLine = true, // Limitar a una sola línea de texto
-        shape = RoundedCornerShape(8.dp), // Esquinas edondeadas
+        singleLine = true,
+        shape = RoundedCornerShape(8.dp),
         colors = TextFieldDefaults.colors(
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
             unfocusedContainerColor = Color.Transparent,
-            cursorColor = Color.Black
+            cursorColor = Color.White
         )
     )
 }
 
-
-// Función para mostrar una tarjeta de seguro con imagen
 @Composable
 fun InsuranceCardWithImage(imageRes: Int, companyLogo: Int, companyName: String, description: String) {
     Column(
@@ -515,132 +685,43 @@ fun InsuranceCardWithImage(imageRes: Int, companyLogo: Int, companyName: String,
                 )
             }
 
-            // Íconos del corazón y de la flecha en la misma fila
+            // Íconos del corazón y de la flecha
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_personal), // Ícono de corazón
+                    painter = painterResource(id = R.drawable.ic_personal),
                     contentDescription = null,
                     tint = Color.Gray,
                     modifier = Modifier
                         .size(24.dp)
-                        .padding(bottom = 4.dp) // Añade padding hacia abajo para mayor separación
+                        .padding(bottom = 4.dp)
                 )
 
-                Spacer(modifier = Modifier.height(8.dp)) // Aumenta la altura del espaciado
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_arrow), // Ícono de flecha hacia abajo
+                    painter = painterResource(id = R.drawable.ic_arrow),
                     contentDescription = "Desplegar más",
                     tint = Color.Gray,
                     modifier = Modifier
                         .size(24.dp)
-                        .padding(top = 4.dp) // Añade padding hacia arriba para mayor separación
-                )
-            }
-
-        }
-    }
-}
-
-
-@Composable
-fun BottomBar(
-    onSwipeUp: () -> Unit,
-    onNavigateToUsers: () -> Unit // Añadir el nuevo parámetro aquí
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp))
-            .background(Color(0xFF072A4A))
-            .navigationBarsPadding()
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onSwipeUp) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_file),
-                    contentDescription = "Home",
-                    tint = Color.White,
-                    modifier = Modifier.size(30.dp)
-                )
-            }
-
-            IconButton(onClick = onSwipeUp) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_history),
-                    contentDescription = "Search",
-                    tint = Color.White,
-                    modifier = Modifier.size(30.dp)
-                )
-            }
-
-            IconButton(onClick = onSwipeUp) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_search),
-                    contentDescription = "Notifications",
-                    tint = Color.White,
-                    modifier = Modifier.size(30.dp)
-                )
-            }
-
-            IconButton(onClick = onNavigateToUsers) { // Ahora sí se reconoce la referencia
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_profile2),
-                    contentDescription = "Settings",
-                    tint = Color.White,
-                    modifier = Modifier.size(30.dp)
+                        .padding(top = 4.dp)
                 )
             }
         }
     }
 }
 
-
 @Composable
-fun MenuOption(iconRes: Int, text: String, spacerHeight: Dp) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .clickable { /* Acción de la opción */ },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start // Alinear opciones del menú a la izquierda
-    ) {
-        Icon(
-            painter = painterResource(id = iconRes),
-            contentDescription = text,
-            tint = Color.White,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = text,
-            fontSize = 16.sp,
-            color = Color.White,
-            fontWeight = FontWeight.Medium
-        )
-    }
-    Spacer(modifier = Modifier.height(spacerHeight)) // Espaciado adicional
-}
-
-@Composable
-fun WelcomeMessage(firstName: String, lastName: String) {
-    val name = "${firstName.split(" ").first()} ${lastName.split(" ").first()}"
+fun WelcomeMessage() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
     ) {
         Text(
-            text = "¡Bienvenid@, $name!",
+            text = "¡Buenas tardes, Gilberto Ceja!",
             modifier = Modifier
                 .align(Alignment.Center)
                 .background(color = Color(0xFF072A4A), shape = RoundedCornerShape(8.dp))
@@ -668,7 +749,7 @@ fun InsuranceCategories(onNavigateToCarInsurance: () -> Unit) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
-        )  {
+        ) {
             InsuranceCategory("Autos", R.drawable.ic_auto, onClick = onNavigateToCarInsurance)
             InsuranceCategory("Personal", R.drawable.ic_personal, onClick = { /* Navegación Personal */ })
             InsuranceCategory("Empresarial", R.drawable.ic_empresarial, onClick = { /* Navegación Empresarial */ })
@@ -682,7 +763,7 @@ fun InsuranceCategory(name: String, iconResId: Int, onClick: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .padding(8.dp)
-            .clickable { onClick() } // Agregar la acción de clic
+            .clickable { onClick() }
     ) {
         Image(
             painter = painterResource(id = iconResId),
@@ -699,7 +780,6 @@ fun InsuranceCategory(name: String, iconResId: Int, onClick: () -> Unit) {
 
 @Composable
 fun LearnAboutInsurance() {
-    // Agregar padding general de 16.dp alrededor de toda la sección
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -750,7 +830,7 @@ fun InsuranceImage() {
     ) {
         // Imagen principal
         Image(
-            painter = painterResource(id = R.drawable.insurance_image4),
+            painter = painterResource(id = R.drawable.aprende_desde_0),
             contentDescription = "Insurance Image",
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
@@ -768,12 +848,11 @@ fun InsuranceImage() {
         ) {
             // Texto dentro de la caja
             Text(
-                text = "Aprende todo sobre seguros desde cero y fácil",
+                text = "Aprende todo sobre seguros desde cero",
                 color = Color.Black,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyLarge
+                modifier = Modifier.weight(1f)
             )
 
             // Imagen a la derecha del texto
@@ -839,7 +918,7 @@ fun InsuranceImage2() {
         ) {
             // Texto dentro de la caja
             Text(
-                text = "Contamos con todo tipo de cobertura para tu vehiculo",
+                text = " Aprende sobre seguros automovilísticos",
                 color = Color.Black,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
@@ -909,7 +988,7 @@ fun InsuranceImage3() {
         ) {
             // Texto dentro de la caja
             Text(
-                text = "Protege a los tuyos desde ahora",
+                text = "Aprende sobre seguros personales",
                 color = Color.Black,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
@@ -979,7 +1058,7 @@ fun InsuranceImage4() {
         ) {
             // Texto dentro de la caja
             Text(
-                text = "Protege tu empresa y evita riesgos",
+                text = "Aprende sobre seguros empresariales",
                 color = Color.Black,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
@@ -997,6 +1076,5 @@ fun InsuranceImage4() {
         }
     }
 }
-
 
 

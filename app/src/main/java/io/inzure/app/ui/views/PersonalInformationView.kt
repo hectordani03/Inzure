@@ -151,7 +151,6 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
 
     Scaffold(
         topBar = { TopBarProfile() },
-        bottomBar = { BottomNavigationBarProfile() }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -753,25 +752,4 @@ fun TopBarProfile() {
     )
 }
 
-@Composable
-fun BottomNavigationBarProfile() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp))
-            .background(Color(0xFF072A4A))
-            .padding(vertical = 12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            BottomBarIconCar(R.drawable.ic_file, "Home")
-            BottomBarIconCar(R.drawable.ic_history, "Search")
-            BottomBarIconCar(R.drawable.ic_search, "Notifications")
-            BottomBarIconCar(R.drawable.ic_profile2, "Settings")
-        }
-    }
-}
+

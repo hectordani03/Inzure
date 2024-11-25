@@ -17,11 +17,15 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.inzure.app.R
+
+// Importa la función BottomBar desde BottomBar.kt
+import io.inzure.app.ui.components.BottomBar
 
 class CarInsuranceView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,9 +64,9 @@ fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
                     modifier = Modifier.weight(1f)
                 )
                 Image(
-                    painter = painterResource(id = R.drawable.ic_auto), // Asegúrate de usar el ícono correcto
+                    painter = painterResource(id = R.drawable.ic_auto),
                     contentDescription = "Car Icon",
-                    modifier = Modifier.size(28.dp) // Tamaño del ícono ajustado
+                    modifier = Modifier.size(28.dp)
                 )
             }
 
@@ -84,15 +88,23 @@ fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
             )
         }
 
-        BottomBarCar() // Barra inferior
+        // Reemplaza BottomBarCar() por BottomBar()
+        BottomBar(
+            onSwipeUp = { /* Acción al deslizar hacia arriba */ },
+            onNavigateToUsers = { /* Acción de navegación */ }
+        )
     }
 }
 
 @Composable
 fun TopBarCar(onNavigateToLogin: () -> Unit) {
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .background(Color.White)
+            .statusBarsPadding()
             .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -101,7 +113,7 @@ fun TopBarCar(onNavigateToLogin: () -> Unit) {
             Image(
                 painter = painterResource(id = R.drawable.ic_menu),
                 contentDescription = "Menú",
-                modifier = Modifier.size(80.dp)
+                modifier = Modifier.size(40.dp)
             )
         }
         Image(
@@ -120,41 +132,6 @@ fun TopBarCar(onNavigateToLogin: () -> Unit) {
 }
 
 @Composable
-fun BottomBarCar() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp))
-            .background(Color(0xFF072A4A))
-            .padding(vertical = 12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            BottomBarIconCar(R.drawable.ic_file, "Home")
-            BottomBarIconCar(R.drawable.ic_history, "Search")
-            BottomBarIconCar(R.drawable.ic_search, "Notifications")
-            BottomBarIconCar(R.drawable.ic_profile2, "Settings")
-        }
-    }
-}
-
-@Composable
-fun BottomBarIconCar(iconResId: Int, contentDescription: String) {
-    IconButton(onClick = { /* TODO: Handle click */ }) {
-        Image(
-            painter = painterResource(id = iconResId),
-            contentDescription = contentDescription,
-            modifier = Modifier.size(30.dp),
-            colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.White)
-        )
-    }
-}
-
-@Composable
 fun InsuranceCategoriesCar() {
     Row(
         modifier = Modifier
@@ -163,13 +140,12 @@ fun InsuranceCategoriesCar() {
             .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        CategoryButton("Mas buscadas", R.drawable.ic_mas_buscados, iconSize = 20)
+        CategoryButton("Más buscadas", R.drawable.ic_mas_buscados, iconSize = 20)
         CategoryButton("", R.drawable.ic_qualitas, iconSize = 30)
         CategoryButton("", R.drawable.ic_gnp, iconSize = 30)
         CategoryButton("", R.drawable.ic_inbursa, iconSize = 30)
         CategoryButton("", R.drawable.ic_hdi, iconSize = 30)
         CategoryButton("", R.drawable.ic_inbursa, iconSize = 30)
-
     }
 }
 
@@ -178,19 +154,19 @@ fun CategoryButton(name: String, iconResId: Int, iconSize: Int = 24) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .height(40.dp) // Altura fija
-            .wrapContentWidth() // Ancho adaptable al contenido
-            .clip(RoundedCornerShape(20.dp)) // Bordes redondeados
-            .background(Color(0xFFE0E0E0)) // Fondo gris claro
-            .padding(horizontal = 8.dp) // Espaciado interno
+            .height(40.dp)
+            .wrapContentWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(Color(0xFFE0E0E0))
+            .padding(horizontal = 8.dp)
     ) {
         Image(
             painter = painterResource(id = iconResId),
             contentDescription = name,
-            modifier = Modifier.size(iconSize.dp) // Tamaño del ícono ajustable
+            modifier = Modifier.size(iconSize.dp)
         )
         if (name.isNotEmpty()) {
-            Spacer(modifier = Modifier.width(8.dp)) // Espaciador entre el ícono y el texto
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = name,
                 fontSize = 14.sp,
@@ -201,15 +177,12 @@ fun CategoryButton(name: String, iconResId: Int, iconSize: Int = 24) {
     }
 }
 
-
-
-
 @Composable
 fun InsuranceCard(title: String, description: String, imageResId: Int) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(250.dp) // Altura total ajustada para incluir la tarjeta de información
+            .height(250.dp)
             .drawBehind {
                 // Efecto de sombra y blur
                 for (i in 1..3) {

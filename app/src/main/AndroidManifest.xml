@@ -43,6 +43,18 @@
         </activity>
 
         <activity
+            android:name="io.inzure.app.ui.views.AdminView"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
+        </activity>
+
+        <activity
+            android:name="io.inzure.app.ui.views.AdminPersonalInformationView"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
+        </activity>
+
+        <activity
             android:name="io.inzure.app.ui.views.InsuranceView"
             android:exported="true"
             android:theme="@style/Theme.Inzure">
@@ -50,6 +62,12 @@
 
         <activity
             android:name="io.inzure.app.ui.views.PostsView"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
+        </activity>
+
+        <activity
+            android:name="io.inzure.app.ui.views.AgentsView"
             android:exported="true"
             android:theme="@style/Theme.Inzure">
         </activity>
