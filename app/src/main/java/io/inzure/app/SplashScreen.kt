@@ -45,7 +45,7 @@ class SplashActivity : ComponentActivity() {
         }
     }
         private fun navigateToLoginView() {
-            startActivity(Intent(this, LoginView::class.java))
+            startActivity(Intent(this, MainActivity::class.java))
             finish()
         }
 
