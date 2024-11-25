@@ -103,4 +103,25 @@ class UserViewModel : ViewModel() {
             }
         }
     }
+
+    fun updatePhone(
+        userId: String,
+        newPhone: String,
+        onSuccess: () -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val success = repository.updatePhone(userId, newPhone)
+                if (success) {
+                    onSuccess()
+                } else {
+                    onError(Exception("No se pudo actualizar el número telefónico."))
+                }
+            } catch (e: Exception) {
+                Log.e("UserViewModel", "Error al actualizar el teléfono: ${e.message}")
+                onError(e)
+            }
+        }
+    }
 }

@@ -1,4 +1,4 @@
-package io.inzure.app.ui.views
+package io.inzure.app.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

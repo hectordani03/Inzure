@@ -28,10 +28,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
+import androidx.navigation.compose.rememberNavController
 import io.inzure.app.R
 import io.inzure.app.ui.components.SideMenu
 import io.inzure.app.ui.components.TopBar
-import io.inzure.app.ui.views.BottomBar
+import io.inzure.app.ui.components.BottomBar
 import kotlinx.coroutines.launch
 
 // Clase de datos para la lista de seguros
@@ -67,6 +68,7 @@ fun MainView(
     onNavigateToProfile: () -> Unit,
     onNavigateToCarInsurance: () -> Unit,
     onNavigateToUsers: () -> Unit,
+    onNavigateToAdmin: () -> Unit, // Agrega esta función
     onNavigateToChat: () -> Unit
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -132,16 +134,23 @@ fun MainView(
             drawerState = drawerState,
             scrimColor = scrimColor,
             drawerContent = {
-                // Uso del componente SideMenu importado desde SideMenu.kt
                 SideMenu(
                     screenWidth = screenWidth,
-                    onNavigateToProfile = onNavigateToProfile,
+                    onNavigateToProfile = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToProfile()
+                    },
                     showChatView = showChatView,
                     scope = scope,
-                    drawerState = drawerState
+                    drawerState = drawerState,
+                    onNavigateToAdmin = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToAdmin()
+                    }
                 )
             }
-        ) {
+        )
+        {
             // Uso de Scaffold para mantener la TopBar y la BottomBar fijas
             Scaffold(
                 topBar = {

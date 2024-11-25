@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.sp
 import io.inzure.app.R
 
 // Importa la función BottomBar desde BottomBar.kt
-import io.inzure.app.ui.views.BottomBar
+import io.inzure.app.ui.components.BottomBar
 
 class CarInsuranceView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

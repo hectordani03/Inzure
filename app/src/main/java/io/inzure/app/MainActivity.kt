@@ -15,7 +15,8 @@ import androidx.compose.ui.graphics.Color
 import io.inzure.app.ui.views.CarInsuranceView
 import io.inzure.app.ui.views.ProfileView
 import io.inzure.app.ui.views.MainView
-import io.inzure.app.ui.views.UsersView // Importa la vista de usuarios
+import io.inzure.app.ui.views.UsersView
+import io.inzure.app.ui.views.AdminView // Importa AdminView
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,8 +40,12 @@ class MainActivity : ComponentActivity() {
                             val intent = Intent(this@MainActivity, CarInsuranceView::class.java)
                             startActivity(intent)
                         },
-                        onNavigateToUsers = { // Nueva función para navegar a UsersView
+                        onNavigateToUsers = {
                             val intent = Intent(this@MainActivity, UsersView::class.java)
+                            startActivity(intent)
+                        },
+                        onNavigateToAdmin = {
+                            val intent = Intent(this@MainActivity, AdminView::class.java)
                             startActivity(intent)
                         },
                         onNavigateToChat = {}

@@ -133,6 +133,21 @@ class UserRepository {
         }
     }
 
+    suspend fun updatePhone(userId: String, newPhone: String): Boolean {
+        return try {
+            db.collection("Users")
+                .document(userId)
+                .update("phone", newPhone)
+                .await()
+            true
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error al actualizar el número telefónico: ${e.message}")
+            false
+        }
+    }
+
+
+
     fun removeListener() {
         listenerRegistration?.remove()
     }

@@ -1,3 +1,4 @@
+// SideMenu.kt
 package io.inzure.app.ui.components
 
 import androidx.compose.foundation.background
@@ -26,16 +27,15 @@ fun SideMenu(
     onNavigateToProfile: () -> Unit,
     showChatView: MutableState<Boolean>,
     scope: CoroutineScope,
-    drawerState: DrawerState
-)  {
-    // Contenido del menú lateral
+    drawerState: DrawerState,
+    onNavigateToAdmin: () -> Unit // Función de navegación al AdminView
+) {
     Box(
         modifier = Modifier
             .width(screenWidth * 0.75f)
             .fillMaxHeight()
             .background(Color(0xFF072A4A))
     ) {
-        // Diseño del menú lateral
         Column(
             modifier = Modifier
                 .fillMaxHeight()
@@ -101,8 +101,8 @@ fun SideMenu(
                 text = "Chat",
                 spacerHeight = 20.dp,
                 onClick = {
-                    showChatView.value = true // Actualizar el estado para mostrar la vista de chat
-                    scope.launch { drawerState.close() } // Cerrar el drawer
+                    showChatView.value = true
+                    scope.launch { drawerState.close() }
                 }
             )
             MenuOption(
@@ -112,13 +112,25 @@ fun SideMenu(
                 onClick = { /* Acción para "Educativo" */ }
             )
 
+            // Nueva opción: Administrador
+            MenuOption(
+                iconRes = R.drawable.ic_profile2, // Asegúrate de tener este recurso o reemplázalo
+                text = "Administrador",
+                spacerHeight = 20.dp,
+                onClick = {
+                    scope.launch { drawerState.close() }
+                    onNavigateToAdmin() // Llamar a la navegación al AdminView
+                }
+            )
+
             Spacer(modifier = Modifier.weight(1f))
 
             // Botón de cerrar sesión
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .clickable { /* Acción para cerrar sesión */ },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Start
             ) {
@@ -140,7 +152,6 @@ fun SideMenu(
     }
 }
 
-// Asegúrate de incluir también la función MenuOption si no está ya en otro archivo
 @Composable
 fun MenuOption(
     iconRes: Int,
@@ -148,31 +159,29 @@ fun MenuOption(
     spacerHeight: Dp,
     onClick: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .clickable { onClick() },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start
-    ) {
-        Icon(
-            painter = painterResource(id = iconRes),
-            contentDescription = text,
-            tint = Color.White,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = text,
-            fontSize = 16.sp,
-            color = Color.White,
-            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
-        )
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+                .clickable { onClick() },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Icon(
+                painter = painterResource(id = iconRes),
+                contentDescription = text,
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = text,
+                fontSize = 16.sp,
+                color = Color.White,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+            )
+        }
+        Spacer(modifier = Modifier.height(spacerHeight))
     }
-    Spacer(modifier = Modifier.height(spacerHeight))
-}
-
-class SideMenu {
-
 }

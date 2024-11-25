@@ -37,6 +37,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import io.inzure.app.R
 import io.inzure.app.data.model.User
+import io.inzure.app.ui.components.BottomBar
 import io.inzure.app.ui.components.SideMenu
 import io.inzure.app.ui.components.TopBar
 import kotlinx.coroutines.CoroutineScope
@@ -136,13 +137,16 @@ fun ProfileScreen(navController: NavController) {
         drawerState = drawerState,
         scrimColor = scrimColor,
         drawerContent = {
+            val navController = rememberNavController()
             SideMenu(
                 screenWidth = screenWidth,
-                onNavigateToProfile = { /* Navegación a perfil si es necesario */ },
+                onNavigateToProfile = { /* Navegar a Perfil */ },
                 showChatView = showChatView,
                 scope = scope,
-                drawerState = drawerState
+                drawerState = drawerState,
+                onNavigateToAdmin = { navController.navigate("admin") } // Navegación al AdminView
             )
+
         }
     ) {
         // Uso de Scaffold para mantener la TopBar y la BottomBar fijas
