@@ -32,6 +32,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -42,6 +43,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException
 import io.inzure.app.R
 import io.inzure.app.data.model.User
 import io.inzure.app.viewmodel.UserViewModel
+import io.inzure.app.viewmodel.ValidationUtils
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
@@ -76,6 +78,10 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
 
     var showEditPhotoDialog by remember { mutableStateOf(false) }
     var showDeleteImageDialog by remember { mutableStateOf(false) }
+
+// Agregar variable de estado para el diálogo de contraseña
+    var showPasswordDialog by remember { mutableStateOf(false) }
+    var enteredPassword by remember { mutableStateOf("") }
 
     val context = LocalContext.current
 
@@ -279,33 +285,23 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
                 // Realizar validación
                 coroutineScope.launch {
                     when (editingLabel) {
+// Lógica actualizada para manejar "Correo Electrónico"
                         "Correo Electrónico" -> {
-                            val (isUnique, message) = isEmailUnique(newValue, userId, firestore)
-
+                            val isUnique = ValidationUtils.isEmailUnique(newValue, userId, firestore)
                             if (!isUnique) {
-                                errorMessage = message
+                                errorMessage = "El email ya está registrado."
                             } else {
-                                // Email válido y único, proceder a guardar
-                                userViewModel.updateEmail(
-                                    newEmail = newValue, // Aquí usamos newValue, no email
-                                    onRedirectToLogin = {
-                                        val loginIntent = Intent(context, LoginView::class.java)
-                                        loginIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                                        context.startActivity(loginIntent)
-                                    },
-                                    onSuccess = {
-                                        showSuccessDialog = true
-                                    },
-                                    onError = { exception ->
-                                        errorMessage = exception.message.toString()
-                                    }
-                                )
+                                // Mostrar el diálogo para reautenticación
+                                editingValue = newValue // Guardar temporalmente el nuevo email
+                                enteredPassword = "" // Limpiar el campo de contraseña
+                                showPasswordDialog = true
                                 showDialog = false
                             }
                         }
 
+
                         "Número telefónico" -> {
-                            val isUnique = isPhoneUnique(newValue, userId, firestore)
+                            val isUnique = ValidationUtils.isPhoneUnique(newValue, userId, firestore)
                             if (!isUnique) {
                                 errorMessage = "El número de teléfono ya está registrado o no es válido."
                             } else {
@@ -456,6 +452,60 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
         )
     }
 
+
+    if (showPasswordDialog) {
+        AlertDialog(
+            onDismissRequest = { showPasswordDialog = false },
+            title = { Text("Reautenticación Requerida") },
+            text = {
+                Column {
+                    Text("Por favor, ingresa tu contraseña actual para actualizar el correo:")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextField(
+                        value = enteredPassword,
+                        onValueChange = { enteredPassword = it },
+                        label = { Text("Contraseña") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (enteredPassword.isNotEmpty()) {
+                        userViewModel.updateEmail(
+                            currentPassword = enteredPassword,
+                            newEmail = editingValue, // Usar el valor temporal
+                            onRedirectToLogin = {
+                                val loginIntent = Intent(context, LoginView::class.java)
+                                loginIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                context.startActivity(loginIntent)
+                            },
+                            onSuccess = {
+                                showPasswordDialog = false
+                                showSuccessDialog = true
+                            },
+                            onError = { exception ->
+                                errorMessage = exception.message.toString()
+                                showPasswordDialog = false
+                            }
+                        )
+                    } else {
+                        errorMessage = "La contraseña no puede estar vacía."
+                    }
+                }) {
+                    Text("Confirmar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPasswordDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
 }
 
 // Función para actualizar la información del usuario en Firestore a través del ViewModel
@@ -483,67 +533,6 @@ fun updateUserInfo(
         role = role,
     )
     userViewModel.updateUser(updatedUser)
-}
-
-suspend fun isEmailUnique(newEmail: String, currentUserId: String, firestore: FirebaseFirestore): Pair<Boolean, String> {
-    return try {
-        // Primero obtenemos el documento del usuario actual para comparar
-        val currentUserDoc = firestore.collection("Users")
-            .document(currentUserId)
-            .get()
-            .await()
-
-        val currentUserEmail = currentUserDoc.getString("email")
-
-        // Si el email nuevo es igual al actual del usuario, no permitimos el cambio
-        if (currentUserEmail == newEmail) {
-            return Pair(false, "Este ya es tu email actual")
-        }
-
-        // Verificamos si existe el email en otros usuarios
-        val querySnapshot = firestore.collection("Users")
-            .whereEqualTo("email", newEmail)
-            .get()
-            .await()
-
-        if (!querySnapshot.isEmpty) {
-            return Pair(false, "El email ya está registrado por otro usuario")
-        }
-
-        // Si llegamos aquí, el email es único y diferente al actual
-        Pair(true, "")
-
-    } catch (e: Exception) {
-        Log.e("Validation", "Error al verificar la unicidad del email: ${e.message}")
-        Pair(false, "Error al verificar el email: ${e.message}")
-    }
-}
-
-suspend fun isPhoneUnique(phone: String, currentUserId: String, firestore: FirebaseFirestore): Boolean {
-    // Validar que el número telefónico tenga exactamente 10 dígitos
-    val phoneRegex = Regex("^\\d{10}$")
-    if (!phoneRegex.matches(phone)) {
-        Log.e("Validation", "El número telefónico debe tener exactamente 10 dígitos.")
-        return false
-    }
-
-    return try {
-        val querySnapshot = firestore.collection("Users")
-            .whereEqualTo("phone", phone)
-            .get()
-            .await()
-
-        if (querySnapshot.isEmpty) {
-            true // El número no está registrado
-        } else {
-            // Verificar si el número pertenece al usuario actual
-            val otherUsers = querySnapshot.documents.filter { it.id != currentUserId }
-            otherUsers.isEmpty()
-        }
-    } catch (e: Exception) {
-        Log.e("Validation", "Error al verificar la unicidad del teléfono: ${e.message}")
-        false
-    }
 }
 
 // Función para validar que el usuario tenga al menos 18 años

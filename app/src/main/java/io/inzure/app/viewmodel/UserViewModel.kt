@@ -103,6 +103,7 @@ class UserViewModel : ViewModel() {
     }
 
     fun updateEmail(
+        currentPassword: String,
         newEmail: String,
         onRedirectToLogin: () -> Unit,
         onSuccess: () -> Unit,
@@ -110,7 +111,7 @@ class UserViewModel : ViewModel() {
     ) {
         viewModelScope.launch {
             try {
-                val success = repository.updateEmail(newEmail){
+                val success = repository.updateEmail(currentPassword, newEmail) {
                     onRedirectToLogin()
                 }
                 if (success) {

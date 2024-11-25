@@ -34,6 +34,10 @@ import io.inzure.app.ui.components.SideMenu
 import io.inzure.app.ui.components.TopBar
 import io.inzure.app.ui.components.BottomBar
 import kotlinx.coroutines.launch
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import io.inzure.app.data.model.User
+import android.util.Log
 
 // Clase de datos para la lista de seguros
 data class InsuranceData(
@@ -85,6 +89,39 @@ fun MainView(
         targetValue = if (isDrawerOpen) Color.Black.copy(alpha = 0.5f) else Color.Transparent,
         animationSpec = tween(durationMillis = 500)
     )
+
+    val auth = FirebaseAuth.getInstance()
+    val firestore = FirebaseFirestore.getInstance()
+    val userId = auth.currentUser?.uid ?: return
+
+    var firstName by remember { mutableStateOf("No disponible") }
+    var lastName by remember { mutableStateOf("No disponible") }
+    var email by remember { mutableStateOf("No disponible") }
+    var imageUri by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(userId) {
+        firestore.collection("Users")
+            .document(userId)
+            .get()
+            .addOnSuccessListener { userDoc ->
+                if (userDoc.exists()) {
+                    val userData = userDoc.toObject(User::class.java)
+                    if (userData != null) {
+                        firstName = userData.firstName
+                        lastName = userData.lastName
+                        email = userData.email
+
+                        imageUri = userData.image
+                    } else {
+                        Log.e("Firestore", "El documento existe, pero no se pudo mapear a un objeto User")
+                    }
+                } else {
+                    Log.e("Firestore", "El documento del usuario no existe en Firestore")
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Error al obtener el documento del usuario: ", e)
+            }
+    }
 
     // Lista de seguros de ejemplo
     val insuranceList = listOf(
@@ -192,7 +229,7 @@ fun MainView(
                             .verticalScroll(rememberScrollState())
                             .padding(innerPadding)
                     ) {
-                        WelcomeMessage()
+                        WelcomeMessage(firstName = firstName, lastName = lastName)
                         InsuranceCategories(onNavigateToCarInsurance)
                         LearnAboutInsurance()
                         Spacer(modifier = Modifier.weight(1f))
@@ -714,14 +751,15 @@ fun InsuranceCardWithImage(imageRes: Int, companyLogo: Int, companyName: String,
 }
 
 @Composable
-fun WelcomeMessage() {
+fun WelcomeMessage(firstName: String, lastName: String) {
+    val name = "${firstName.split(" ").first()} ${lastName.split(" ").first()}"
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
     ) {
         Text(
-            text = "¡Buenas tardes, Gilberto Ceja!",
+            text = "¡Bienvenid@, $name!",
             modifier = Modifier
                 .align(Alignment.Center)
                 .background(color = Color(0xFF072A4A), shape = RoundedCornerShape(8.dp))

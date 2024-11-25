@@ -9,9 +9,13 @@ data class User(
     var description: String = "",
     var birthDate: String = "",
     var image: String = "", 
-    var role: String = ""
+    var role: String = "",
+    var fiscalId: String = "",
+    var companyName: String = "",
+    var licenseNumber: String = "",
+    var direction: String = "",
 ) {
-    constructor() : this("", "", "", "", "", "", "", "", "")
+    constructor() : this("", "", "", "", "", "", "", "", "", "", "", "", "")
 }
 
 

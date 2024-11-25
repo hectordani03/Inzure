@@ -2,6 +2,7 @@ package io.inzure.app.data.repository
 
 import android.net.Uri
 import android.util.Log
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.toObject
@@ -29,9 +30,43 @@ class UserRepository {
 
     suspend fun updateUser(user: User): Boolean {
         return try {
+            val userData = when (user.role) {
+                "admin", "editor" -> mapOf(
+                    "id" to user.id,
+                    "firstName" to user.firstName,
+                    "lastName" to user.lastName,
+                    "role" to user.role,
+                    "email" to user.email,
+                    "phone" to user.phone
+                )
+                "client" -> mapOf(
+                    "id" to user.id,
+                    "firstName" to user.firstName,
+                    "lastName" to user.lastName,
+                    "role" to user.role,
+                    "email" to user.email,
+                    "phone" to user.phone,
+                    "image" to user.image,
+                    "description" to user.description,
+                    "birthDate" to user.birthDate
+                )
+                "insurer" -> mapOf(
+                    "id" to user.id,
+                    "firstName" to user.firstName,
+                    "lastName" to user.lastName,
+                    "role" to user.role,
+                    "email" to user.email,
+                    "phone" to user.phone,
+                    "fiscalId" to user.fiscalId,
+                    "companyName" to user.companyName,
+                    "licenseNumber" to user.licenseNumber,
+                    "direction" to user.direction
+                )
+                else -> throw IllegalArgumentException("Unknown role: ${user.role}")
+            }
             db.collection("Users")
                 .document(user.id)
-                .set(user)
+                .set(userData)
                 .await()
             true
         } catch (e: Exception) {
@@ -39,6 +74,7 @@ class UserRepository {
             false
         }
     }
+
 
     suspend fun deleteUser(user: User): Boolean {
         return try {
@@ -112,15 +148,28 @@ class UserRepository {
         }
     }
 
-    suspend fun updateEmail(newEmail: String): Boolean {
+    suspend fun updateEmail(
+        currentPassword: String,
+        newEmail: String,
+        onRedirectToLogin: () -> Unit
+    ): Boolean {
         return try {
             val currentUser = FirebaseAuth.getInstance().currentUser
             if (currentUser != null) {
+                // Obtener las credenciales actuales del usuario
+                val credential = EmailAuthProvider.getCredential(currentUser.email!!, currentPassword)
+
+                // Reautenticar al usuario
+                currentUser.reauthenticate(credential).await()
+
                 // Enviar correo de verificación antes de actualizar el email
                 currentUser.verifyBeforeUpdateEmail(newEmail).await()
 
                 // Cerrar sesión después de enviar el correo de verificación
                 FirebaseAuth.getInstance().signOut()
+
+                // Redirigir al login
+                onRedirectToLogin()
 
                 true
             } else {
@@ -128,7 +177,7 @@ class UserRepository {
                 false
             }
         } catch (e: Exception) {
-            Log.e("UserRepository", "Error al actualizar el correo: ${e.message}")
+            Log.e("UserRepository", "Error al reautenticar o actualizar el correo: ${e.message}")
             false
         }
     }
@@ -145,12 +194,41 @@ class UserRepository {
             false
         }
     }
+    private fun extractStoragePathFromUrl(url: String): String? {
+        if (url.isBlank()) return null // Si la URL está vacía, no hay path que extraer
 
+        val baseUrl = "https://firebasestorage.googleapis.com/v0/b/"
+        if (url.startsWith(baseUrl)) {
+            val startIndex = url.indexOf("/o/") + 3
+            val endIndex = url.indexOf("?alt=")
+            if (startIndex != -1 && endIndex != -1) {
+                return url.substring(startIndex, endIndex).replace("%2F", "/")
+            }
+        }
+        return null // URL no válida
+    }
 
-
+    suspend fun deleteImageFromStorage(imageUri: String) {
+        if (imageUri.isBlank()) {
+            Log.w("Delete", "La URI de la imagen está vacía, no se intentará eliminar del Storage.")
+            return
+        }
+        val storagePath = extractStoragePathFromUrl(imageUri)
+        if (storagePath != null) {
+            val storageReference = FirebaseStorage.getInstance().getReference(storagePath)
+            storageReference.delete().await()
+        } else {
+            throw IllegalArgumentException("El path del Storage no es válido.")
+        }
+    }
+    suspend fun clearImageUriInFirestore(userId: String) {
+        FirebaseFirestore.getInstance()
+            .collection("Users")
+            .document(userId)
+            .update("image", "") // Usar cadena vacía para indicar "sin imagen"
+            .await()
+    }
     fun removeListener() {
         listenerRegistration?.remove()
     }
-
-
 }
