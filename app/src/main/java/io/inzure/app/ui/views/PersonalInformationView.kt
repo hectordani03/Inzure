@@ -2,6 +2,7 @@ package io.inzure.app.ui.views
 
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
@@ -37,6 +38,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import io.inzure.app.R
 import io.inzure.app.data.model.User
 import io.inzure.app.viewmodel.UserViewModel
@@ -74,6 +76,8 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
 
     var showEditPhotoDialog by remember { mutableStateOf(false) }
     var showDeleteImageDialog by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
@@ -277,23 +281,30 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
                 coroutineScope.launch {
                     when (editingLabel) {
                         "Correo Electrónico" -> {
-                            val isUnique = isEmailUnique(newValue, userId, firestore)
+                            val (isUnique, message) = isEmailUnique(newValue, userId, firestore)
+
                             if (!isUnique) {
-                                errorMessage = "El email ya está registrado."
+                                errorMessage = message
                             } else {
-                                // Email válido, proceder a guardar
+                                // Email válido y único, proceder a guardar
                                 userViewModel.updateEmail(
-                                    newEmail = email,
+                                    newEmail = newValue, // Aquí usamos newValue, no email
+                                    onRedirectToLogin = {
+                                        val loginIntent = Intent(context, LoginView::class.java)
+                                        loginIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                        context.startActivity(loginIntent)
+                                    },
                                     onSuccess = {
                                         showSuccessDialog = true
                                     },
                                     onError = { exception ->
-                                        errorMessage = exception.message.toString() // Guarda el mensaje de error
+                                        errorMessage = exception.message.toString()
                                     }
                                 )
                                 showDialog = false
                             }
                         }
+
                         "Número telefónico" -> {
                             val isUnique = isPhoneUnique(newValue, userId, firestore)
                             if (!isUnique) {
@@ -475,23 +486,37 @@ fun updateUserInfo(
     userViewModel.updateUser(updatedUser)
 }
 
-suspend fun isEmailUnique(email: String, currentUserId: String, firestore: FirebaseFirestore): Boolean {
+suspend fun isEmailUnique(newEmail: String, currentUserId: String, firestore: FirebaseFirestore): Pair<Boolean, String> {
     return try {
-        val querySnapshot = firestore.collection("Users")
-            .whereEqualTo("email", email)
+        // Primero obtenemos el documento del usuario actual para comparar
+        val currentUserDoc = firestore.collection("Users")
+            .document(currentUserId)
             .get()
             .await()
 
-        if (querySnapshot.isEmpty) {
-            true // El email no está registrado
-        } else {
-            // Verificar si el email pertenece al usuario actual
-            val otherUsers = querySnapshot.documents.filter { it.id != currentUserId }
-            otherUsers.isEmpty()
+        val currentUserEmail = currentUserDoc.getString("email")
+
+        // Si el email nuevo es igual al actual del usuario, no permitimos el cambio
+        if (currentUserEmail == newEmail) {
+            return Pair(false, "Este ya es tu email actual")
         }
+
+        // Verificamos si existe el email en otros usuarios
+        val querySnapshot = firestore.collection("Users")
+            .whereEqualTo("email", newEmail)
+            .get()
+            .await()
+
+        if (!querySnapshot.isEmpty) {
+            return Pair(false, "El email ya está registrado por otro usuario")
+        }
+
+        // Si llegamos aquí, el email es único y diferente al actual
+        Pair(true, "")
+
     } catch (e: Exception) {
         Log.e("Validation", "Error al verificar la unicidad del email: ${e.message}")
-        false
+        Pair(false, "Error al verificar el email: ${e.message}")
     }
 }
 

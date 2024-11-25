@@ -1,5 +1,6 @@
 package io.inzure.app.ui.views
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -49,8 +50,10 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.ExperimentalMaterial3Api
-
-
+import coil.compose.rememberAsyncImagePainter
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import io.inzure.app.data.model.User
 
 
 // Clase de datos para la lista de seguros
@@ -73,7 +76,38 @@ fun MainView(
     val scope = rememberCoroutineScope()
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     var isDrawerOpen by remember { mutableStateOf(false) }
+    val auth = FirebaseAuth.getInstance()
+    val firestore = FirebaseFirestore.getInstance()
+    val userId = auth.currentUser?.uid ?: return
 
+    var firstName by remember { mutableStateOf("No disponible") }
+    var lastName by remember { mutableStateOf("No disponible") }
+    var email by remember { mutableStateOf("No disponible") }
+    var imageUri by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(userId) {
+        firestore.collection("Users")
+            .document(userId)
+            .get()
+            .addOnSuccessListener { userDoc ->
+                if (userDoc.exists()) {
+                    val userData = userDoc.toObject(User::class.java)
+                    if (userData != null) {
+                        firstName = userData.firstName
+                        lastName = userData.lastName
+                        email = userData.email
+
+                        imageUri = userData.image
+                    } else {
+                        Log.e("Firestore", "El documento existe, pero no se pudo mapear a un objeto User")
+                    }
+                } else {
+                    Log.e("Firestore", "El documento del usuario no existe en Firestore")
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Error al obtener el documento del usuario: ", e)
+            }
+    }
     // Estado del BottomSheetScaffold
     val bottomSheetScaffoldState = rememberBottomSheetScaffoldState()
 
@@ -152,26 +186,36 @@ fun MainView(
                         Spacer(modifier = Modifier.height(40.dp))
 
                         // Sección de perfil
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_profile3),
-                            contentDescription = "User Avatar",
-                            modifier = Modifier
-                                .size(50.dp)
-                                .clip(CircleShape)
-                        )
+                        if (!imageUri.isNullOrEmpty()) {
+                            Image(
+                                painter = rememberAsyncImagePainter(imageUri),
+                                contentDescription = "User Avatar",
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .clip(CircleShape)
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(R.drawable.ic_profile_default),
+                                contentDescription = "User Avatar",
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .clip(CircleShape)
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(8.dp))
 
                         // Información del usuario
                         Text(
-                            text = "Jose Joshua",
+                            text = firstName,
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                             color = Color.White
                         )
 
                         Text(
-                            text = "josejoshua01@gmail.com",
+                            text = email,
                             fontSize = 14.sp,
                             color = Color.White
                         )
@@ -224,7 +268,9 @@ fun MainView(
                                 drawerState.open() // Abrir el Drawer
                             }
                         },
-                        onNavigateToProfile = onNavigateToProfile
+                        onNavigateToProfile = onNavigateToProfile,
+                        userImageUri = imageUri // Pasa la URI de la imagen aquí
+
                     )
                 },
                 bottomBar = {
@@ -245,7 +291,7 @@ fun MainView(
                         .verticalScroll(rememberScrollState())
                         .padding(innerPadding)
                 ) {
-                    WelcomeMessage()
+                    WelcomeMessage(firstName = firstName, lastName = lastName)
                     InsuranceCategories(onNavigateToCarInsurance)
                     LearnAboutInsurance()
                     Spacer(modifier = Modifier.weight(1f))
@@ -259,7 +305,8 @@ fun MainView(
 @Composable
 fun TopBar(
     onMenuClick: () -> Unit, // Agregar el parámetro onMenuClick
-    onNavigateToProfile: () -> Unit
+    onNavigateToProfile: () -> Unit,
+    userImageUri: String? // Agregar parámetro para la URI de la imagen del usuario
 ) {
     Row(
         modifier = Modifier
@@ -288,11 +335,23 @@ fun TopBar(
 
         // Botón de perfil
         IconButton(onClick = onNavigateToProfile) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_profile3),
-                contentDescription = "Profile",
-                modifier = Modifier.size(40.dp)
-            )
+            if (!userImageUri.isNullOrEmpty()) {
+                Image(
+                    painter = rememberAsyncImagePainter(userImageUri),
+                    contentDescription = "User Avatar",
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                )
+            } else {
+                Image(
+                    painter = painterResource(R.drawable.ic_profile_default),
+                    contentDescription = "Default Avatar",
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                )
+            }
         }
     }
 }
@@ -573,14 +632,15 @@ fun MenuOption(iconRes: Int, text: String, spacerHeight: Dp) {
 }
 
 @Composable
-fun WelcomeMessage() {
+fun WelcomeMessage(firstName: String, lastName: String) {
+    val name = "${firstName.split(" ").first()} ${lastName.split(" ").first()}"
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
     ) {
         Text(
-            text = "¡Buenas tardes, Gilberto Ceja!",
+            text = "¡Bienvenid@, $name!",
             modifier = Modifier
                 .align(Alignment.Center)
                 .background(color = Color(0xFF072A4A), shape = RoundedCornerShape(8.dp))

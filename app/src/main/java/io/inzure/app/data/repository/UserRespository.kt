@@ -148,7 +148,10 @@ class UserRepository {
             .await()
     }
 
-    suspend fun updateEmail(newEmail: String): Boolean {
+    suspend fun updateEmail(
+        newEmail: String,
+        onRedirectToLogin: () -> Unit
+    ): Boolean {
         return try {
             val currentUser = FirebaseAuth.getInstance().currentUser
             if (currentUser != null) {
@@ -157,6 +160,9 @@ class UserRepository {
 
                 // Cerrar sesión después de enviar el correo de verificación
                 FirebaseAuth.getInstance().signOut()
+
+                // Redirigir al login
+                onRedirectToLogin()
 
                 true
             } else {
@@ -168,6 +174,7 @@ class UserRepository {
             false
         }
     }
+
 
     fun removeListener() {
         listenerRegistration?.remove()
