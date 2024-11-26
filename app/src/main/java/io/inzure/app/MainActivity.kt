@@ -1,3 +1,4 @@
+// MainActivity.kt
 package io.inzure.app
 
 import android.content.Intent
@@ -9,14 +10,15 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.ui.Modifier
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import io.inzure.app.ui.views.CarInsuranceView
 import io.inzure.app.ui.views.ProfileView
 import io.inzure.app.ui.views.MainView
 import io.inzure.app.ui.views.UsersView
 import io.inzure.app.ui.views.AdminView // Importa AdminView
+import io.inzure.app.ui.views.LoginView // Importa LoginView
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,9 +50,17 @@ class MainActivity : ComponentActivity() {
                             val intent = Intent(this@MainActivity, AdminView::class.java)
                             startActivity(intent)
                         },
-                        onNavigateToChat = {}
+                        onNavigateToChat = {
+                            // Implementa la navegación al chat si es necesario
+                        },
+                        onNavigateToLogin = {
+                            // Cerrar sesión y redireccionar al LoginView
+                            val intent = Intent(this@MainActivity, LoginView::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            }
+                            startActivity(intent)
+                        }
                     )
-
                 }
             }
         }

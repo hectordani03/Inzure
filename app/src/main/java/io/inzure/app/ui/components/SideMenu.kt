@@ -8,13 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,10 +30,11 @@ import io.inzure.app.data.model.User
 fun SideMenu(
     screenWidth: Dp,
     onNavigateToProfile: () -> Unit,
+    onNavigateToAdmin: () -> Unit, // Función de navegación al AdminView
+    onNavigateToLogin: () -> Unit, // Nueva función de navegación al Login
     showChatView: MutableState<Boolean>,
     scope: CoroutineScope,
-    drawerState: DrawerState,
-    onNavigateToAdmin: () -> Unit // Función de navegación al AdminView
+    drawerState: DrawerState
 ) {
     val auth = FirebaseAuth.getInstance()
     val firestore = FirebaseFirestore.getInstance()
@@ -188,8 +183,11 @@ fun SideMenu(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
-                    .clickable { /* Acción para cerrar sesión */ },
+                    .clickable {
+                        FirebaseAuth.getInstance().signOut()
+                        onNavigateToLogin()
+                    }
+                    .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Start
             ) {
