@@ -4,7 +4,7 @@ package io.inzure.app.data.repository
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
-import io.inzure.app.data.model.Post
+import io.inzure.app.data.model.Posts
 import kotlinx.coroutines.tasks.await
 
 class PostRepository {
@@ -12,10 +12,10 @@ class PostRepository {
     private var listenerRegistration: ListenerRegistration? = null
     private val db = FirebaseFirestore.getInstance()
 
-    suspend fun addPost(post: Post): Boolean {
+    suspend fun addPost(posts: Posts): Boolean {
         return try {
             db.collection("Posts")
-                .add(post)
+                .add(posts)
                 .await()
             true
         } catch (e: Exception) {
@@ -24,11 +24,11 @@ class PostRepository {
         }
     }
 
-    suspend fun updatePost(post: Post): Boolean {
+    suspend fun updatePost(posts: Posts): Boolean {
         return try {
             db.collection("Posts")
-                .document(post.id)
-                .set(post)
+                .document(posts.id)
+                .set(posts)
                 .await()
             true
         } catch (e: Exception) {
@@ -37,10 +37,10 @@ class PostRepository {
         }
     }
 
-    suspend fun deletePost(post: Post): Boolean {
+    suspend fun deletePost(posts: Posts): Boolean {
         return try {
             db.collection("Posts")
-                .document(post.id)
+                .document(posts.id)
                 .delete()
                 .await()
             true
@@ -50,11 +50,10 @@ class PostRepository {
         }
     }
 
-    fun getPosts(onPostsChanged: (List<Post>) -> Unit) {
+    fun getPosts(onPostsChanged: (List<Posts>) -> Unit) {
         listenerRegistration?.remove()
 
         listenerRegistration = db.collection("Posts")
-            .orderBy("timestamp")
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     Log.e("PostRepository", "Error fetching posts: ${error.message}")
@@ -62,8 +61,8 @@ class PostRepository {
                 }
 
                 val postsList = snapshot?.documents?.mapNotNull { document ->
-                    val post = document.toObject(Post::class.java)
-                    post?.copy(id = document.id)
+                    val posts = document.toObject(Posts::class.java)
+                    posts?.copy(id = document.id)
                 } ?: emptyList()
 
                 onPostsChanged(postsList)

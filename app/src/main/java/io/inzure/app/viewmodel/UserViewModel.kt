@@ -73,7 +73,6 @@ class UserViewModel : ViewModel() {
             onError(IllegalArgumentException("No se seleccionó ninguna imagen"))
             return
         }
-
         viewModelScope.launch {
             try {
                 repository.updateProfileImage(userId, imageUri)
