@@ -100,6 +100,7 @@ fun MainScreen() {
                     }
                     context.startActivity(intent)
                 },
+                onNavigateToChat = { navController.navigate("chat") },
                 showChatView = remember { mutableStateOf(false) },
                 scope = scope,
                 drawerState = drawerState,

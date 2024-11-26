@@ -1,6 +1,9 @@
 package io.inzure.app.ui.views
 
+import android.os.Bundle
 import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
@@ -25,61 +28,128 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Path
+import coil.compose.AsyncImage
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import io.inzure.app.R
-import java.util.UUID
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+
+class ChatView : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Crear un estado para manejar la lista de chats
+        val chats = mutableListOf<Chat>()
+
+        // Ejecutar la carga de datos
+        CoroutineScope(Dispatchers.IO).launch {
+            val fetchedChats = fetchChats() // Llamar a Firestore para obtener los chats
+            chats.addAll(fetchedChats)
+
+            // Actualizar la vista principal con los datos cargados
+            runOnUiThread {
+                setContent {
+                    ChatListView(
+                        chats = chats, // Pasar los datos cargados
+                        onClose = { finish() } // Terminar la actividad al cerrar
+                    )
+                }
+            }
+        }
+    }
+}
 
 // Clase de datos para los mensajes
-data class Chat(val userName: String, val userCompany: String, val userImageRes: Int)
-data class Message(val text: String, val isSentByUser: Boolean)
-
-// Lista de mensajes de ejemplo
-val sampleMessages = listOf(
-    Message("Hola, Buen día, está interesado en algún seguro?", false),
-    Message("Sí, me interesa el seguro automovilístico", true),
-    Message("Me podría dar más información", true),
-    Message("Claro, por el momento estamos manejando un seguro de cobertura total que incluye...", false),
-    Message("Perfecto, ¿cuáles son los precios?", true)
-
+data class Chat(
+    val uid: String, // UID del destinatario
+    val userName: String,
+    val userCompany: String,
+    val userImageUrl: String // URL de la imagen
 )
 
-val suggestedChats = listOf(
-    Chat("Carlos Rivera", "Asegurador de Qualitas", R.drawable.ic_profile5),
-    Chat("Lucía Martínez", "Aseguradora de Seguros x", R.drawable.ic_profile4),
-    Chat("Juan Pérez", "Asegurador de SegurosMex", R.drawable.ic_profile3),
-    Chat("Ana López", "Aseguradora de CubreTuAuto", R.drawable.ic_profile4),
-    Chat("Carlos Rivera", "Asegurador de Qualitas", R.drawable.ic_profile5),
-    Chat("Lucía Martínez", "Aseguradora de Seguros x", R.drawable.ic_profile4),
-    Chat("Juan Pérez", "Asegurador de SegurosMex", R.drawable.ic_profile3),
-    Chat("Ana López", "Aseguradora de CubreTuAuto", R.drawable.ic_profile4),
-    Chat("Carlos Rivera", "Asegurador de Qualitas", R.drawable.ic_profile5),
-    Chat("Lucía Martínez", "Aseguradora de Seguros x", R.drawable.ic_profile4),
+data class Message(
+    val text: String = "",
+    val isSentByUser: Boolean = false,
+    val timestamp: Long = 0L // Agregar timestamp
 )
 
+suspend fun fetchChats(): List<Chat> {
+    val db = FirebaseFirestore.getInstance()
+    val suggestedChats = mutableListOf<Chat>()
+
+    try {
+        // Obtener usuarios con rol "insurer"
+        val querySnapshot = db.collection("Users")
+            .whereEqualTo("role", "insurer")
+            .get()
+            .await()
+
+        // Mapear datos al modelo Chat
+        for (document in querySnapshot.documents) {
+            val uid = document.id // Obtener el UID del documento
+            val firstName = document.getString("firstName") ?: "Nombre"
+            val lastName = document.getString("lastName") ?: "Apellido"
+            val companyName = document.getString("companyName") ?: "Sin compañía"
+            val imageUrl = document.getString("image") ?: R.drawable.ic_profile_default
+
+            // Asigna los datos al modelo Chat (incluye el UID si lo necesitas)
+            suggestedChats.add(
+                Chat(
+                    uid = uid,
+                    userName = "$firstName $lastName",
+                    userCompany = companyName,
+                    userImageUrl = imageUrl.toString()
+                )
+            )
+
+            // Opcional: Si necesitas manejar el UID adicionalmente
+            Log.d("Firestore", "Usuario encontrado: $uid, $firstName $lastName")
+        }
+    } catch (e: Exception) {
+        // Manejar errores (ej. problemas de red o permisos)
+        e.printStackTrace()
+    }
+
+    return suggestedChats
+}
 
 @Composable
 fun ChatListView(chats: List<Chat>, onClose: () -> Unit) {
     var isExploringChats by remember { mutableStateOf(false) }
-    var selectedChat by remember { mutableStateOf<Chat?>(null) } // Estado para el chat seleccionado
+    var selectedChat by remember { mutableStateOf<Chat?>(null) }
+    var suggestedChats by remember { mutableStateOf<List<Chat>>(emptyList()) } // Estado para los chats sugeridos
+    var isLoading by remember { mutableStateOf(false) } // Estado de carga
 
     when {
         selectedChat != null -> {
             // Mostrar IndividualChatView cuando hay un chat seleccionado
             IndividualChatView(
                 chat = selectedChat!!,
-                onClose = { selectedChat = null } // Volver a la vista anterior
+                onClose = { selectedChat = null }
             )
         }
         isExploringChats -> {
-            // Mostrar ExploreChatsView con los datos sugeridos
-            ExploreChatsView(
-                chats = suggestedChats,
-                onClose = { isExploringChats = false }, // Volver a la vista de chats principales
-                onChatSelected = { chat ->
-                    selectedChat = chat // Establecer el chat seleccionado
+            if (isLoading) {
+                // Mostrar un indicador de carga mientras se obtienen los datos
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color.White)
                 }
-            )
+            } else {
+                // Mostrar ExploreChatsView con los datos sugeridos
+                ExploreChatsView(
+                    chats = suggestedChats,
+                    onClose = { isExploringChats = false },
+                    onChatSelected = { chat ->
+                        selectedChat = chat
+                    }
+                )
+            }
         }
         else -> {
             // Mostrar la lista principal de chats
@@ -89,7 +159,7 @@ fun ChatListView(chats: List<Chat>, onClose: () -> Unit) {
                     .fillMaxHeight()
                     .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                     .background(Color(0xFF072A4A))
-                    .padding(top = (LocalConfiguration.current.screenHeightDp * 0.22).dp) // Mover la vista hacia abajo
+                    .padding(top = (LocalConfiguration.current.screenHeightDp * 0.22).dp)
             ) {
                 Box(
                     modifier = Modifier
@@ -127,7 +197,16 @@ fun ChatListView(chats: List<Chat>, onClose: () -> Unit) {
                             fontWeight = FontWeight.Bold
                         )
 
-                        IconButton(onClick = { isExploringChats = true }) {
+                        IconButton(onClick = {
+                            isExploringChats = true
+                            isLoading = true // Activar el estado de carga
+
+                            // Llamar a initializeExploreChatsView
+                            CoroutineScope(Dispatchers.Main).launch {
+                                suggestedChats = fetchChats() // Obtener los chats
+                                isLoading = false // Desactivar el estado de carga
+                            }
+                        }) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_new_chat),
                                 contentDescription = "Buscar más chats",
@@ -149,8 +228,8 @@ fun ChatListView(chats: List<Chat>, onClose: () -> Unit) {
                         ChatItem(
                             userName = chat.userName,
                             userCompany = chat.userCompany,
-                            userImageRes = chat.userImageRes,
-                            onClick = { selectedChat = chat } // Seleccionar el chat al hacer clic
+                            userImageUrl = chat.userImageUrl,
+                            onClick = { selectedChat = chat }
                         )
                     }
                 }
@@ -227,7 +306,7 @@ fun ExploreChatsView(chats: List<Chat>, onClose: () -> Unit, onChatSelected: (Ch
                 ChatItem(
                     userName = chat.userName,
                     userCompany = chat.userCompany,
-                    userImageRes = chat.userImageRes,
+                    userImageUrl = chat.userImageUrl,
                     onClick = { onChatSelected(chat) } // Seleccionar el chat y abrir conversación
                 )
             }
@@ -241,7 +320,7 @@ fun ExploreChatsView(chats: List<Chat>, onClose: () -> Unit, onChatSelected: (Ch
 fun ChatItem(
     userName: String,
     userCompany: String,
-    userImageRes: Int,
+    userImageUrl: String,
     onClick: () -> Unit
 ) {
     Row(
@@ -252,9 +331,12 @@ fun ChatItem(
             .clickable { onClick() }, // Acción de clic para seleccionar el chat
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(
-            painter = painterResource(id = userImageRes),
+        // Cargar imagen dinámica con Coil
+        AsyncImage(
+            model = userImageUrl, // URL de la imagen
             contentDescription = null,
+            placeholder = painterResource(id = R.drawable.ic_profile_default), // Placeholder
+            error = painterResource(id = R.drawable.ic_profile_default), // Imagen en caso de error
             modifier = Modifier
                 .size(50.dp)
                 .clip(CircleShape)
@@ -289,34 +371,51 @@ fun ChatItem(
 fun IndividualChatView(chat: Chat, onClose: () -> Unit) {
     val db = FirebaseFirestore.getInstance() // Instancia de Firestore
     val currentUser = FirebaseAuth.getInstance().currentUser
-    val userIdSender = currentUser?.uid
-    val userIdReceiver = "QmFVXVwNGGPZPpUQkFiPMxChTmR2"
-    var displayName = ""
-    if (userIdSender != null) {
-        db.collection("Users").document(userIdSender).get()
-            .addOnSuccessListener { document ->
-                if (document != null && document.exists()) {
-                    val firstname = document.getString("firstName") ?: "Sin nombre"
-                    val lastname = document.getString("lastName") ?: "Sin apellido"
-                    displayName = "${firstname}" + "${lastname}"
-                    Log.d("Firestore", "Nombre del usuario: $displayName")
-                } else {
-                    Log.w("Firestore", "No se encontró el documento para el usuario.")
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.e("Firestore", "Error al obtener el nombre del usuario: $e")
-            }
-    } else {
-        Log.w("Firestore", "El usuario no está autenticado.")
-    }
-    val chatId = "${userIdSender}_${userIdReceiver}" // Genera un ID único para cada chat
-    val listState = rememberLazyListState()
-    var currentMessage by remember { mutableStateOf("") }
-    val messages = remember { mutableStateListOf<Message>().apply { addAll(sampleMessages) } }
+    val userIdSender = currentUser?.uid // ID del usuario que envía el mensaje
+    val userIdReceiver = chat.uid // ID del usuario al que se envía el mensaje
 
+    // Verifica si el usuario está autenticado
+    if (userIdSender == null) {
+        Log.w("Firestore", "El usuario no está autenticado.")
+        return
+    }
+
+    val chatId = generateChatId(userIdSender, userIdReceiver) // ID único para el chat
+    val listState = rememberLazyListState()
+    var currentMessage by remember { mutableStateOf("") } // Estado para el mensaje actual
+    val messages = remember { mutableStateListOf<Message>() } // Estado para los mensajes cargados
+
+    LaunchedEffect(Unit) {
+        try {
+            val querySnapshot = db.collection("chats")
+                .document(chatId)
+                .collection("messages")
+                .orderBy("timestamp") // Ordenar los mensajes por timestamp desde Firestore
+                .get()
+                .await()
+
+            val loadedMessages = querySnapshot.documents.map { document ->
+                val senderId = document.getString("senderId") ?: ""
+                val receiverId = document.getString("receiverId") ?: ""
+                val timestamp = document.getLong("timestamp") ?: 0L
+                Message(
+                    text = document.getString("text") ?: "",
+                    isSentByUser = senderId == userIdSender, // Verifica si el mensaje fue enviado por el usuario actual
+                    timestamp = timestamp // Cargar el timestamp
+                )
+            }
+
+            messages.clear()
+            messages.addAll(loadedMessages)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+    // Desplazar automáticamente al último mensaje cuando se carga un mensaje nuevo
     LaunchedEffect(messages.size) {
-        listState.animateScrollToItem(messages.size - 1)
+        if (messages.isNotEmpty()) {
+            listState.animateScrollToItem(messages.size - 1)
+        }
     }
 
     Column(
@@ -333,9 +432,11 @@ fun IndividualChatView(chat: Chat, onClose: () -> Unit) {
                 .padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(
-                painter = painterResource(id = chat.userImageRes),
+            AsyncImage(
+                model = chat.userImageUrl, // URL de la imagen
                 contentDescription = null,
+                placeholder = painterResource(id = R.drawable.ic_profile_default), // Placeholder
+                error = painterResource(id = R.drawable.ic_profile_default), // Imagen en caso de error
                 modifier = Modifier
                     .size(50.dp)
                     .clip(CircleShape)
@@ -383,7 +484,7 @@ fun IndividualChatView(chat: Chat, onClose: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(messages) { message ->
-                    ChatBubble(message)
+                    ChatBubble(message, isSentByUser = message.isSentByUser)
                 }
             }
         }
@@ -400,7 +501,7 @@ fun IndividualChatView(chat: Chat, onClose: () -> Unit) {
         ) {
             TextField(
                 value = currentMessage,
-                onValueChange = { currentMessage = it },
+                onValueChange = { newValue -> currentMessage = newValue },
                 placeholder = {
                     Text(
                         text = "Escribe algo...",
@@ -440,17 +541,17 @@ fun IndividualChatView(chat: Chat, onClose: () -> Unit) {
                         val messageMap = hashMapOf(
                             "text" to newMessage.text,
                             "isSentByUser" to newMessage.isSentByUser,
-                            "userId" to userIdSender, // Agregar el ID del usuario al mensaje
+                            "senderId" to userIdSender, // ID del remitente
+                            "receiverId" to userIdReceiver, // ID del receptor
                             "timestamp" to System.currentTimeMillis()
                         )
                         db.collection("chats").document(chatId).collection("messages")
                             .add(messageMap)
                             .addOnSuccessListener {
-                                // Mensaje guardado con éxito
+                                Log.d("Firestore", "Mensaje enviado correctamente.")
                             }
                             .addOnFailureListener { e ->
-                                // Error al guardar el mensaje
-                                e.printStackTrace()
+                                Log.e("Firestore", "Error al enviar el mensaje: $e")
                             }
                     }
                 }
@@ -466,27 +567,37 @@ fun IndividualChatView(chat: Chat, onClose: () -> Unit) {
     }
 }
 
+
+// Genera un ID único para el chat usando los IDs de los participantes
+fun generateChatId(userId1: String, userId2: String): String {
+    return if (userId1 < userId2) {
+        "${userId1}_$userId2"
+    } else {
+        "${userId2}_$userId1"
+    }
+}
+
+
 @Composable
-fun ChatBubble(message: Message) {
+fun ChatBubble(message: Message, isSentByUser: Boolean) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (message.isSentByUser) Arrangement.End else Arrangement.Start
+        horizontalArrangement = if (isSentByUser) Arrangement.End else Arrangement.Start
     ) {
-        Box(
-            contentAlignment = if (message.isSentByUser) Alignment.CenterEnd else Alignment.CenterStart,
-            modifier = Modifier
-                .padding(horizontal = 8.dp)
+        Column(
+            horizontalAlignment = if (isSentByUser) Alignment.End else Alignment.Start,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         ) {
             // Globo de texto
             Box(
                 modifier = Modifier
                     .background(
-                        if (message.isSentByUser) Color(0xFF007AFF) else Color(0xFF04305A),
+                        if (isSentByUser) Color(0xFF007AFF) else Color(0xFF04305A),
                         shape = RoundedCornerShape(
                             topStart = 12.dp,
                             topEnd = 12.dp,
-                            bottomEnd = if (message.isSentByUser) 0.dp else 12.dp,
-                            bottomStart = if (message.isSentByUser) 12.dp else 0.dp
+                            bottomEnd = if (isSentByUser) 0.dp else 12.dp,
+                            bottomStart = if (isSentByUser) 12.dp else 0.dp
                         )
                     )
                     .padding(12.dp)
@@ -499,26 +610,18 @@ fun ChatBubble(message: Message) {
                 )
             }
 
-            // Pico del globo de texto
-            Canvas(
-                modifier = Modifier
-                    .size(15.dp)
-                    .align(
-                        if (message.isSentByUser) Alignment.BottomEnd else Alignment.BottomStart
-                    )
-                    .offset(x = if (message.isSentByUser) (-5).dp else 5.dp, y = 0.dp)
-            ) {
-                val path = Path().apply {
-                    moveTo(0f, 0f)
-                    lineTo(size.width, 0f)
-                    lineTo(size.width / 2, size.height)
-                    close()
-                }
-                drawPath(
-                    path = path,
-                    color = if (message.isSentByUser) Color(0xFF007AFF) else Color(0xFF04305A)
-                )
-            }
+            // Timestamp
+            Text(
+                text = formatTimestamp(message.timestamp), // Formatear el timestamp
+                color = Color.LightGray,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(top = 4.dp)
+            )
         }
     }
+}
+
+fun formatTimestamp(timestamp: Long): String {
+    val sdf = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()) // Formato de 12 horas
+    return sdf.format(java.util.Date(timestamp))
 }

@@ -78,7 +78,7 @@ fun Educativo(
     onNavigateToAutos: () -> Unit,
     onNavigateToPersonal: () -> Unit,
     onNavigateToEmpresarial: () -> Unit,
-    onNavigateToEducativo: () -> Unit
+    onNavigateToEducativo: () -> Unit,
 
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -191,6 +191,10 @@ fun Educativo(
                     onNavigateToEducativo = {
                         scope.launch { drawerState.close() }
                         onNavigateToEducativo()
+                    },
+                    onNavigateToChat = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToChat()
                     },
                     onNavigateToLogin = {
                         scope.launch { drawerState.close() }

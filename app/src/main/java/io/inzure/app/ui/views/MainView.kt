@@ -164,6 +164,11 @@ fun MainView(
                         scope.launch { drawerState.close() }
                         onNavigateToEducativo()
                     },
+                    onNavigateToChat = {
+                        scope.launch { drawerState.close() }
+                        showChatView.value = true
+                        onNavigateToChat()
+                    },
                     onNavigateToLogin = {
                         scope.launch { drawerState.close() }
                         onNavigateToLogin()
