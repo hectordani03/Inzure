@@ -78,7 +78,7 @@ fun Educativo(
     onNavigateToAutos: () -> Unit,
     onNavigateToPersonal: () -> Unit,
     onNavigateToEmpresarial: () -> Unit,
-    onNavigateToEducativo: () -> Unit,
+    onNavigateToEducativo: () -> Unit
 
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
