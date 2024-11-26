@@ -138,10 +138,6 @@ fun LearnInsuranceViewAutos(
                 )
             },
             bottomBar = {
-                BottomBar(
-                    onSwipeUp = { /* Acción al deslizar hacia arriba en el BottomBar */ },
-                    onNavigateToUsers = onNavigateToUsers
-                )
             },
         ) { innerPadding ->
             Column(

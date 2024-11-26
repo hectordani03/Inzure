@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,6 +29,8 @@ import io.inzure.app.R
 
 // Importa la función BottomBar desde BottomBar.kt
 import io.inzure.app.ui.components.BottomBar
+import io.inzure.app.ui.components.TopBar
+import kotlinx.coroutines.launch
 
 class EnterpriseInsuranceView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,61 +43,79 @@ class EnterpriseInsuranceView : ComponentActivity() {
 
 @Composable
 fun EnterpriseInsuranceScreen(onNavigateToLogin: () -> Unit) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        EnterpriseInsuranceTopBar(onNavigateToLogin)
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
-        Spacer(modifier = Modifier.height(22.dp))
-
+    Scaffold(
+        topBar = {
+            TopBar(
+                onMenuClick = {
+                    scope.launch {
+                        drawerState.open() // Abre el drawer al hacer clic en el menú
+                    }
+                },
+                onNavigateToProfile = onNavigateToLogin // Configura la acción de navegación
+            )
+        },
+        bottomBar = {
+            BottomBar(
+                onSwipeUp = { /* Acción al deslizar hacia arriba */ },
+                onNavigateToProfile = { /* Acción de navegación */ }
+            )
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(12.dp)
+                .padding(padding)
         ) {
-            // Título principal con ícono empresarial
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 12.dp)
-            ) {
-                Text(
-                    text = "Seguros Empresariales",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
-                    modifier = Modifier.weight(1f)
-                )
-                Image(
-                    painter = painterResource(id = R.drawable.ic_empresarial),
-                    contentDescription = "Enterprise Icon",
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-
-            EnterpriseInsuranceCategories() // Categorías de seguros empresariales
-
             Spacer(modifier = Modifier.height(22.dp))
 
-            // Tarjetas de seguro empresarial
-            EnterpriseInsuranceCard(
-                title = "EmpresaPlus",
-                description = "Protección integral para tu negocio",
-                imageResId = R.drawable.insurance_image1 // Imagen de ejemplo
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            EnterpriseInsuranceCard(
-                title = "NegocioSeguro",
-                description = "Cobertura adaptada a tus necesidades empresariales",
-                imageResId = R.drawable.insurance_image2 // Imagen de ejemplo
-            )
-        }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(12.dp)
+            ) {
+                // Título principal con ícono empresarial
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp)
+                ) {
+                    Text(
+                        text = "Seguros Empresariales",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_empresarial),
+                        contentDescription = "Enterprise Icon",
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
 
-        // Barra inferior
-        BottomBar(
-            onSwipeUp = { /* Acción al deslizar hacia arriba */ },
-            onNavigateToUsers = { /* Acción de navegación */ }
-        )
+                EnterpriseInsuranceCategories() // Categorías de seguros empresariales
+
+                Spacer(modifier = Modifier.height(22.dp))
+
+                // Tarjetas de seguro empresarial
+                EnterpriseInsuranceCard(
+                    title = "EmpresaPlus",
+                    description = "Protección integral para tu negocio",
+                    imageResId = R.drawable.insurance_image1 // Imagen de ejemplo
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                EnterpriseInsuranceCard(
+                    title = "NegocioSeguro",
+                    description = "Cobertura adaptada a tus necesidades empresariales",
+                    imageResId = R.drawable.insurance_image2 // Imagen de ejemplo
+                )
+            }
+        }
     }
 }
 

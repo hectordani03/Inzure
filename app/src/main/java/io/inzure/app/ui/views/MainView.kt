@@ -199,7 +199,7 @@ fun MainView(
                                 bottomSheetScaffoldState.bottomSheetState.expand()
                             }
                         },
-                        onNavigateToUsers = onNavigateToUsers
+                        onNavigateToProfile = onNavigateToProfile
                     )
                 }
             ) { innerPadding ->
