@@ -1,15 +1,13 @@
 package io.inzure.app.ui.views
 
+import android.util.Log
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.*
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.TextFieldDefaults
@@ -21,14 +19,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.*
 import androidx.compose.ui.geometry.*
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
-import androidx.navigation.compose.rememberNavController
+import com.google.firebase.firestore.FirebaseFirestore
 import io.inzure.app.R
 import io.inzure.app.ui.components.SideMenu
 import io.inzure.app.ui.components.TopBar
@@ -45,25 +42,6 @@ data class InsuranceData(
     val companyLogo: Int,
     val companyName: String,
     val description: String
-)
-
-// Clase de datos para chats
-data class Chat(
-    val userName: String,
-    val userCompany: String,
-    val userImageRes: Int
-)
-
-// Data class para representar un mensaje
-data class Message(val text: String, val isSentByUser: Boolean)
-
-// Lista de ejemplo de mensajes
-val sampleMessages = listOf(
-    Message("Hola, Buen día, está interesado en algún seguro?", false),
-    Message("Sí, me interesa el seguro automovilístico", true),
-    Message("Me podría dar más información", true),
-    Message("Claro, por el momento estamos manejando un seguro de cobertura total que incluye...", false),
-    Message("Perfecto, ¿cuáles son los precios?", true)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -214,13 +192,48 @@ fun MainView(
                 }
             ) { innerPadding ->
                 if (showChatView.value) {
-                    // Mostrar la vista de chats si el estado está activado
-                    val chatList = listOf(
-                        Chat("Jose Joshua", "Asegurador de Qualitas", R.drawable.ic_profile5),
-                        Chat("Maria Lopez", "Asegurador de MetLife", R.drawable.ic_profile4),
-                        Chat("Carlos Perez", "Asegurador de HDI", R.drawable.ic_profile)
+                    val userReceiver = "QmFVXVwNGGPZPpUQkFiPMxChTmR2"
+                    val db = FirebaseFirestore.getInstance() // Instancia de Firestore
+                    val chatListState = remember { mutableStateListOf<Chat>() }
+
+                    // Consulta Firestore para obtener el nombre del usuario
+                    if (userReceiver != null) {
+                        db.collection("Users").document(userReceiver).get()
+                            .addOnSuccessListener { document ->
+                                if (document != null && document.exists()) {
+                                    val firstname = document.getString("firstName") ?: "Sin nombre"
+                                    val lastname = document.getString("lastName") ?: "Sin apellido"
+                                    val displayName = "$firstname $lastname"
+
+                                    // Agrega el chat con el nombre recuperado
+                                    chatListState.add(
+                                        Chat(
+                                            userName = displayName,
+                                            userCompany = "Asegurador de Qualitas",
+                                            userImageRes = R.drawable.ic_profile5
+                                        )
+                                    )
+                                } else {
+                                    Log.w("Firestore", "No se encontró el documento para el usuario.")
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("Firestore", "Error al obtener el nombre del usuario: $e")
+                            }
+                    } else {
+                        Log.w("Firestore", "El usuario no está autenticado.")
+                    }
+
+                    // Agrega los otros chats estáticos
+                    chatListState.addAll(
+                        listOf(
+                            Chat("Maria Lopez", "Asegurador de MetLife", R.drawable.ic_profile4),
+                            Chat("Carlos Perez", "Asegurador de HDI", R.drawable.ic_profile)
+                        )
                     )
-                    ChatListView(chats = chatList, onClose = { showChatView.value = false })
+
+                    // Mostrar la vista de chats
+                    ChatListView(chats = chatListState, onClose = { /* Acción de cerrar la lista */ })
                 } else {
                     // Contenido principal de la pantalla
                     Column(
@@ -235,338 +248,6 @@ fun MainView(
                         Spacer(modifier = Modifier.weight(1f))
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun ChatListView(chats: List<Chat>, onClose: () -> Unit) {
-    var selectedChat by remember { mutableStateOf<Chat?>(null) }
-
-    selectedChat?.let { chat ->
-        // Mostrar vista de chat individual solo si selectedChat no es null
-        IndividualChatView(chat = chat, onClose = { selectedChat = null })
-    } ?: run {
-        // Mostrar lista de chats cuando no hay chat seleccionado
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight()
-                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                .background(Color(0xFF072A4A))
-                .padding(top = (LocalConfiguration.current.screenHeightDp * 0.22).dp) // Mover la vista hacia abajo
-        ) {
-            // Encabezado del desplegable de chats con gesto de arrastre
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFF04305A))
-                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                    .pointerInput(Unit) {
-                        detectVerticalDragGestures { _, dragAmount ->
-                            if (dragAmount > 20) {
-                                onClose()
-                            }
-                        }
-                    }
-                    .padding(horizontal = 16.dp, vertical = 16.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .width(40.dp)
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(Color.White)
-                        .padding(bottom = 8.dp)
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "Mis Chats",
-                        color = Color.White,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    IconButton(onClick = onClose) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_chat),
-                            contentDescription = "Cerrar",
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
-            }
-
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFF072A4A))
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(chats) { chat ->
-                    ChatItem(
-                        userName = chat.userName,
-                        userCompany = chat.userCompany,
-                        userImageRes = chat.userImageRes,
-                        onClick = { selectedChat = chat } // Seleccionar el chat al hacer clic
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ChatItem(
-    userName: String,
-    userCompany: String,
-    userImageRes: Int,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF04305A), RoundedCornerShape(12.dp))
-            .padding(12.dp)
-            .clickable { onClick() }, // Acción de clic para seleccionar el chat
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Image(
-            painter = painterResource(id = userImageRes),
-            contentDescription = null,
-            modifier = Modifier
-                .size(50.dp)
-                .clip(CircleShape)
-        )
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = userName,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-            Text(
-                text = userCompany,
-                fontSize = 14.sp,
-                color = Color.LightGray
-            )
-        }
-
-        Icon(
-            painter = painterResource(id = R.drawable.ic_chat),
-            contentDescription = "Chat",
-            tint = Color.White,
-            modifier = Modifier.size(24.dp)
-        )
-    }
-}
-
-@Composable
-fun IndividualChatView(chat: Chat, onClose: () -> Unit) {
-    val listState = rememberLazyListState()
-    var currentMessage by remember { mutableStateOf("") }
-    val messages = remember { mutableStateListOf<Message>().apply { addAll(sampleMessages) } }
-
-    LaunchedEffect(messages.size) {
-        listState.animateScrollToItem(messages.size - 1)
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF072A4A))
-            .padding(top = 170.dp) // Baja toda la vista un poco verticalmente
-            .padding(horizontal = 16.dp)
-    ) {
-        // Encabezado de chat individual
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Foto de perfil
-            Image(
-                painter = painterResource(id = chat.userImageRes),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(CircleShape)
-            )
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Nombre y descripción
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = chat.userName,
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = chat.userCompany,
-                    color = Color.LightGray,
-                    fontSize = 14.sp
-                )
-            }
-
-            // Botón de cerrar
-            IconButton(onClick = onClose) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_close),
-                    contentDescription = "Cerrar",
-                    tint = Color.White
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Lista de mensajes en el chat
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(start = 16.dp, top = 0.dp, end = 16.dp, bottom = 50.dp)
-        ) {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 70.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(messages) { message ->
-                    ChatBubble(message)
-                }
-            }
-        }
-
-        // Caja de texto para enviar mensajes
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp)
-                .offset(y = (-120).dp)
-                .background(Color(0xFF04305A), RoundedCornerShape(24.dp))
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TextField(
-                value = currentMessage,
-                onValueChange = { currentMessage = it },
-                placeholder = {
-                    Text(
-                        text = "Escribe algo...",
-                        color = Color.LightGray
-                    )
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .background(Color.Transparent),
-                textStyle = TextStyle(color = Color.White),
-                maxLines = 1,
-                colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedContainerColor = Color.Transparent,
-                    cursorColor = Color.White,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    unfocusedPlaceholderColor = Color.LightGray,
-                    focusedPlaceholderColor = Color.LightGray,
-                    unfocusedTextColor = Color.White,
-                    focusedTextColor = Color.White
-                ),
-                keyboardOptions = KeyboardOptions.Default,
-                keyboardActions = KeyboardActions.Default
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            IconButton(
-                onClick = {
-                    if (currentMessage.isNotBlank()) {
-                        messages.add(Message(currentMessage, true)) // Agrega el mensaje enviado
-                        currentMessage = "" // Limpia el campo de entrada
-                    }
-                }
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_send), // Reemplaza con tu ícono de enviar
-                    contentDescription = "Enviar",
-                    tint = Color(0xFF007AFF),
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun ChatBubble(message: Message) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (message.isSentByUser) Arrangement.End else Arrangement.Start
-    ) {
-        Box(
-            contentAlignment = if (message.isSentByUser) Alignment.CenterEnd else Alignment.CenterStart,
-            modifier = Modifier
-                .padding(horizontal = 8.dp)
-        ) {
-            // Globo de texto
-            Box(
-                modifier = Modifier
-                    .background(
-                        if (message.isSentByUser) Color(0xFF007AFF) else Color(0xFF04305A),
-                        shape = RoundedCornerShape(
-                            topStart = 12.dp,
-                            topEnd = 12.dp,
-                            bottomEnd = if (message.isSentByUser) 0.dp else 12.dp,
-                            bottomStart = if (message.isSentByUser) 12.dp else 0.dp
-                        )
-                    )
-                    .padding(12.dp)
-                    .widthIn(max = 250.dp)
-            ) {
-                Text(
-                    text = message.text,
-                    color = Color.White,
-                    fontSize = 16.sp
-                )
-            }
-
-            // Pico del globo de texto
-            Canvas(
-                modifier = Modifier
-                    .size(15.dp)
-                    .align(
-                        if (message.isSentByUser) Alignment.BottomEnd else Alignment.BottomStart
-                    )
-                    .offset(x = if (message.isSentByUser) (-5).dp else 5.dp, y = 0.dp)
-            ) {
-                val path = Path().apply {
-                    moveTo(0f, 0f)
-                    lineTo(size.width, 0f)
-                    lineTo(size.width / 2, size.height)
-                    close()
-                }
-                drawPath(
-                    path = path,
-                    color = if (message.isSentByUser) Color(0xFF007AFF) else Color(0xFF04305A)
-                )
             }
         }
     }
