@@ -43,10 +43,12 @@ import io.inzure.app.ui.components.BottomSheetContent
 fun MainView(
     onNavigateToProfile: () -> Unit,
     onNavigateToCarInsurance: () -> Unit,
+    onNavigateToLifeInsurance: () -> Unit,
+    onNavigateToEnterpriseInsurance: () -> Unit, // Nuevo parámetro
     onNavigateToUsers: () -> Unit,
     onNavigateToAdmin: () -> Unit,
     onNavigateToChat: () -> Unit,
-    onNavigateToLogin: () -> Unit // Nuevo parámetro para navegar al Login
+    onNavigateToLogin: () -> Unit
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -201,7 +203,11 @@ fun MainView(
                             .padding(innerPadding)
                     ) {
                         WelcomeMessage(firstName = firstName, lastName = lastName)
-                        InsuranceCategories(onNavigateToCarInsurance)
+                        InsuranceCategories(
+                            onNavigateToCarInsurance = onNavigateToCarInsurance,
+                            onNavigateToLifeInsurance = onNavigateToLifeInsurance,
+                            onNavigateToEnterpriseInsurance = onNavigateToEnterpriseInsurance // Pasar la nueva función
+                        )
                         LearnAboutInsurance()
                         Spacer(modifier = Modifier.weight(1f))
                     }
@@ -233,7 +239,11 @@ fun WelcomeMessage(firstName: String, lastName: String) {
 }
 
 @Composable
-fun InsuranceCategories(onNavigateToCarInsurance: () -> Unit) {
+fun InsuranceCategories(
+    onNavigateToCarInsurance: () -> Unit,
+    onNavigateToLifeInsurance: () -> Unit,
+    onNavigateToEnterpriseInsurance: () -> Unit // Nuevo parámetro
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth(),
@@ -250,8 +260,8 @@ fun InsuranceCategories(onNavigateToCarInsurance: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             InsuranceCategory("Autos", R.drawable.ic_auto, onClick = onNavigateToCarInsurance)
-            InsuranceCategory("Personal", R.drawable.ic_personal, onClick = { /* Navegación Personal */ })
-            InsuranceCategory("Empresarial", R.drawable.ic_empresarial, onClick = { /* Navegación Empresarial */ })
+            InsuranceCategory("Personal", R.drawable.ic_personal, onClick = onNavigateToLifeInsurance)
+            InsuranceCategory("Empresarial", R.drawable.ic_empresarial, onClick = onNavigateToEnterpriseInsurance) // Actualizar onClick
         }
     }
 }

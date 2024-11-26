@@ -28,19 +28,19 @@ import io.inzure.app.R
 // Importa la función BottomBar desde BottomBar.kt
 import io.inzure.app.ui.components.BottomBar
 
-class CarInsuranceView : ComponentActivity() {
+class LifeInsuranceView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            CarInsuranceScreen(onNavigateToLogin = { /* Acción de navegación al login */ })
+            LifeInsuranceScreen(onNavigateToLogin = { /* Acción de navegación al login */ })
         }
     }
 }
 
 @Composable
-fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
+fun LifeInsuranceScreen(onNavigateToLogin: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
-        TopBarCar(onNavigateToLogin)
+        LifeInsuranceTopBar(onNavigateToLogin)
 
         Spacer(modifier = Modifier.height(22.dp))
 
@@ -51,7 +51,7 @@ fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(12.dp)
         ) {
-            // Título principal con ícono de carro
+            // Título principal con ícono de vida
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -59,37 +59,37 @@ fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
                     .padding(bottom = 12.dp)
             ) {
                 Text(
-                    text = "Seguros de autos",
+                    text = "Seguros de Vida",
                     fontWeight = FontWeight.Bold,
                     fontSize = 22.sp,
                     modifier = Modifier.weight(1f)
                 )
                 Image(
-                    painter = painterResource(id = R.drawable.ic_auto),
-                    contentDescription = "Car Icon",
+                    painter = painterResource(id = R.drawable.ic_personal),
+                    contentDescription = "Life Icon",
                     modifier = Modifier.size(28.dp)
                 )
             }
 
-            InsuranceCategoriesCar() // Categorías de seguros
+            LifeInsuranceCategories() // Categorías de seguros de vida
 
             Spacer(modifier = Modifier.height(22.dp))
 
             // Tarjetas de seguro
-            InsuranceCard(
-                title = "Qualitas Seguros",
-                description = "Explora por los diversos seguros que tenemos",
-                imageResId = R.drawable.insurance_image2 // Imagen de ejemplo
+            LifeInsuranceCard(
+                title = "VidaPlus",
+                description = "Protección completa para tu futuro",
+                imageResId = R.drawable.insurance_image1 // Imagen de ejemplo
             )
             Spacer(modifier = Modifier.height(16.dp))
-            InsuranceCard(
+            LifeInsuranceCard(
                 title = "GNP Seguros",
-                description = "Seguros completos para tu vehículo",
-                imageResId = R.drawable.insurance_image1 // Imagen de ejemplo
+                description = "Cobertura flexible para tus necesidades",
+                imageResId = R.drawable.insurance_image2 // Imagen de ejemplo
             )
         }
 
-        // Reemplaza BottomBarCar() por BottomBar()
+        // Barra inferior
         BottomBar(
             onSwipeUp = { /* Acción al deslizar hacia arriba */ },
             onNavigateToUsers = { /* Acción de navegación */ }
@@ -98,9 +98,7 @@ fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
 }
 
 @Composable
-fun TopBarCar(onNavigateToLogin: () -> Unit) {
-    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-
+fun LifeInsuranceTopBar(onNavigateToLogin: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -110,7 +108,7 @@ fun TopBarCar(onNavigateToLogin: () -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = { /* TODO: Handle menu click */ }) {
+        IconButton(onClick = { /* TODO: Manejar clic en menú */ }) {
             Image(
                 painter = painterResource(id = R.drawable.ic_menu),
                 contentDescription = "Menú",
@@ -125,7 +123,7 @@ fun TopBarCar(onNavigateToLogin: () -> Unit) {
         IconButton(onClick = onNavigateToLogin) {
             Image(
                 painter = painterResource(id = R.drawable.ic_profile),
-                contentDescription = "Profile",
+                contentDescription = "Perfil",
                 modifier = Modifier.size(40.dp)
             )
         }
@@ -133,7 +131,7 @@ fun TopBarCar(onNavigateToLogin: () -> Unit) {
 }
 
 @Composable
-fun InsuranceCategoriesCar() {
+fun LifeInsuranceCategories() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -141,17 +139,16 @@ fun InsuranceCategoriesCar() {
             .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        CategoryButton("Más buscadas", R.drawable.ic_mas_buscados, iconSize = 20)
-        CategoryButton("", R.drawable.ic_qualitas, iconSize = 30)
-        CategoryButton("", R.drawable.ic_gnp, iconSize = 30)
-        CategoryButton("", R.drawable.ic_inbursa, iconSize = 30)
-        CategoryButton("", R.drawable.ic_hdi, iconSize = 30)
-        CategoryButton("", R.drawable.ic_inbursa, iconSize = 30)
+        LifeCategoryButton("Más Buscadas", R.drawable.ic_mas_buscados, iconSize = 20)
+        LifeCategoryButton("VidaPlus", R.drawable.ic_lifeplus, iconSize = 30)
+        LifeCategoryButton("Gnp Seguros", R.drawable.ic_gnp, iconSize = 30)
+        LifeCategoryButton("Inbursa", R.drawable.ic_inbursa, iconSize = 30)
+        LifeCategoryButton("BBVA", R.drawable.bbva, iconSize = 30)
     }
 }
 
 @Composable
-fun CategoryButton(name: String, iconResId: Int, iconSize: Int = 24) {
+fun LifeCategoryButton(name: String, iconResId: Int, iconSize: Int = 24) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -179,7 +176,7 @@ fun CategoryButton(name: String, iconResId: Int, iconSize: Int = 24) {
 }
 
 @Composable
-fun InsuranceCard(title: String, description: String, imageResId: Int) {
+fun LifeInsuranceCard(title: String, description: String, imageResId: Int) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -233,7 +230,11 @@ fun InsuranceCard(title: String, description: String, imageResId: Int) {
             ) {
                 // Icono en la izquierda
                 Image(
-                    painter = painterResource(id = R.drawable.ic_qualitas), // Ajusta el ícono según corresponda
+                    painter = painterResource(id = when (title) {
+                        "VidaPlus" -> R.drawable.ic_lifeplus
+                        "GNP Seguros" -> R.drawable.ic_gnp
+                        else -> R.drawable.ic_personal
+                    }), // Ajusta el ícono según el título
                     contentDescription = "Insurance Logo",
                     modifier = Modifier
                         .size(40.dp)

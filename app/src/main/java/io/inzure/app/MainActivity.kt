@@ -14,6 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import io.inzure.app.ui.views.CarInsuranceView
+import io.inzure.app.ui.views.LifeInsuranceView // Importa LifeInsuranceView
+import io.inzure.app.ui.views.EnterpriseInsuranceView // Importa EnterpriseInsuranceView
 import io.inzure.app.ui.views.ProfileView
 import io.inzure.app.ui.views.MainView
 import io.inzure.app.ui.views.UsersView
@@ -40,6 +42,14 @@ class MainActivity : ComponentActivity() {
                         },
                         onNavigateToCarInsurance = {
                             val intent = Intent(this@MainActivity, CarInsuranceView::class.java)
+                            startActivity(intent)
+                        },
+                        onNavigateToLifeInsurance = {
+                            val intent = Intent(this@MainActivity, LifeInsuranceView::class.java)
+                            startActivity(intent)
+                        },
+                        onNavigateToEnterpriseInsurance = { // Añadir la navegación a EnterpriseInsuranceView
+                            val intent = Intent(this@MainActivity, EnterpriseInsuranceView::class.java)
                             startActivity(intent)
                         },
                         onNavigateToUsers = {
