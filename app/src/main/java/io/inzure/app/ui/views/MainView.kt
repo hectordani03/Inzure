@@ -1,6 +1,7 @@
 // MainView.kt
 package io.inzure.app.ui.views
 
+import android.os.Bundle
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
@@ -34,9 +35,40 @@ import kotlinx.coroutines.launch
 import com.google.firebase.auth.FirebaseAuth
 import io.inzure.app.data.model.User
 import android.util.Log
-
+import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.compose.setContent
 import io.inzure.app.data.model.SearchItem
 import io.inzure.app.ui.components.BottomSheetContent
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.runtime.Composable
+
+class MainView : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0),
+            navigationBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0)
+        )
+        setContent {
+            MaterialTheme {
+                Surface {
+                    MainView(
+                        onNavigateToProfile = { /* Acción al hacer clic en el botón de perfil */ },
+                        onNavigateToCarInsurance = { /* Acción al hacer clic en el botón de seguros de autos */ },
+                        onNavigateToUsers = { /* Acción al hacer clic en el botón de usuarios */ },
+                        onNavigateToAdmin = { /* Acción al hacer clic en el botón de administrador */ },
+                        onNavigateToChat = { /* Acción al hacer clic en el botón de chat */ },
+                        onNavigateToLogin = { /* Acción al hacer clic en el botón de login */ }
+                    )
+                }
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

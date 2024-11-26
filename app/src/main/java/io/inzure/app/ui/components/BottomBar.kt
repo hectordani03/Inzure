@@ -13,12 +13,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import io.inzure.app.R
+import android.content.Intent
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import io.inzure.app.ui.views.MainView
 
 @Composable
 fun BottomBar(
     onSwipeUp: () -> Unit,
     onNavigateToUsers: () -> Unit
 ) {
+    val context = LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -33,9 +42,12 @@ fun BottomBar(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onSwipeUp) {
+            IconButton(onClick = {
+                val intent = Intent(context, MainView::class.java)
+                context.startActivity(intent)
+            }) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_learn),
+                    painter = painterResource(id = R.drawable.ic_home),
                     contentDescription = "Home",
                     tint = Color.White,
                     modifier = Modifier.size(30.dp)
