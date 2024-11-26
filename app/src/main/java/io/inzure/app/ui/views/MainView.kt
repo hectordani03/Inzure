@@ -31,7 +31,6 @@ import com.google.firebase.auth.FirebaseAuth
 import io.inzure.app.data.model.User
 import android.util.Log
 
-import io.inzure.app.data.model.SearchItem
 import io.inzure.app.ui.components.BottomSheetContent
 
 
@@ -41,28 +40,24 @@ fun MainView(
     onNavigateToProfile: () -> Unit,
     onNavigateToCarInsurance: () -> Unit,
     onNavigateToLifeInsurance: () -> Unit,
-    onNavigateToEnterpriseInsurance: () -> Unit, // Nuevo parámetro
+    onNavigateToEnterpriseInsurance: () -> Unit,
     onNavigateToUsers: () -> Unit,
     onNavigateToAdmin: () -> Unit,
-    onNavigateToChat: () -> Unit,
     onNavigateToLogin: () -> Unit,
     onNavigateToGeneral: () -> Unit,
     onNavigateToAutos: () -> Unit,
     onNavigateToPersonal: () -> Unit,
     onNavigateToEmpresarial: () -> Unit,
-    onNavigateToEducativo: () -> Unit
-
+    onNavigateToEducativo: () -> Unit,
+    onNavigateToChat: () -> Unit
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     var isDrawerOpen by remember { mutableStateOf(false) }
-    val showChatView = remember { mutableStateOf(false) }
+    val showChatView = remember { mutableStateOf(false) } // Estado para el ChatView
 
-    // Estado del BottomSheetScaffold
     val bottomSheetScaffoldState = rememberBottomSheetScaffoldState()
-
-    // Animación de color para el sombreado al abrir el Drawer
     val scrimColor by animateColorAsState(
         targetValue = if (isDrawerOpen) Color.Black.copy(alpha = 0.5f) else Color.Transparent,
         animationSpec = tween(durationMillis = 500)
@@ -100,52 +95,14 @@ fun MainView(
             }
     }
 
-    // Lista de seguros de ejemplo
-    val insuranceList = listOf(
-        SearchItem.InsuranceItem(
-            imageRes = R.drawable.aseguradora1,
-            companyLogo = R.drawable.ic_qualitas,
-            companyName = "Qualitas Seguros",
-            description = "Explora por los diversos seguros que tenemos"
-        ),
-        SearchItem.InsuranceItem(
-            imageRes = R.drawable.aseguradora3,
-            companyLogo = R.drawable.ic_aseguradora3,
-            companyName = "MetLife",
-            description = "Descubriendo la vida juntos"
-        )
-    )
-
-    // Lista de chats de ejemplo
-    val chatList = listOf(
-        SearchItem.ChatItem(
-            userName = "Maria Lopez",
-            userCompany = "Asegurador de MetLife",
-            userImageRes = R.drawable.ic_profile4,
-            onClick = { /* Acción al hacer clic en el chat */ }
-        ),
-        SearchItem.ChatItem(
-            userName = "Carlos Perez",
-            userCompany = "Asegurador de HDI",
-            userImageRes = R.drawable.ic_profile,
-            onClick = { /* Acción al hacer clic en el chat */ }
-        )
-        // Agrega más chats según sea necesario
-    )
-
-    // Combinar las listas de seguros y chats
-    val searchItems = remember { insuranceList + chatList }
-
-    // Implementación del BottomSheetScaffold para manejar el comportamiento de la Bottom Bar
     BottomSheetScaffold(
         scaffoldState = bottomSheetScaffoldState,
-        sheetPeekHeight = 0.dp, // Comienza colapsado
-        containerColor = Color(0xFF072A4A), // Fondo azul del Bottom Sheet
+        sheetPeekHeight = 0.dp,
+        containerColor = Color(0xFF072A4A),
         sheetContent = {
-            BottomSheetContent(searchItems)
+            BottomSheetContent(emptyList()) // Cambia por el contenido necesario
         }
     ) {
-        // Uso de ModalNavigationDrawer para el menú lateral
         ModalNavigationDrawer(
             drawerState = drawerState,
             scrimColor = scrimColor,
@@ -166,27 +123,25 @@ fun MainView(
                     },
                     onNavigateToChat = {
                         scope.launch { drawerState.close() }
-                        showChatView.value = true
-                        onNavigateToChat()
+                        showChatView.value = true // Activar el ChatView
                     },
                     onNavigateToLogin = {
                         scope.launch { drawerState.close() }
                         onNavigateToLogin()
-                    }, // Pasar la nueva función de navegación al Login
+                    },
                     showChatView = showChatView,
                     scope = scope,
                     drawerState = drawerState
                 )
             }
         ) {
-            // Uso de Scaffold para mantener la TopBar y la BottomBar fijas
             Scaffold(
                 topBar = {
                     TopBar(
                         onMenuClick = {
                             scope.launch {
                                 isDrawerOpen = true
-                                drawerState.open() // Abrir el Drawer
+                                drawerState.open()
                             }
                         },
                         onNavigateToProfile = onNavigateToProfile
@@ -199,15 +154,19 @@ fun MainView(
                                 bottomSheetScaffoldState.bottomSheetState.expand()
                             }
                         },
-                        onNavigateToProfile = onNavigateToProfile
+                        onNavigateToProfile = onNavigateToProfile,
+                        onNavigateToChat = { showChatView.value = true } // Activar el ChatView desde la BottomBar
                     )
                 }
             ) { innerPadding ->
                 if (showChatView.value) {
-                    // Lógica para mostrar la vista de chat
-                    // Puedes implementar aquí la vista de chat según tus necesidades
+                    // Renderizar el ChatView
+                    ChatListView(
+                        chats = emptyList(), // Pasa la lista de chats desde Firestore
+                        onClose = { showChatView.value = false } // Cerrar el ChatView
+                    )
                 } else {
-                    // Contenido principal de la pantalla
+                    // Contenido principal
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -218,15 +177,14 @@ fun MainView(
                         InsuranceCategories(
                             onNavigateToCarInsurance = onNavigateToCarInsurance,
                             onNavigateToLifeInsurance = onNavigateToLifeInsurance,
-                            onNavigateToEnterpriseInsurance = onNavigateToEnterpriseInsurance // Pasar la nueva función
+                            onNavigateToEnterpriseInsurance = onNavigateToEnterpriseInsurance
                         )
                         LearnAboutInsurance(
-                            onNavigateToGeneral = { onNavigateToGeneral() }, // Sustituir con el Intent correspondiente
-                            onNavigateToAutos = { onNavigateToAutos() }, // Sustituir con el Intent correspondiente
-                            onNavigateToPersonal = { onNavigateToPersonal() },
-                            onNavigateToEmpresarial = { onNavigateToEmpresarial() } // Sustituir con el Intent correspondiente
+                            onNavigateToGeneral = onNavigateToGeneral,
+                            onNavigateToAutos = onNavigateToAutos,
+                            onNavigateToPersonal = onNavigateToPersonal,
+                            onNavigateToEmpresarial = onNavigateToEmpresarial
                         )
-
                         Spacer(modifier = Modifier.weight(1f))
                     }
                 }
@@ -234,6 +192,7 @@ fun MainView(
         }
     }
 }
+
 
 @Composable
 fun WelcomeMessage(firstName: String, lastName: String) {

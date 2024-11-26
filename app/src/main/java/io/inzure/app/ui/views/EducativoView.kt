@@ -226,7 +226,8 @@ fun Educativo(
                                 bottomSheetScaffoldState.bottomSheetState.expand()
                             }
                         },
-                        onNavigateToProfile = onNavigateToProfile
+                        onNavigateToProfile = onNavigateToProfile,
+                        onNavigateToChat = { showChatView.value = true }
                     )
                 }
             ) { innerPadding ->

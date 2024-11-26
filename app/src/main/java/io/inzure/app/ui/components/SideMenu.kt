@@ -151,8 +151,8 @@ fun SideMenu(
                 text = "Chat",
                 spacerHeight = 20.dp,
                 onClick = {
-                    showChatView.value = true
-                    onNavigateToChat()
+                    scope.launch { drawerState.close() } // Cierra el menú lateral
+                    onNavigateToChat() // Navega al chat
                 }
             )
             MenuOption(

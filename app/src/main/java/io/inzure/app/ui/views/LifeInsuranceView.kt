@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,7 +30,6 @@ import io.inzure.app.R
 import io.inzure.app.ui.components.BottomBar
 import io.inzure.app.ui.components.TopBar // Importa tu TopBar personalizado
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.CoroutineScope
 
 class LifeInsuranceView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,9 +61,11 @@ fun LifeInsuranceScreen(onNavigateToLogin: () -> Unit) {
             )
         },
         bottomBar = {
+            val showChatView = remember { mutableStateOf(false) }
             BottomBar(
                 onSwipeUp = { /* Acción al deslizar hacia arriba */ },
-                onNavigateToProfile = { /* Acción de navegación */ }
+                onNavigateToProfile = { /* Acción de navegación */ },
+                onNavigateToChat = { showChatView.value = true }
             )
         }
     ) { padding ->
