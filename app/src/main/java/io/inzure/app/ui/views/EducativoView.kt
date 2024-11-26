@@ -1,6 +1,6 @@
-// MainView.kt
 package io.inzure.app.ui.views
 
+import android.os.Bundle
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
@@ -30,18 +30,46 @@ import kotlinx.coroutines.launch
 import com.google.firebase.auth.FirebaseAuth
 import io.inzure.app.data.model.User
 import android.util.Log
-
+import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import io.inzure.app.data.model.SearchItem
 import io.inzure.app.ui.components.BottomSheetContent
 
+class EducativoView : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0),
+            navigationBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0)
+        )
+        setContent {
+            Educativo(onNavigateToLogin = { /* Acción de navegación al login */ },
+                onNavigateToProfile = { /* Acción de navegación al perfil */ },
+                onNavigateToCarInsurance = { /* Acción de navegación al seguro de autos */ },
+                onNavigateToLifeInsurance = { /* Acción de navegación al seguro de vida */ },
+                onNavigateToEnterpriseInsurance = { /* Acción de navegación al seguro empresarial */ },
+                onNavigateToUsers = { /* Acción de navegación a la lista de usuarios */ },
+                onNavigateToAdmin = { /* Acción de navegación al administrador */ },
+                onNavigateToChat = { /* Acción de navegación al chat */ },
+                onNavigateToGeneral = { /* Acción de navegación al general */},
+                onNavigateToAutos = { /* Acción de navegación a los seguros de autos */},
+                onNavigateToPersonal = { /* Acción de navegación a los seguros personales */},
+                onNavigateToEmpresarial = { /* Acción de navegación a los seguros empresariales */},
+                onNavigateToEducativo = { /* Acción de navegación al educativo */}
+                )
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainView(
+fun Educativo(
     onNavigateToProfile: () -> Unit,
     onNavigateToCarInsurance: () -> Unit,
     onNavigateToLifeInsurance: () -> Unit,
-    onNavigateToEnterpriseInsurance: () -> Unit, // Nuevo parámetro
+    onNavigateToEnterpriseInsurance: () -> Unit,
     onNavigateToUsers: () -> Unit,
     onNavigateToAdmin: () -> Unit,
     onNavigateToChat: () -> Unit,
@@ -209,17 +237,11 @@ fun MainView(
                             .verticalScroll(rememberScrollState())
                             .padding(innerPadding)
                     ) {
-                        WelcomeMessage(firstName = firstName, lastName = lastName)
-                        InsuranceCategories(
-                            onNavigateToCarInsurance = onNavigateToCarInsurance,
-                            onNavigateToLifeInsurance = onNavigateToLifeInsurance,
-                            onNavigateToEnterpriseInsurance = onNavigateToEnterpriseInsurance // Pasar la nueva función
-                        )
-                        LearnAboutInsurance(
+                        LearnAboutInsuranceEducativo(
                             onNavigateToGeneral = { onNavigateToGeneral() }, // Sustituir con el Intent correspondiente
                             onNavigateToAutos = { onNavigateToAutos() }, // Sustituir con el Intent correspondiente
                             onNavigateToPersonal = { onNavigateToPersonal() },
-                            onNavigateToEmpresarial = { onNavigateToEmpresarial() } // Sustituir con el Intent correspondiente
+                            onNavigateToEmpresarial = { onNavigateToEmpresarial() }
                         )
 
                         Spacer(modifier = Modifier.weight(1f))
@@ -231,77 +253,7 @@ fun MainView(
 }
 
 @Composable
-fun WelcomeMessage(firstName: String, lastName: String) {
-    val name = "${firstName.split(" ").first()} ${lastName.split(" ").first()}"
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-    ) {
-        Text(
-            text = "¡Bienvenid@, $name!",
-            modifier = Modifier
-                .align(Alignment.Center)
-                .background(color = Color(0xFF072A4A), shape = RoundedCornerShape(8.dp))
-                .padding(16.dp),
-            color = Color.White,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-@Composable
-fun InsuranceCategories(
-    onNavigateToCarInsurance: () -> Unit,
-    onNavigateToLifeInsurance: () -> Unit,
-    onNavigateToEnterpriseInsurance: () -> Unit // Nuevo parámetro
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Categorías de Seguros",
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
-            modifier = Modifier.padding(top = 16.dp, bottom = 12.dp)
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            InsuranceCategory("Autos", R.drawable.ic_auto, onClick = onNavigateToCarInsurance)
-            InsuranceCategory("Personal", R.drawable.ic_personal, onClick = onNavigateToLifeInsurance)
-            InsuranceCategory("Empresarial", R.drawable.ic_empresarial, onClick = onNavigateToEnterpriseInsurance) // Actualizar onClick
-        }
-    }
-}
-
-@Composable
-fun InsuranceCategory(name: String, iconResId: Int, onClick: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .padding(8.dp)
-            .clickable { onClick() }
-    ) {
-        Image(
-            painter = painterResource(id = iconResId),
-            contentDescription = name,
-            modifier = Modifier.size(30.dp)
-        )
-        Text(
-            text = name,
-            fontSize = 14.sp,
-            modifier = Modifier.padding(top = 4.dp)
-        )
-    }
-}
-
-@Composable
-fun LearnAboutInsurance(
+fun LearnAboutInsuranceEducativo(
     onNavigateToGeneral: () -> Unit,
     onNavigateToAutos: () -> Unit,
     onNavigateToPersonal: () -> Unit,
@@ -318,18 +270,18 @@ fun LearnAboutInsurance(
             fontSize = 20.sp,
             modifier = Modifier.padding(bottom = 12.dp)
         )
-        InsuranceImage(onClick = onNavigateToGeneral)
+        InsuranceImageEducativo(onClick = onNavigateToGeneral)
         Spacer(modifier = Modifier.height(20.dp))
-        InsuranceImage2(onClick = onNavigateToAutos)
+        InsuranceImageEducativo2(onClick = onNavigateToAutos)
         Spacer(modifier = Modifier.height(10.dp))
-        InsuranceImage3(onClick = onNavigateToPersonal)
+        InsuranceImageEducativo3(onClick = onNavigateToPersonal)
         Spacer(modifier = Modifier.height(10.dp))
-        InsuranceImage4(onClick = onNavigateToEmpresarial)
+        InsuranceImageEducativo4(onClick = onNavigateToEmpresarial)
     }
 }
 
 @Composable
-fun InsuranceImage(onClick: () -> Unit) {
+fun InsuranceImageEducativo(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -370,7 +322,7 @@ fun InsuranceImage(onClick: () -> Unit) {
 }
 
 @Composable
-fun InsuranceImage2(onClick: () -> Unit) {
+fun InsuranceImageEducativo2(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -411,7 +363,7 @@ fun InsuranceImage2(onClick: () -> Unit) {
 }
 
 @Composable
-fun InsuranceImage3(onClick: () -> Unit) {
+fun InsuranceImageEducativo3(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -452,7 +404,7 @@ fun InsuranceImage3(onClick: () -> Unit) {
 }
 
 @Composable
-fun InsuranceImage4(onClick: () -> Unit) {
+fun InsuranceImageEducativo4(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
