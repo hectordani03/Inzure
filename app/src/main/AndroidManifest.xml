@@ -105,6 +105,29 @@
             android:theme="@style/Theme.Inzure">
         </activity>
 
+        <activity
+            android:name="io.inzure.app.ui.views.AprendizajeAutos"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
+        </activity>
+
+        <activity
+            android:name="io.inzure.app.ui.views.AprendizajeEmpresarial"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
+        </activity>
+
+        <activity
+            android:name="io.inzure.app.ui.views.AprendizajeGeneral"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
+        </activity>
+
+        <activity
+        android:name="io.inzure.app.ui.views.AprendizajePersonal"
+        android:exported="true"
+        android:theme="@style/Theme.Inzure">
+    </activity>
 
         <activity
             android:name="io.inzure.app.MainActivity"

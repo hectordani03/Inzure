@@ -2,7 +2,9 @@ package io.inzure.app.ui.views
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,6 +33,10 @@ import io.inzure.app.ui.components.BottomBar
 class CarInsuranceView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0),
+            navigationBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0)
+        )
         setContent {
             CarInsuranceScreen(onNavigateToLogin = { /* Acción de navegación al login */ })
         }
