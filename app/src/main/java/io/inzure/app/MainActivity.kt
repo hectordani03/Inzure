@@ -19,8 +19,12 @@ import io.inzure.app.ui.views.EnterpriseInsuranceView // Importa EnterpriseInsur
 import io.inzure.app.ui.views.ProfileView
 import io.inzure.app.ui.views.MainView
 import io.inzure.app.ui.views.UsersView
-import io.inzure.app.ui.views.AdminView // Importa AdminView
-import io.inzure.app.ui.views.LoginView // Importa LoginView
+import io.inzure.app.ui.views.AdminView
+import io.inzure.app.ui.views.AprendizajeAutos
+import io.inzure.app.ui.views.AprendizajeEmpresarial
+import io.inzure.app.ui.views.AprendizajeGeneral
+import io.inzure.app.ui.views.AprendizajePersonal
+import io.inzure.app.ui.views.LoginView
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,6 +67,22 @@ class MainActivity : ComponentActivity() {
                         onNavigateToChat = {
                             // Implementa la navegación al chat si es necesario
                         },
+                        onNavigateToGeneral = {
+                            val intent = Intent(this@MainActivity, AprendizajeGeneral::class.java)
+                            startActivity(intent)
+                        },
+                        onNavigateToAutos = {
+                            val intent = Intent(this@MainActivity, AprendizajeAutos::class.java)
+                            startActivity(intent)
+                        },
+                        onNavigateToEmpresarial = {
+                            val intent = Intent(this@MainActivity, AprendizajeEmpresarial::class.java)
+                            startActivity(intent)
+                        },
+                        onNavigateToPersonal = {
+                            val intent = Intent(this@MainActivity, AprendizajePersonal::class.java)
+                            startActivity(intent)
+                        },
                         onNavigateToLogin = {
                             // Cerrar sesión y redireccionar al LoginView
                             val intent = Intent(this@MainActivity, LoginView::class.java).apply {
@@ -70,6 +90,7 @@ class MainActivity : ComponentActivity() {
                             }
                             startActivity(intent)
                         }
+
                     )
                 }
             }

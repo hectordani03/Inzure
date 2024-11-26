@@ -37,6 +37,39 @@ import android.util.Log
 
 import io.inzure.app.data.model.SearchItem
 import io.inzure.app.ui.components.BottomSheetContent
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.runtime.Composable
+
+class MainView : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0),
+            navigationBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0)
+        )
+        setContent {
+            MaterialTheme {
+                Surface {
+                    MainView(
+                        onNavigateToProfile = { /* Acción al hacer clic en el botón de perfil */ },
+                        onNavigateToCarInsurance = { /* Acción al hacer clic en el botón de seguros de autos */ },
+                        onNavigateToUsers = { /* Acción al hacer clic en el botón de usuarios */ },
+                        onNavigateToAdmin = { /* Acción al hacer clic en el botón de administrador */ },
+                        onNavigateToChat = { /* Acción al hacer clic en el botón de chat */ },
+                        onNavigateToLogin = { /* Acción al hacer clic en el botón de login */ },
+                        onNavigateToGeneral = { /* Acción al hacer clic en el botón de login */ },
+                        onNavigateToAutos = { /* Acción al hacer clic en el botón de login */ },
+                        onNavigateToEmpresarial = { /* Acción al hacer clic en el botón de login */ },
+                        onNavigateToPersonal = { /* Acción al hacer clic en el botón de login */ }
+                    )
+                }
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,7 +81,11 @@ fun MainView(
     onNavigateToUsers: () -> Unit,
     onNavigateToAdmin: () -> Unit,
     onNavigateToChat: () -> Unit,
-    onNavigateToLogin: () -> Unit
+    onNavigateToLogin: () -> Unit,
+    onNavigateToGeneral: () -> Unit,
+    onNavigateToAutos: () -> Unit,
+    onNavigateToEmpresarial: () -> Unit,
+    onNavigateToPersonal: () -> Unit
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -203,6 +240,9 @@ fun MainView(
                             .padding(innerPadding)
                     ) {
                         WelcomeMessage(firstName = firstName, lastName = lastName)
+                        LearnAboutInsurance(onNavigateToGeneral
+                        , onNavigateToAutos , onNavigateToEmpresarial , onNavigateToPersonal
+                        )
                         InsuranceCategories(
                             onNavigateToCarInsurance = onNavigateToCarInsurance,
                             onNavigateToLifeInsurance = onNavigateToLifeInsurance,
@@ -288,7 +328,12 @@ fun InsuranceCategory(name: String, iconResId: Int, onClick: () -> Unit) {
 }
 
 @Composable
-fun LearnAboutInsurance() {
+fun LearnAboutInsurance(
+    onNavigateToGeneral: () -> Unit,
+    onNavigateToAutos: () -> Unit,
+    onNavigateToEmpresarial: () -> Unit,
+    onNavigateToPersonal: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -300,23 +345,26 @@ fun LearnAboutInsurance() {
             fontSize = 20.sp,
             modifier = Modifier.padding(bottom = 12.dp)
         )
-        InsuranceImage()
+        InsuranceImage(onClick = onNavigateToGeneral)
         Spacer(modifier = Modifier.height(20.dp))
-        InsuranceImage2()
+        InsuranceImage2(onClick = onNavigateToAutos)
         Spacer(modifier = Modifier.height(10.dp))
-        InsuranceImage3()
+        InsuranceImage3(onClick = onNavigateToPersonal)
         Spacer(modifier = Modifier.height(10.dp))
-        InsuranceImage4()
+        InsuranceImage4(onClick = onNavigateToEmpresarial)
     }
 }
 
 @Composable
-fun InsuranceImage() {
+fun InsuranceImage(onClick: () -> Unit) {
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
-            .drawBehind {
+            .clickable { onClick() }
+            .drawBehind
+            {
                 for (i in 1..3) {
                     drawRoundRect(
                         color = Color.Gray.copy(alpha = .1f),
@@ -377,12 +425,13 @@ fun InsuranceImage() {
 }
 
 @Composable
-fun InsuranceImage2() {
+fun InsuranceImage2(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
             .padding(bottom = 16.dp)
+            .clickable { onClick() }
             // Aplicamos la sombra usando elevation
             .drawBehind {
                 // Dibujamos múltiples sombras con diferentes opacidades para crear efecto blur
@@ -447,12 +496,13 @@ fun InsuranceImage2() {
 }
 
 @Composable
-fun InsuranceImage3() {
+fun InsuranceImage3(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
             .padding(bottom = 16.dp)
+            .clickable { onClick() }
             // Aplicamos la sombra usando elevation
             .drawBehind {
                 // Dibujamos múltiples sombras con diferentes opacidades para crear efecto blur
@@ -517,12 +567,13 @@ fun InsuranceImage3() {
 }
 
 @Composable
-fun InsuranceImage4() {
+fun InsuranceImage4(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
             .padding(bottom = 16.dp)
+            .clickable { onClick() }
             // Aplicamos la sombra usando elevation
             .drawBehind {
                 // Dibujamos múltiples sombras con diferentes opacidades para crear efecto blur
