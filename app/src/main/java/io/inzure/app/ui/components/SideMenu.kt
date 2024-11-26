@@ -36,10 +36,12 @@ import io.inzure.app.data.model.User
 fun SideMenu(
     screenWidth: Dp,
     onNavigateToProfile: () -> Unit,
+    onNavigateToEducativo: () -> Unit,
+    onNavigateToAdmin: () -> Unit, // Función de navegación al AdminView
+    onNavigateToLogin: () -> Unit, // Nueva función de navegación al Login
     showChatView: MutableState<Boolean>,
     scope: CoroutineScope,
-    drawerState: DrawerState,
-    onNavigateToAdmin: () -> Unit // Función de navegación al AdminView
+    drawerState: DrawerState
 ) {
     val auth = FirebaseAuth.getInstance()
     val firestore = FirebaseFirestore.getInstance()
@@ -138,25 +140,13 @@ fun SideMenu(
                 onClick = { onNavigateToProfile() }
             )
             MenuOption(
-                iconRes = R.drawable.ic_file,
-                text = "Mis Pólizas",
-                spacerHeight = 20.dp,
-                onClick = { /* Acción para "Mis Pólizas" */ }
-            )
-            MenuOption(
                 iconRes = R.drawable.ic_search,
                 text = "Buscador",
                 spacerHeight = 20.dp,
                 onClick = { /* Acción para "Buscador" */ }
             )
             MenuOption(
-                iconRes = R.drawable.ic_history,
-                text = "Historial",
-                spacerHeight = 20.dp,
-                onClick = { /* Acción para "Historial" */ }
-            )
-            MenuOption(
-                iconRes = R.drawable.ic_chat,
+                iconRes = R.drawable.chat_icon,
                 text = "Chat",
                 spacerHeight = 20.dp,
                 onClick = {
@@ -168,7 +158,9 @@ fun SideMenu(
                 iconRes = R.drawable.ic_learn,
                 text = "Educativo",
                 spacerHeight = 20.dp,
-                onClick = { /* Acción para "Educativo" */ }
+                onClick = {
+                    onNavigateToEducativo()
+                }
             )
 
             // Nueva opción: Administrador
@@ -187,13 +179,14 @@ fun SideMenu(
             // Botón de cerrar sesión
             Row(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .clickable {
-                        // Cerrar sesión
                         FirebaseAuth.getInstance().signOut()
-                        // Redireccionar al login
-
+                        onNavigateToLogin()
                     }
-                    .padding(16.dp)
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_logout),

@@ -13,12 +13,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import io.inzure.app.R
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun BottomBar(
     onSwipeUp: () -> Unit,
-    onNavigateToUsers: () -> Unit
+    onNavigateToProfile: () -> Unit // Cambié el nombre para mayor claridad
 ) {
+    val context = LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -35,7 +38,7 @@ fun BottomBar(
         ) {
             IconButton(onClick = onSwipeUp) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_learn),
+                    painter = painterResource(id = R.drawable.ic_home),
                     contentDescription = "Home",
                     tint = Color.White,
                     modifier = Modifier.size(30.dp)
@@ -45,7 +48,7 @@ fun BottomBar(
             IconButton(onClick = onSwipeUp) {
                 Icon(
                     painter = painterResource(id = R.drawable.chat_icon),
-                    contentDescription = "Home",
+                    contentDescription = "Chat",
                     tint = Color.White,
                     modifier = Modifier.size(30.dp)
                 )
@@ -54,16 +57,17 @@ fun BottomBar(
             IconButton(onClick = onSwipeUp) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_search),
-                    contentDescription = "Notifications",
+                    contentDescription = "Search",
                     tint = Color.White,
                     modifier = Modifier.size(30.dp)
                 )
             }
 
-            IconButton(onClick = onNavigateToUsers) {
+            // Cambié esta parte
+            IconButton(onClick = onNavigateToProfile) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_profile2),
-                    contentDescription = "Settings",
+                    contentDescription = "Profile",
                     tint = Color.White,
                     modifier = Modifier.size(30.dp)
                 )
@@ -71,3 +75,4 @@ fun BottomBar(
         }
     }
 }
+

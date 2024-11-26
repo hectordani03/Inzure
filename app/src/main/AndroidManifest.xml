@@ -61,13 +61,19 @@
         </activity>
 
         <activity
-            android:name="io.inzure.app.ui.views.PostsView"
+            android:name="io.inzure.app.ui.views.InsuranceInfoActivity"
             android:exported="true"
             android:theme="@style/Theme.Inzure">
         </activity>
 
         <activity
-            android:name="io.inzure.app.ui.views.AgentsView"
+            android:name="io.inzure.app.ui.views.AgentActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
+        </activity>
+
+        <activity
+            android:name="io.inzure.app.ui.views.PostsView"
             android:exported="true"
             android:theme="@style/Theme.Inzure">
         </activity>
@@ -80,15 +86,58 @@
         </activity>
 
         <activity
+            android:name="io.inzure.app.ui.views.LifeInsuranceView"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
+
+        </activity>
+
+        <activity
+            android:name="io.inzure.app.ui.views.EnterpriseInsuranceView"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
+
+        </activity>
+
+        <activity
             android:name="io.inzure.app.ui.views.ProfileView"
             android:exported="true"
             android:theme="@style/Theme.Inzure">
         </activity>
 
+        <activity
+            android:name="io.inzure.app.ui.views.AprendizajeAutos"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
+        </activity>
+
+        <activity
+            android:name="io.inzure.app.ui.views.AprendizajeEmpresarial"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
+        </activity>
+
+        <activity
+            android:name="io.inzure.app.ui.views.AprendizajeGeneral"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
+        </activity>
+
+        <activity
+        android:name="io.inzure.app.ui.views.AprendizajePersonal"
+        android:exported="true"
+        android:theme="@style/Theme.Inzure">
+    </activity>
 
         <activity
             android:name="io.inzure.app.MainActivity"
             android:exported="true">
+        </activity>
+
+        <activity
+            android:name="io.inzure.app.ui.views.EducativoView"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
         </activity>
 
     </application>

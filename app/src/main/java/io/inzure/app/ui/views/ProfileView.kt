@@ -1,15 +1,17 @@
+// ProfileView.kt
 package io.inzure.app.ui.views
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -25,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -36,19 +39,35 @@ import androidx.navigation.compose.composable
 import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import io.inzure.app.InzureTheme
 import io.inzure.app.R
 import io.inzure.app.data.model.User
 import io.inzure.app.ui.components.BottomBar
 import io.inzure.app.ui.components.SideMenu
 import io.inzure.app.ui.components.TopBar
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+
+// Importar MyPostsScreen y otras vistas necesarias
+import io.inzure.app.ui.views.MyPostsListView
+import io.inzure.app.ui.views.LoginView
+import io.inzure.app.ui.views.PersonalInformationView
 
 class ProfileView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0),
+            navigationBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0)
+        )
         setContent {
-            MainScreen()
+            InzureTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = Color.White
+                ) {
+                    MainScreen()
+                }
+            }
         }
     }
 }
@@ -56,10 +75,43 @@ class ProfileView : ComponentActivity() {
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
-    NavHost(navController, startDestination = "profile") {
-        composable("profile") { ProfileScreen(navController) }
-        composable("personal_information") { PersonalInformationView() }
-        // Agrega más composables según tus necesidades
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            SideMenu(
+                onNavigateToEducativo = { navController.navigate("educativo") },
+                onNavigateToProfile = {
+                    navController.navigate("profile") {
+                        popUpTo("profile") { inclusive = true }
+                    }
+                },
+
+                onNavigateToAdmin = { navController.navigate("admin") },
+                onNavigateToLogin = {
+                    // Cerrar sesión y redirigir al login
+                    FirebaseAuth.getInstance().signOut()
+                    val intent = Intent(context, LoginView::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    }
+                    context.startActivity(intent)
+                },
+                showChatView = remember { mutableStateOf(false) },
+                scope = scope,
+                drawerState = drawerState,
+                screenWidth = screenWidth
+            )
+        }
+    ) {
+        NavHost(navController, startDestination = "profile") {
+            composable("profile") { ProfileScreen(navController) }
+            composable("personal_information") { PersonalInformationView() }
+            composable("my_posts") { MyPostsListView() }
+        }
     }
 }
 
@@ -90,7 +142,10 @@ fun ProfileScreen(navController: NavController) {
                         description = userData.description
                         imageUri = userData.image
                     } else {
-                        Log.e("Firestore", "El documento existe, pero no se pudo mapear a un objeto User")
+                        Log.e(
+                            "Firestore",
+                            "El documento existe, pero no se pudo mapear a un objeto User"
+                        )
                     }
                 } else {
                     Log.e("Firestore", "El documento del usuario no existe en Firestore")
@@ -101,9 +156,9 @@ fun ProfileScreen(navController: NavController) {
             }
     }
 
-    // Inicializar DrawerState y CoroutineScope para el SideMenu
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    // CoroutineScope para manejar la apertura del drawer desde la barra de navegación
     val scope = rememberCoroutineScope()
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val showChatView = remember { mutableStateOf(false) }
 
@@ -113,116 +168,114 @@ fun ProfileScreen(navController: NavController) {
         animationSpec = tween(durationMillis = 500)
     )
 
-    // Uso de ModalNavigationDrawer para el menú lateral
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        scrimColor = scrimColor,
-        drawerContent = {
-            val navController = rememberNavController()
-            SideMenu(
-                screenWidth = screenWidth,
-                onNavigateToProfile = { /* Navegar a Perfil */ },
-                showChatView = showChatView,
-                scope = scope,
-                drawerState = drawerState,
-                onNavigateToAdmin = { navController.navigate("admin") } // Navegación al AdminView
+    // Obtener el contexto para iniciar actividades
+    val context = LocalContext.current
+
+    // Nota: Eliminamos ModalNavigationDrawer de ProfileScreen
+    // Ya está manejado en MainScreen
+
+    // Uso de Scaffold para mantener la TopBar y la BottomBar fijas
+    Scaffold(
+        topBar = {
+            TopBar(
+                onMenuClick = {
+                    scope.launch {
+                        drawerState.open() // Abrir el Drawer al hacer clic en el menú
+                    }
+                },
+                onNavigateToProfile = { /* Implementar si es necesario */ }
+            )
+        },
+        bottomBar = {
+            BottomBar(
+                onSwipeUp = { /* Implementar acción si es necesario */ },
+                onNavigateToProfile = { /* Implementar navegación a Users si es necesario */ }
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(innerPadding)
+                .background(Color.White),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Fondo azul con imagen de perfil centrada
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(220.dp)
+                    .background(Color(0xFF072A4A)),
+                contentAlignment = Alignment.Center
+            ) {
+                // Sección de perfil
+                if (!imageUri.isNullOrEmpty()) {
+                    Image(
+                        painter = rememberAsyncImagePainter(imageUri),
+                        contentDescription = "Foto de Perfil",
+                        modifier = Modifier
+                            .size(140.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(R.drawable.ic_profile_default),
+                        contentDescription = "Foto de Perfil",
+                        modifier = Modifier
+                            .size(140.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Nombre del usuario
+            val name = "${firstName.split(" ").first()} ${lastName.split(" ").first()}"
+            Text(
+                text = name,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
-        }
-    ) {
-        // Uso de Scaffold para mantener la TopBar y la BottomBar fijas
-        Scaffold(
-            topBar = {
-                TopBar(
-                    onMenuClick = {
-                        scope.launch {
-                            drawerState.open() // Abrir el Drawer al hacer clic en el menú
-                        }
-                    },
-                    onNavigateToProfile = { /* Implementar si es necesario */ }
-                )
-            },
-            bottomBar = {
-                BottomBar(
-                    onSwipeUp = { /* Implementar acción si es necesario */ },
-                    onNavigateToUsers = { /* Implementar navegación a Users si es necesario */ }
-                )
+            // Descripción del usuario
+            Text(
+                text = description,
+                fontSize = 16.sp,
+                color = Color.Gray,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Botones de opciones estilizados
+            OptionButton("Información Personal", R.drawable.ic_profile2) {
+                navController.navigate("personal_information")
             }
-        ) { innerPadding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(innerPadding)
-                    .background(Color.White),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Fondo azul con imagen de perfil centrada
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(220.dp)
-                        .background(Color(0xFF072A4A)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // Sección de perfil
-                    if (!imageUri.isNullOrEmpty()) {
-                        Image(
-                            painter = rememberAsyncImagePainter(imageUri),
-                            contentDescription = "Foto de Perfil",
-                            modifier = Modifier
-                                .size(140.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Image(
-                            painter = painterResource(R.drawable.ic_profile_default),
-                            contentDescription = "Foto de Perfil",
-                            modifier = Modifier
-                                .size(140.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Nombre del usuario
-                val name = "${firstName.split(" ").first()} ${lastName.split(" ").first()}"
-                Text(
-                    text = name,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-
-                // Descripción del usuario
-                Text(
-                    text = description,
-                    fontSize = 16.sp,
-                    color = Color.Gray,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Botones de opciones estilizados
-                OptionButton("Información Personal", R.drawable.ic_profile2) {
-                    navController.navigate("personal_information")
-                }
-                OptionButton("Mis Seguros", R.drawable.ic_profile2) {
-                    // Implementar navegación a 'Mis Seguros'
-                }
-                OptionButton("Mis Agentes", R.drawable.ic_profile2) {
-                    // Implementar navegación a 'Mis Agentes'
-                }
+            OptionButton("Mis Posts", R.drawable.ic_profile2) {
+                // Navegar a la ruta "my_posts" utilizando NavController
+                navController.navigate("my_posts")
+            }
+            OptionButton("Mis Agentes", R.drawable.ic_profile2) {
+                // Implementar navegación a 'Mis Agentes'
+                // Por ejemplo:
+                // navController.navigate("my_agents")
             }
         }
     }
 }
 
+/**
+ * Función composable para un botón de opción personalizado.
+ *
+ * @param text Texto que se mostrará en el botón.
+ * @param icon Recurso de imagen para el icono del botón.
+ * @param onClick Función que se ejecutará al hacer clic en el botón.
+ */
 @Composable
 fun OptionButton(text: String, icon: Int, onClick: () -> Unit) {
     Button(

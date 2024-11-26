@@ -10,9 +10,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,23 +20,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.rememberAsyncImagePainter
-import io.inzure.app.ui.components.TopBar
-
 import io.inzure.app.R
-
-// Importa la función BottomBar desde BottomBar.kt
 import io.inzure.app.ui.components.BottomBar
-import io.inzure.app.viewmodel.PostsViewModel
+import io.inzure.app.ui.components.TopBar // Importa tu TopBar personalizado
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
 
-class CarInsuranceView : ComponentActivity() {
+class LifeInsuranceView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
@@ -47,22 +38,13 @@ class CarInsuranceView : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0)
         )
         setContent {
-            CarInsuranceScreen(onNavigateToLogin = { /* Acción de navegación al login */ })
+            LifeInsuranceScreen(onNavigateToLogin = { /* Acción de navegación al login */ })
         }
     }
 }
 
 @Composable
-fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
-
-    val postsViewModel: PostsViewModel = viewModel()
-    val posts by postsViewModel.posts.collectAsState()
-    LaunchedEffect(Unit) {
-        postsViewModel.getCarPosts()
-    }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        TopBarCar(onNavigateToLogin)
+fun LifeInsuranceScreen(onNavigateToLogin: () -> Unit) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -71,10 +53,10 @@ fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
             TopBar(
                 onMenuClick = {
                     scope.launch {
-                        drawerState.open() // Abre el Drawer
+                        drawerState.open() // Abre el drawer al hacer clic en el menú
                     }
                 },
-                onNavigateToProfile = onNavigateToLogin // Implementa la acción de navegación
+                onNavigateToProfile = onNavigateToLogin // Configura la acción de navegación
             )
         },
         bottomBar = {
@@ -98,7 +80,7 @@ fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
                     .verticalScroll(rememberScrollState())
                     .padding(12.dp)
             ) {
-                // Título principal con ícono de carro
+                // Título principal con ícono de vida
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -106,70 +88,42 @@ fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
                         .padding(bottom = 12.dp)
                 ) {
                     Text(
-                        text = "Seguros de autos",
+                        text = "Seguros de Vida",
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp,
                         modifier = Modifier.weight(1f)
                     )
                     Image(
-                        painter = painterResource(id = R.drawable.ic_auto),
-                        contentDescription = "Car Icon",
+                        painter = painterResource(id = R.drawable.ic_personal),
+                        contentDescription = "Life Icon",
                         modifier = Modifier.size(28.dp)
                     )
                 }
 
-            InsuranceCategoriesCar() // Categorías de seguros
-            posts.forEach { postWithUser ->
+                LifeInsuranceCategories() // Categorías de seguros de vida
 
-                InsuranceCard(
-                    title = postWithUser.post.titulo,
-                    description = postWithUser.post.descripcion,
-                    postImage = postWithUser.post.image,
-                    userImage = postWithUser.profileImage
-                )
                 Spacer(modifier = Modifier.height(22.dp))
+
+                // Tarjetas de seguro
+                LifeInsuranceCard(
+                    title = "VidaPlus",
+                    description = "Protección completa para tu futuro",
+                    imageResId = R.drawable.insurance_image1 // Imagen de ejemplo
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                LifeInsuranceCard(
+                    title = "GNP Seguros",
+                    description = "Cobertura flexible para tus necesidades",
+                    imageResId = R.drawable.insurance_image2 // Imagen de ejemplo
+                )
             }
         }
     }
 }
 
-@Composable
-fun TopBarCar(onNavigateToLogin: () -> Unit) {
-    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White)
-            .statusBarsPadding()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = { /* TODO: Handle menu click */ }) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_menu),
-                contentDescription = "Menú",
-                modifier = Modifier.size(40.dp)
-            )
-        }
-        Image(
-            painter = painterResource(id = R.drawable.logo),
-            contentDescription = "Logo",
-            modifier = Modifier.size(80.dp)
-        )
-        IconButton(onClick = onNavigateToLogin) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_profile),
-                contentDescription = "Profile",
-                modifier = Modifier.size(40.dp)
-            )
-        }
-    }
-}
 
 @Composable
-fun InsuranceCategoriesCar() {
+fun LifeInsuranceCategories() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -177,17 +131,16 @@ fun InsuranceCategoriesCar() {
             .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        CategoryButton("Más buscadas", R.drawable.ic_mas_buscados, iconSize = 20)
-        CategoryButton("", R.drawable.ic_qualitas, iconSize = 30)
-        CategoryButton("", R.drawable.ic_gnp, iconSize = 30)
-        CategoryButton("", R.drawable.ic_inbursa, iconSize = 30)
-        CategoryButton("", R.drawable.ic_hdi, iconSize = 30)
-        CategoryButton("", R.drawable.ic_inbursa, iconSize = 30)
+        LifeCategoryButton("Más Buscadas", R.drawable.ic_mas_buscados, iconSize = 20)
+        LifeCategoryButton("VidaPlus", R.drawable.ic_lifeplus, iconSize = 30)
+        LifeCategoryButton("Gnp Seguros", R.drawable.ic_gnp, iconSize = 30)
+        LifeCategoryButton("Inbursa", R.drawable.ic_inbursa, iconSize = 30)
+        LifeCategoryButton("BBVA", R.drawable.bbva, iconSize = 30)
     }
 }
 
 @Composable
-fun CategoryButton(name: String, iconResId: Int, iconSize: Int = 24) {
+fun LifeCategoryButton(name: String, iconResId: Int, iconSize: Int = 24) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -215,12 +168,7 @@ fun CategoryButton(name: String, iconResId: Int, iconSize: Int = 24) {
 }
 
 @Composable
-fun InsuranceCard(title: String, description: String, postImage: String, userImage: String) {
-    val postsViewModel: PostsViewModel = viewModel()
-    val posts by postsViewModel.posts.collectAsState()
-    LaunchedEffect(Unit) {
-        postsViewModel.getCarPosts()
-    }
+fun LifeInsuranceCard(title: String, description: String, imageResId: Int) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -250,7 +198,7 @@ fun InsuranceCard(title: String, description: String, postImage: String, userIma
     ) {
         // Imagen principal
         Image(
-            painter = rememberAsyncImagePainter(postImage),
+            painter = painterResource(id = imageResId),
             contentDescription = "Insurance Image",
             contentScale = ContentScale.Crop,
             modifier = Modifier
@@ -258,6 +206,7 @@ fun InsuranceCard(title: String, description: String, postImage: String, userIma
                 .height(180.dp)
                 .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
         )
+
         // Caja de información en la parte inferior
         Column(
             modifier = Modifier
@@ -273,8 +222,12 @@ fun InsuranceCard(title: String, description: String, postImage: String, userIma
             ) {
                 // Icono en la izquierda
                 Image(
-                    painter = rememberAsyncImagePainter(userImage),
-                    contentDescription = "User profile pic",
+                    painter = painterResource(id = when (title) {
+                        "VidaPlus" -> R.drawable.ic_lifeplus
+                        "GNP Seguros" -> R.drawable.ic_gnp
+                        else -> R.drawable.ic_personal
+                    }), // Ajusta el ícono según el título
+                    contentDescription = "Insurance Logo",
                     modifier = Modifier
                         .size(40.dp)
                         .clip(RoundedCornerShape(8.dp))
