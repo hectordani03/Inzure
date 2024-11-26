@@ -51,21 +51,16 @@ class CarInsuranceView : ComponentActivity() {
         }
     }
 }
-
 @Composable
 fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
-
-    val postsViewModel: PostsViewModel = viewModel()
-    val posts by postsViewModel.posts.collectAsState()
-    LaunchedEffect(Unit) {
-        postsViewModel.getCarPosts()
-    }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        TopBarCar(onNavigateToLogin)
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
+    val postsViewModel: PostsViewModel = viewModel()
+    val carPosts by postsViewModel.carPosts.collectAsState()
+    LaunchedEffect(Unit) {
+        postsViewModel.getCarPosts()
+    }
     Scaffold(
         topBar = {
             TopBar(
@@ -118,16 +113,20 @@ fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
                     )
                 }
 
-            InsuranceCategoriesCar() // Categorías de seguros
-            posts.forEach { postWithUser ->
+                InsuranceCategoriesCar() // Categorías de seguros
 
-                InsuranceCard(
-                    title = postWithUser.post.titulo,
-                    description = postWithUser.post.descripcion,
-                    postImage = postWithUser.post.image,
-                    userImage = postWithUser.profileImage
-                )
                 Spacer(modifier = Modifier.height(22.dp))
+
+                carPosts.forEach { postWithUser ->
+                    InsuranceCard(
+                        title = postWithUser.post.titulo,
+                        description = postWithUser.post.descripcion,
+                        postImage = postWithUser.post.image,
+                        userImage = postWithUser.profileImage
+                    )
+                    Spacer(modifier = Modifier.height(22.dp))
+                }
+
             }
         }
     }
@@ -258,6 +257,7 @@ fun InsuranceCard(title: String, description: String, postImage: String, userIma
                 .height(180.dp)
                 .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
         )
+
         // Caja de información en la parte inferior
         Column(
             modifier = Modifier
@@ -272,15 +272,25 @@ fun InsuranceCard(title: String, description: String, postImage: String, userIma
                 modifier = Modifier.fillMaxWidth()
             ) {
                 // Icono en la izquierda
-                Image(
-                    painter = rememberAsyncImagePainter(userImage),
-                    contentDescription = "User profile pic",
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.White)
-                )
-
+                if (!userImage.isNullOrEmpty()) {
+                    Image(
+                        painter = rememberAsyncImagePainter(userImage),
+                        contentDescription = "Insurance Logo",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.White)
+                    )
+                } else{
+                    Image(
+                        painter = painterResource(R.drawable.ic_profile_default),
+                        contentDescription = "Insurance Logo",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.White)
+                    )
+                }
                 Spacer(modifier = Modifier.width(8.dp))
 
                 // Título y descripción

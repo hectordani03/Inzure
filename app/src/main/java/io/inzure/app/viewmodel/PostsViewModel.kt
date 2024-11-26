@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.storage
 import io.inzure.app.data.model.Posts
@@ -21,6 +22,15 @@ class PostsViewModel : ViewModel() {
 
     private val repository = PostRepository()
 
+    private val _carPosts = MutableStateFlow<List<PostRepository.PostWithUser>>(emptyList())
+    val carPosts: StateFlow<List<PostRepository.PostWithUser>> get() = _carPosts
+
+    private val _personalPosts = MutableStateFlow<List<PostRepository.PostWithUser>>(emptyList())
+    val personalPosts: StateFlow<List<PostRepository.PostWithUser>> get() = _personalPosts
+
+    private val _businessPosts = MutableStateFlow<List<PostRepository.PostWithUser>>(emptyList())
+    val businessPosts: StateFlow<List<PostRepository.PostWithUser>> get() = _businessPosts
+
     private val _posts = MutableStateFlow<List<PostRepository.PostWithUser>>(emptyList())
     val posts: StateFlow<List<PostRepository.PostWithUser>> get() = _posts
 
@@ -29,27 +39,49 @@ class PostsViewModel : ViewModel() {
 
     fun getPosts() {
         repository.getPosts { postsList ->
-            //_posts.value = postsList
+            // Transforma la lista de Posts a PostWithUser
+            val transformedPosts = postsList.map { post ->
+                PostRepository.PostWithUser(
+                    post = post,
+                    profileImage = "" // Puedes usar un valor vacío o algún valor predeterminado
+                )
+            }
+            _posts.value = transformedPosts // Asigna la lista transformada
+        }
+    }
+
+    fun getUsersPosts() {
+        repository.getUsersPosts { posts ->
+            _posts.value = posts.map { post ->
+                PostRepository.PostWithUser(
+                    post = post,
+                    profileImage = "" // Valor predeterminado o personalizado
+                )
+            }
         }
     }
 
     fun getCarPosts() {
         repository.getCarPosts { postsList ->
-            _posts.value = postsList
+            Log.d("DEBUG", "Car posts: ${postsList.size}")
+            _carPosts.value = postsList
         }
     }
 
     fun getPersonalPosts() {
         repository.getPersonalPosts { postsList ->
-            _posts.value = postsList
+            Log.d("DEBUG", "Personal posts: ${postsList.size}")
+            _personalPosts.value = postsList
         }
     }
 
     fun getBusinessPosts() {
         repository.getBusinessPosts { postsList ->
-            _posts.value = postsList
+            Log.d("DEBUG", "Business posts: ${postsList.size}")
+            _businessPosts.value = postsList
         }
     }
+
 
     override fun onCleared() {
         super.onCleared()

@@ -126,6 +126,7 @@ fun ProfileScreen(navController: NavController) {
     // Estados para almacenar información del usuario
     var firstName by remember { mutableStateOf("Cargando...") }
     var lastName by remember { mutableStateOf("Cargando...") }
+    var role by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("Cargando...") }
     var imageUri by remember { mutableStateOf<String?>(null) }
 
@@ -140,6 +141,7 @@ fun ProfileScreen(navController: NavController) {
                         firstName = userData.firstName
                         lastName = userData.lastName
                         description = userData.description
+                        role = userData.role
                         imageUri = userData.image
                     } else {
                         Log.e(
@@ -256,9 +258,12 @@ fun ProfileScreen(navController: NavController) {
             OptionButton("Información Personal", R.drawable.ic_profile2) {
                 navController.navigate("personal_information")
             }
-            OptionButton("Mis Posts", R.drawable.ic_profile2) {
-                // Navegar a la ruta "my_posts" utilizando NavController
-                navController.navigate("my_posts")
+
+            if (role == "insurer") {
+                OptionButton("Mis Posts", R.drawable.ic_profile2) {
+                    // Navegar a la ruta "my_posts" utilizando NavController
+                    navController.navigate("my_posts")
+                }
             }
             OptionButton("Mis Agentes", R.drawable.ic_profile2) {
                 // Implementar navegación a 'Mis Agentes'

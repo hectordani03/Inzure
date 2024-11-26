@@ -53,6 +53,7 @@ fun SideMenu(
     var firstName by remember { mutableStateOf("Cargando...") }
     var lastName by remember { mutableStateOf("Cargando...") }
     var email by remember { mutableStateOf("Cargando...") }
+    var role by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(userId) {
         firestore.collection("Users")
@@ -65,6 +66,7 @@ fun SideMenu(
                         firstName = userData.firstName
                         lastName = userData.lastName
                         email = userData.email
+                        role = userData.role
                         imageUri = userData.image
                     } else {
                         Log.e("Firestore", "El documento existe, pero no se pudo mapear a un objeto User")
@@ -163,16 +165,17 @@ fun SideMenu(
                 }
             )
 
-            // Nueva opción: Administrador
-            MenuOption(
-                iconRes = R.drawable.ic_profile2, // Asegúrate de tener este recurso o reemplázalo
-                text = "Administrador",
-                spacerHeight = 20.dp,
-                onClick = {
-                    scope.launch { drawerState.close() }
-                    onNavigateToAdmin() // Llamar a la navegación al AdminView
-                }
-            )
+            if (role == "admin" || role == "editor") {
+                MenuOption(
+                    iconRes = R.drawable.ic_profile2, // Asegúrate de tener este recurso o reemplázalo
+                    text = "Administrador",
+                    spacerHeight = 20.dp,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToAdmin() // Llamar a la navegación al AdminView
+                    }
+                )
+            }
 
             Spacer(modifier = Modifier.weight(1f))
 

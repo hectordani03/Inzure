@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import io.inzure.app.ui.views.AdminView
 import io.inzure.app.ui.views.LoginView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -49,16 +51,39 @@ class SplashActivity : ComponentActivity() {
     private fun checkAuthenticationAndNavigate() {
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (currentUser != null) {
-            // Si hay un usuario autenticado, navegar a MainActivity
-            startActivity(Intent(this, MainActivity::class.java))
+            // Verificar el rol del usuario en Firestore
+            FirebaseFirestore.getInstance().collection("Users")
+                .document(currentUser.uid)
+                .get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        val role = document.getString("role")
+                        if (role == "admin" || role == "editor") {
+                            // Redirigir a AdminView
+                            startActivity(Intent(this, AdminView::class.java))
+                        } else {
+                            // Redirigir a MainActivity
+                            startActivity(Intent(this, MainActivity::class.java))
+                        }
+                    } else {
+                        // Si el documento no existe, redirigir a LoginView
+                        startActivity(Intent(this, LoginView::class.java))
+                    }
+                    finish()
+                }
+                .addOnFailureListener { exception ->
+                    exception.printStackTrace()
+                    // En caso de error, redirigir a LoginView
+                    startActivity(Intent(this, LoginView::class.java))
+                    finish()
+                }
         } else {
             // Si no hay un usuario autenticado, navegar a LoginView
             startActivity(Intent(this, LoginView::class.java))
+            finish()
         }
-        finish()
     }
 }
-
 
 @Composable
 fun SplashScreen() {

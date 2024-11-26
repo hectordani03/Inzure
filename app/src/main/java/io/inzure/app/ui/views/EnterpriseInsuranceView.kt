@@ -1,14 +1,18 @@
-// EnterpriseInsuranceView.kt
 package io.inzure.app.ui.views
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,12 +28,17 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.rememberAsyncImagePainter
+import io.inzure.app.ui.components.TopBar
 
 import io.inzure.app.R
+
 
 // Importa la función BottomBar desde BottomBar.kt
 import io.inzure.app.ui.components.BottomBar
 import io.inzure.app.ui.components.TopBar
+import io.inzure.app.viewmodel.PostsViewModel
 import kotlinx.coroutines.launch
 
 class EnterpriseInsuranceView : ComponentActivity() {
@@ -45,7 +54,11 @@ class EnterpriseInsuranceView : ComponentActivity() {
 fun EnterpriseInsuranceScreen(onNavigateToLogin: () -> Unit) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-
+    val postsViewModel: PostsViewModel = viewModel()
+    val businessPosts by postsViewModel.businessPosts.collectAsState()
+    LaunchedEffect(Unit) {
+        postsViewModel.getBusinessPosts()
+    }
     Scaffold(
         topBar = {
             TopBar(
@@ -102,18 +115,17 @@ fun EnterpriseInsuranceScreen(onNavigateToLogin: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(22.dp))
 
-                // Tarjetas de seguro empresarial
-                EnterpriseInsuranceCard(
-                    title = "EmpresaPlus",
-                    description = "Protección integral para tu negocio",
-                    imageResId = R.drawable.insurance_image1 // Imagen de ejemplo
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                EnterpriseInsuranceCard(
-                    title = "NegocioSeguro",
-                    description = "Cobertura adaptada a tus necesidades empresariales",
-                    imageResId = R.drawable.insurance_image2 // Imagen de ejemplo
-                )
+                businessPosts.forEach { postWithUser ->
+
+                    InsuranceCard(
+                        title = postWithUser.post.titulo,
+                        description = postWithUser.post.descripcion,
+                        postImage = postWithUser.post.image,
+                        userImage = postWithUser.profileImage
+                    )
+                    Spacer(modifier = Modifier.height(22.dp))
+                }
+
             }
         }
     }
@@ -198,7 +210,12 @@ fun EnterpriseCategoryButton(name: String, iconResId: Int, iconSize: Int = 24) {
 }
 
 @Composable
-fun EnterpriseInsuranceCard(title: String, description: String, imageResId: Int) {
+fun EnterpriseInsuranceCard(title: String, description: String, postImage: String, userImage: String) {
+    val postsViewModel: PostsViewModel = viewModel()
+    val posts by postsViewModel.posts.collectAsState()
+    LaunchedEffect(Unit) {
+        postsViewModel.getCarPosts()
+    }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -228,7 +245,7 @@ fun EnterpriseInsuranceCard(title: String, description: String, imageResId: Int)
     ) {
         // Imagen principal
         Image(
-            painter = painterResource(id = imageResId),
+            painter = rememberAsyncImagePainter(postImage),
             contentDescription = "Insurance Image",
             contentScale = ContentScale.Crop,
             modifier = Modifier
@@ -251,18 +268,25 @@ fun EnterpriseInsuranceCard(title: String, description: String, imageResId: Int)
                 modifier = Modifier.fillMaxWidth()
             ) {
                 // Icono en la izquierda
-                Image(
-                    painter = painterResource(id = when (title) {
-                        "MetLife" -> R.drawable.metlife
-                        "AXA" -> R.drawable.axa
-                        else -> R.drawable.ic_empresarial
-                    }), // Ajusta el ícono según el título
-                    contentDescription = "Insurance Logo",
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.White)
-                )
+                if (!userImage.isNullOrEmpty()) {
+                    Image(
+                        painter = rememberAsyncImagePainter(userImage),
+                        contentDescription = "Insurance Logo",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.White)
+                    )
+                } else{
+                    Image(
+                        painter = painterResource(R.drawable.ic_profile_default),
+                        contentDescription = "Insurance Logo",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.White)
+                    )
+                }
 
                 Spacer(modifier = Modifier.width(8.dp))
 
