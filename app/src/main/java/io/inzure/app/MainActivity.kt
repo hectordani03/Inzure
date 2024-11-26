@@ -24,6 +24,7 @@ import io.inzure.app.ui.views.AprendizajeAutos
 import io.inzure.app.ui.views.AprendizajeEmpresarial
 import io.inzure.app.ui.views.AprendizajeGeneral
 import io.inzure.app.ui.views.AprendizajePersonal
+import io.inzure.app.ui.views.EducativoView
 import io.inzure.app.ui.views.LoginView
 
 class MainActivity : ComponentActivity() {
@@ -81,6 +82,10 @@ class MainActivity : ComponentActivity() {
                         },
                         onNavigateToPersonal = {
                             val intent = Intent(this@MainActivity, AprendizajePersonal::class.java)
+                            startActivity(intent)
+                        },
+                        onNavigateToEducativo = {
+                            val intent = Intent(this@MainActivity, EducativoView::class.java)
                             startActivity(intent)
                         },
                         onNavigateToLogin = {
