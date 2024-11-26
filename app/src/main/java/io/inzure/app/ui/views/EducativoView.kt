@@ -197,6 +197,7 @@ fun Educativo(
                     onNavigateToQuiz = {
                         scope.launch { drawerState.close() }
                         onNavigateToQuiz()
+                    },
                     onNavigateToChat = {
                         scope.launch { drawerState.close() }
                         onNavigateToChat()

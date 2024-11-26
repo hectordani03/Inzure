@@ -68,6 +68,8 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import android.widget.Toast
 import androidx.compose.foundation.border
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 
 import androidx.compose.ui.unit.dp
@@ -108,6 +110,10 @@ fun QuizInsuranceView(
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+    var isDrawerOpen by remember { mutableStateOf(false) }
+    val showChatView = remember { mutableStateOf(false) } // Estado para el ChatView
+
+    val bottomSheetScaffoldState = rememberBottomSheetScaffoldState()
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -139,7 +145,11 @@ fun QuizInsuranceView(
                     },
                     showChatView = remember { mutableStateOf(false) },
                     scope = scope,
-                    drawerState = drawerState
+                    drawerState = drawerState,
+                    onNavigateToChat = {
+                        scope.launch { drawerState.close() }
+                        showChatView.value = true // Activar el ChatView
+                    },
                 )
             }
         }
@@ -157,8 +167,13 @@ fun QuizInsuranceView(
             },
             bottomBar = {
                 BottomBar(
-                    onSwipeUp = { /* Acción al deslizar hacia arriba en el BottomBar */ },
-                    onNavigateToUsers = onNavigateToUsers
+                    onSwipeUp = {
+                        scope.launch {
+                            bottomSheetScaffoldState.bottomSheetState.expand()
+                        }
+                    },
+                    onNavigateToProfile = onNavigateToProfile,
+                    onNavigateToChat = { showChatView.value = true } // Activar el ChatView desde la BottomBar
                 )
             },
         ) { innerPadding ->

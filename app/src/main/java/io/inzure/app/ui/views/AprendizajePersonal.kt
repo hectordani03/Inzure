@@ -92,6 +92,7 @@ class AprendizajePersonal : ComponentActivity() {
                 onNavigateToEducativo = {
                 },
                 onNavigateToQuiz = {
+                },
                 onNavigateToChat = {
                 }
             )
@@ -109,7 +110,7 @@ fun LearnInsuranceViewPersonal(
     onNavigateToLogin: () -> Unit,
     onMenuClick: () -> Unit,
     onNavigateToEducativo: () -> Unit,
-    onNavigateToQuiz: () -> Unit
+    onNavigateToQuiz: () -> Unit,
 
     onNavigateToChat: () -> Unit
 ) {
@@ -151,6 +152,7 @@ fun LearnInsuranceViewPersonal(
                     onNavigateToQuiz = {
                         scope.launch { drawerState.close() }
                         onNavigateToQuiz()
+                    },
                     onNavigateToChat = {
                         scope.launch { drawerState.close() }
                         onNavigateToChat()

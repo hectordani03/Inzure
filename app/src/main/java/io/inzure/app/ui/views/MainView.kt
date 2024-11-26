@@ -49,7 +49,7 @@ fun MainView(
     onNavigateToPersonal: () -> Unit,
     onNavigateToEmpresarial: () -> Unit,
     onNavigateToEducativo: () -> Unit,
-    onNavigateToQuiz: () -> Unit
+    onNavigateToQuiz: () -> Unit,
     onNavigateToChat: () -> Unit
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -125,6 +125,7 @@ fun MainView(
                     onNavigateToQuiz = {
                         scope.launch { drawerState.close() }
                         onNavigateToQuiz()
+                    },
                     onNavigateToChat = {
                         scope.launch { drawerState.close() }
                         showChatView.value = true // Activar el ChatView
