@@ -37,6 +37,7 @@ fun SideMenu(
     screenWidth: Dp,
     onNavigateToProfile: () -> Unit,
     onNavigateToEducativo: () -> Unit,
+    onNavigateToQuiz: () -> Unit,
     onNavigateToAdmin: () -> Unit, // Función de navegación al AdminView
     onNavigateToLogin: () -> Unit, // Nueva función de navegación al Login
     showChatView: MutableState<Boolean>,
@@ -160,6 +161,15 @@ fun SideMenu(
                 spacerHeight = 20.dp,
                 onClick = {
                     onNavigateToEducativo()
+                }
+            )
+
+            MenuOption(
+                iconRes = R.drawable.ic_quiz,
+                text = "¿Qué tanto sabes?",
+                spacerHeight = 20.dp,
+                onClick = {
+                    onNavigateToQuiz()
                 }
             )
 

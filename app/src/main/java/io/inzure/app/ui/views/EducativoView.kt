@@ -57,7 +57,8 @@ class EducativoView : ComponentActivity() {
                 onNavigateToAutos = { /* Acción de navegación a los seguros de autos */},
                 onNavigateToPersonal = { /* Acción de navegación a los seguros personales */},
                 onNavigateToEmpresarial = { /* Acción de navegación a los seguros empresariales */},
-                onNavigateToEducativo = { /* Acción de navegación al educativo */}
+                onNavigateToEducativo = { /* Acción de navegación al educativo */},
+                onNavigateToQuiz = { /* Acción de navegación al quiz */},
                 )
         }
     }
@@ -78,7 +79,8 @@ fun Educativo(
     onNavigateToAutos: () -> Unit,
     onNavigateToPersonal: () -> Unit,
     onNavigateToEmpresarial: () -> Unit,
-    onNavigateToEducativo: () -> Unit
+    onNavigateToEducativo: () -> Unit,
+    onNavigateToQuiz: () -> Unit
 
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -191,6 +193,10 @@ fun Educativo(
                     onNavigateToEducativo = {
                         scope.launch { drawerState.close() }
                         onNavigateToEducativo()
+                    },
+                    onNavigateToQuiz = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToQuiz()
                     },
                     onNavigateToLogin = {
                         scope.launch { drawerState.close() }

@@ -50,7 +50,8 @@ fun MainView(
     onNavigateToAutos: () -> Unit,
     onNavigateToPersonal: () -> Unit,
     onNavigateToEmpresarial: () -> Unit,
-    onNavigateToEducativo: () -> Unit
+    onNavigateToEducativo: () -> Unit,
+    onNavigateToQuiz: () -> Unit
 
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -163,6 +164,10 @@ fun MainView(
                     onNavigateToEducativo = {
                         scope.launch { drawerState.close() }
                         onNavigateToEducativo()
+                    },
+                    onNavigateToQuiz = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToQuiz()
                     },
                     onNavigateToLogin = {
                         scope.launch { drawerState.close() }

@@ -84,6 +84,7 @@ fun MainScreen() {
         drawerState = drawerState,
         drawerContent = {
             SideMenu(
+                onNavigateToQuiz = { navController.navigate("quiz") },
                 onNavigateToEducativo = { navController.navigate("educativo") },
                 onNavigateToProfile = {
                     navController.navigate("profile") {
