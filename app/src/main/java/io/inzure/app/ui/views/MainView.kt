@@ -1,6 +1,6 @@
+// MainView.kt
 package io.inzure.app.ui.views
 
-import android.util.Log
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
@@ -33,14 +33,10 @@ import io.inzure.app.ui.components.BottomBar
 import kotlinx.coroutines.launch
 import com.google.firebase.auth.FirebaseAuth
 import io.inzure.app.data.model.User
+import android.util.Log
 
-// Clase de datos para la lista de seguros
-data class InsuranceData(
-    val imageRes: Int,
-    val companyLogo: Int,
-    val companyName: String,
-    val description: String
-)
+import io.inzure.app.data.model.SearchItem
+import io.inzure.app.ui.components.BottomSheetContent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,7 +45,8 @@ fun MainView(
     onNavigateToCarInsurance: () -> Unit,
     onNavigateToUsers: () -> Unit,
     onNavigateToAdmin: () -> Unit,
-    onNavigateToChat: () -> Unit
+    onNavigateToChat: () -> Unit,
+    onNavigateToLogin: () -> Unit // Nuevo parámetro para navegar al Login
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -85,7 +82,6 @@ fun MainView(
                         firstName = userData.firstName
                         lastName = userData.lastName
                         email = userData.email
-
                         imageUri = userData.image
                     } else {
                         Log.e("Firestore", "El documento existe, pero no se pudo mapear a un objeto User")
@@ -101,37 +97,39 @@ fun MainView(
 
     // Lista de seguros de ejemplo
     val insuranceList = listOf(
-        InsuranceData(
+        SearchItem.InsuranceItem(
             imageRes = R.drawable.aseguradora1,
             companyLogo = R.drawable.ic_qualitas,
             companyName = "Qualitas Seguros",
             description = "Explora por los diversos seguros que tenemos"
         ),
-        InsuranceData(
+        SearchItem.InsuranceItem(
             imageRes = R.drawable.aseguradora3,
             companyLogo = R.drawable.ic_aseguradora3,
             companyName = "MetLife",
             description = "Descubriendo la vida juntos"
-        ),
-        InsuranceData(
-            imageRes = R.drawable.aseguradora2,
-            companyLogo = R.drawable.ic_aseguradora2,
-            companyName = "GNP Seguros",
-            description = "Cobertura completa para tu auto"
-        ),
-        InsuranceData(
-            imageRes = R.drawable.aseguradora4,
-            companyLogo = R.drawable.ic_aseguradora4,
-            companyName = "HDI Seguros",
-            description = "Hacer fáciles tus momentos difíciles"
-        ),
-        InsuranceData(
-            imageRes = R.drawable.aseguradora5,
-            companyLogo = R.drawable.ic_aseguradora5,
-            companyName = "Zurich Seguros",
-            description = "Cobertura total para tu hogar"
         )
     )
+
+    // Lista de chats de ejemplo
+    val chatList = listOf(
+        SearchItem.ChatItem(
+            userName = "Maria Lopez",
+            userCompany = "Asegurador de MetLife",
+            userImageRes = R.drawable.ic_profile4,
+            onClick = { /* Acción al hacer clic en el chat */ }
+        ),
+        SearchItem.ChatItem(
+            userName = "Carlos Perez",
+            userCompany = "Asegurador de HDI",
+            userImageRes = R.drawable.ic_profile,
+            onClick = { /* Acción al hacer clic en el chat */ }
+        )
+        // Agrega más chats según sea necesario
+    )
+
+    // Combinar las listas de seguros y chats
+    val searchItems = remember { insuranceList + chatList }
 
     // Implementación del BottomSheetScaffold para manejar el comportamiento de la Bottom Bar
     BottomSheetScaffold(
@@ -139,7 +137,7 @@ fun MainView(
         sheetPeekHeight = 0.dp, // Comienza colapsado
         containerColor = Color(0xFF072A4A), // Fondo azul del Bottom Sheet
         sheetContent = {
-            BottomSheetContent(insuranceList)
+            BottomSheetContent(searchItems)
         }
     ) {
         // Uso de ModalNavigationDrawer para el menú lateral
@@ -153,24 +151,23 @@ fun MainView(
                         scope.launch { drawerState.close() }
                         onNavigateToProfile()
                     },
-                    scope = scope,
-                    drawerState = drawerState,
                     onNavigateToAdmin = {
                         scope.launch { drawerState.close() }
                         onNavigateToAdmin()
                     },
-                    onNavigateToChat = {
+                    onNavigateToLogin = {
                         scope.launch { drawerState.close() }
-                        onNavigateToChat() // Aquí pasas la función de navegación a la vista de chat
-                    }
+                        onNavigateToLogin()
+                    }, // Pasar la nueva función de navegación al Login
+                    showChatView = showChatView,
+                    scope = scope,
+                    drawerState = drawerState
                 )
             }
-        )
-        {
+        ) {
             // Uso de Scaffold para mantener la TopBar y la BottomBar fijas
             Scaffold(
                 topBar = {
-                    // Importa TopBar desde SideMenu.kt
                     TopBar(
                         onMenuClick = {
                             scope.launch {
@@ -193,48 +190,8 @@ fun MainView(
                 }
             ) { innerPadding ->
                 if (showChatView.value) {
-                    val userReceiver = "QmFVXVwNGGPZPpUQkFiPMxChTmR2"
-                    val db = FirebaseFirestore.getInstance() // Instancia de Firestore
-                    val chatListState = remember { mutableStateListOf<Chat>() }
-
-                    // Consulta Firestore para obtener el nombre del usuario
-                    if (userReceiver != null) {
-                        db.collection("Users").document(userReceiver).get()
-                            .addOnSuccessListener { document ->
-                                if (document != null && document.exists()) {
-                                    val firstname = document.getString("firstName") ?: "Sin nombre"
-                                    val lastname = document.getString("lastName") ?: "Sin apellido"
-                                    val displayName = "$firstname $lastname"
-
-                                    // Agrega el chat con el nombre recuperado
-                                    chatListState.add(
-                                        Chat(
-                                            userName = displayName,
-                                            userCompany = "Asegurador de Qualitas",
-                                            userImageRes = R.drawable.ic_profile5
-                                        )
-                                    )
-                                } else {
-                                    Log.w("Firestore", "No se encontró el documento para el usuario.")
-                                }
-                            }
-                            .addOnFailureListener { e ->
-                                Log.e("Firestore", "Error al obtener el nombre del usuario: $e")
-                            }
-                    } else {
-                        Log.w("Firestore", "El usuario no está autenticado.")
-                    }
-
-                    // Agrega los otros chats estáticos
-                    chatListState.addAll(
-                        listOf(
-                            Chat("Maria Lopez", "Asegurador de MetLife", R.drawable.ic_profile4),
-                            Chat("Carlos Perez", "Asegurador de HDI", R.drawable.ic_profile)
-                        )
-                    )
-
-                    // Mostrar la vista de chats
-                    ChatListView(chats = chatListState, onClose = { /* Acción de cerrar la lista */ })
+                    // Lógica para mostrar la vista de chat
+                    // Puedes implementar aquí la vista de chat según tus necesidades
                 } else {
                     // Contenido principal de la pantalla
                     Column(
@@ -249,184 +206,6 @@ fun MainView(
                         Spacer(modifier = Modifier.weight(1f))
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun BottomSheetContent(insuranceList: List<InsuranceData>) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight(0.75f)
-            .background(Color(0xFF072A4A))
-    ) {
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Buscar",
-            color = Color.White,
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Campo de búsqueda
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_search),
-                contentDescription = "Lupa",
-                tint = Color.White,
-                modifier = Modifier.size(24.dp)
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            SearchField()
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .padding(horizontal = 16.dp)
-                .background(Color.White.copy(alpha = 0.6f))
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        LazyColumn(
-            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 16.dp)
-        ) {
-            items(insuranceList) { insurance ->
-                InsuranceCardWithImage(
-                    imageRes = insurance.imageRes,
-                    companyLogo = insurance.companyLogo,
-                    companyName = insurance.companyName,
-                    description = insurance.description
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SearchField() {
-    var text by remember { mutableStateOf("") }
-
-    OutlinedTextField(
-        value = text,
-        onValueChange = { text = it },
-        placeholder = {
-            Text(
-                text = "Encuentra tu seguro",
-                color = Color.White.copy(alpha = 0.6f),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 0.dp),
-        textStyle = TextStyle(
-            color = Color.White,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        ),
-        singleLine = true,
-        shape = RoundedCornerShape(8.dp),
-        colors = TextFieldDefaults.colors(
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            unfocusedContainerColor = Color.Transparent,
-            cursorColor = Color.White
-        )
-    )
-}
-
-@Composable
-fun InsuranceCardWithImage(imageRes: Int, companyLogo: Int, companyName: String, description: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-            .background(Color.White, RoundedCornerShape(12.dp))
-    ) {
-        Image(
-            painter = painterResource(id = imageRes),
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(150.dp)
-                .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
-            contentScale = ContentScale.Crop
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Image(
-                painter = painterResource(id = companyLogo),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(40.dp)
-                    .padding(4.dp)
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = companyName,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Text(
-                    text = description,
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-            }
-
-            // Íconos del corazón y de la flecha
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_personal),
-                    contentDescription = null,
-                    tint = Color.Gray,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .padding(bottom = 4.dp)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_arrow),
-                    contentDescription = "Desplegar más",
-                    tint = Color.Gray,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .padding(top = 4.dp)
-                )
             }
         }
     }
@@ -796,5 +575,3 @@ fun InsuranceImage4() {
         }
     }
 }
-
-

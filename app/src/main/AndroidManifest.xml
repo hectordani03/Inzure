@@ -61,6 +61,18 @@
         </activity>
 
         <activity
+            android:name="io.inzure.app.ui.views.InsuranceInfoActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
+        </activity>
+
+        <activity
+            android:name="io.inzure.app.ui.views.AgentActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
+        </activity>
+
+        <activity
             android:name="io.inzure.app.ui.views.PostsView"
             android:exported="true"
             android:theme="@style/Theme.Inzure">
@@ -83,12 +95,6 @@
         <activity
             android:name="io.inzure.app.MainActivity"
             android:exported="true">
-        </activity>
-
-        <activity
-            android:name="io.inzure.app.ui.views.ChatView"
-            android:exported="true"
-            android:theme="@style/Theme.Inzure">
         </activity>
 
     </application>

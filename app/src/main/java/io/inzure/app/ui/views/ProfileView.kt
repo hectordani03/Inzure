@@ -1,15 +1,18 @@
+// ProfileView.kt
 package io.inzure.app.ui.views
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -25,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -36,19 +40,33 @@ import androidx.navigation.compose.composable
 import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import io.inzure.app.InzureTheme
 import io.inzure.app.R
 import io.inzure.app.data.model.User
 import io.inzure.app.ui.components.BottomBar
 import io.inzure.app.ui.components.SideMenu
 import io.inzure.app.ui.components.TopBar
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+
+// Asegúrate de tener esta actividad en tu proyecto
+import io.inzure.app.ui.views.LoginView
 
 class ProfileView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0),
+            navigationBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0)
+        )
         setContent {
-            MainScreen()
+            InzureTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = Color.White
+                ) {
+                    MainScreen()
+                }
+            }
         }
     }
 }
@@ -113,6 +131,9 @@ fun ProfileScreen(navController: NavController) {
         animationSpec = tween(durationMillis = 500)
     )
 
+    // Obtener el contexto para iniciar actividades
+    val context = LocalContext.current
+
     // Uso de ModalNavigationDrawer para el menú lateral
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -121,10 +142,19 @@ fun ProfileScreen(navController: NavController) {
             SideMenu(
                 screenWidth = screenWidth,
                 onNavigateToProfile = { /* Navegar a Perfil */ },
-                onNavigateToChat = { navController.navigate("chat") }, // Navegar a la vista de chat
+                onNavigateToAdmin = { navController.navigate("admin") }, // Navegación al AdminView
+                onNavigateToLogin = {
+                    // Cerrar sesión y redireccionar al LoginView
+                    auth.signOut()
+                    // Iniciar LoginView y limpiar la pila de actividades
+                    val intent = Intent(context, LoginView::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    }
+                    context.startActivity(intent)
+                },
+                showChatView = showChatView,
                 scope = scope,
-                drawerState = drawerState,
-                onNavigateToAdmin = { navController.navigate("admin") } // Navegación al AdminView
+                drawerState = drawerState
             )
         }
     ) {
@@ -212,15 +242,18 @@ fun ProfileScreen(navController: NavController) {
                 }
                 OptionButton("Mis Seguros", R.drawable.ic_profile2) {
                     // Implementar navegación a 'Mis Seguros'
+                    // Por ejemplo:
+                    // navController.navigate("my_insurances")
                 }
                 OptionButton("Mis Agentes", R.drawable.ic_profile2) {
                     // Implementar navegación a 'Mis Agentes'
+                    // Por ejemplo:
+                    // navController.navigate("my_agents")
                 }
             }
         }
     }
 }
-
 
 @Composable
 fun OptionButton(text: String, icon: Int, onClick: () -> Unit) {
@@ -250,5 +283,18 @@ fun OptionButton(text: String, icon: Int, onClick: () -> Unit) {
                 color = Color.Black // Texto en negro
             )
         }
+    }
+}
+
+@Composable
+fun PersonalInformationView() {
+    // Implementa la UI para Información Personal aquí
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = "Información Personal", fontSize = 24.sp, fontWeight = FontWeight.Bold)
     }
 }
