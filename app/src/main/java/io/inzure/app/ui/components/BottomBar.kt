@@ -42,10 +42,7 @@ fun BottomBar(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = {
-                val intent = Intent(context, MainView::class.java)
-                context.startActivity(intent)
-            }) {
+            IconButton(onClick = onSwipeUp) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_home),
                     contentDescription = "Home",
