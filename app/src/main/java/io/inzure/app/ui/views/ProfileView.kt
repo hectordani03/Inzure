@@ -48,7 +48,7 @@ import io.inzure.app.ui.components.TopBar
 import kotlinx.coroutines.launch
 
 // Importar MyPostsScreen y otras vistas necesarias
-import io.inzure.app.ui.views.MyPostsScreen
+import io.inzure.app.ui.views.MyPostsListView
 import io.inzure.app.ui.views.LoginView
 import io.inzure.app.ui.views.PersonalInformationView
 
@@ -110,7 +110,7 @@ fun MainScreen() {
         NavHost(navController, startDestination = "profile") {
             composable("profile") { ProfileScreen(navController) }
             composable("personal_information") { PersonalInformationView() }
-            composable("my_posts") { MyPostsScreen(drawerState) }
+            composable("my_posts") { MyPostsListView() }
         }
     }
 }

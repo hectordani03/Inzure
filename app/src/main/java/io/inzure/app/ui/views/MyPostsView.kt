@@ -1,17 +1,23 @@
-// MyPostsScreen.kt
 package io.inzure.app.ui.views
 
+import android.net.Uri
+import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,139 +29,126 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
-import io.inzure.app.R
-import io.inzure.app.data.model.Post
-import io.inzure.app.viewmodel.PostViewModel
-import kotlinx.coroutines.launch
+import com.google.firebase.auth.FirebaseAuth
+import io.inzure.app.data.model.Posts
+import io.inzure.app.viewmodel.PostsViewModel
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+class MyPostsView : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            MyPostsListView()
+        }
+    }
+}
+
 @Composable
-fun MyPostsScreen(drawerState: DrawerState) {
-    val postViewModel: PostViewModel = viewModel()
-    val posts by postViewModel.posts.collectAsState()
-    var showAddPostDialog by remember { mutableStateOf(false) }
-    var postToEdit by remember { mutableStateOf<Post?>(null) }
-    var postToDelete by remember { mutableStateOf<Post?>(null) }
+fun MyPostsListView() {
+    val postsViewModel: PostsViewModel = viewModel()
+    val posts by postsViewModel.posts.collectAsState()
+    var showDialog by remember { mutableStateOf(false) }
+    var postsToEdit by remember { mutableStateOf<Posts?>(null) }
+    var showDeleteConfirmation by remember { mutableStateOf<Posts?>(null) }
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    val context = LocalContext.current
 
-    // CoroutineScope para manejar la apertura del drawer desde la barra de navegación
-    val scope = rememberCoroutineScope()
+    LaunchedEffect(Unit) {
+        postsViewModel.getPosts()
+    }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Mis Posts", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        scope.launch {
-                            drawerState.open()
-                        }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Menú",
-                            tint = Color.White
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF072A4A),
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
-            )
-        },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddPostDialog = true }) {
+            FloatingActionButton(onClick = { showDialog = true }) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Agregar Post")
             }
         },
         content = { paddingValues ->
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .background(Color(0xFFF2F2F2))
+                    .padding(16.dp)
             ) {
+                Text(
+                    text = "Mis Publicaciones",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
                 if (posts.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No hay posts disponibles.",
-                            fontSize = 18.sp,
-                            color = Color.Gray
-                        )
-                    }
+                    Text(
+                        text = "No tienes publicaciones.",
+                        fontSize = 16.sp,
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
                 } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        items(posts) { post ->
-                            InsuranceCard(
-                                title = post.title,
-                                description = post.content,
-                                imageResId = R.drawable.ic_qualitas, // Asegúrate de tener este recurso
-                                onEdit = { postToEdit = post },
-                                onDelete = { postToDelete = post }
-                            )
-                        }
+                    posts.filter { it.userId == currentUserId }.forEach { post ->
+                        PostCard(
+                            posts = post,
+                            onEdit = { postsToEdit = post },
+                            onDelete = { showDeleteConfirmation = post }
+                        )
                     }
                 }
             }
         }
     )
 
-    // Diálogo para agregar un nuevo post
-    if (showAddPostDialog) {
-        AddNewPostDialog(
-            onDismiss = { showAddPostDialog = false },
-            onSave = { newPost ->
-                postViewModel.addPostManually(newPost) // Llamar a una función que actualice localmente
-                showAddPostDialog = false
+    if (showDialog) {
+        AddPostDialog(
+            currentUserId = currentUserId,
+            onDismiss = { showDialog = false },
+            onSave = { post, imageUri ->
+                postsViewModel.addPost(post, imageUri)
+                showDialog = false
+            },
+            onSelectImage = { uri -> }
+        )
+    }
+
+    postsToEdit?.let { post ->
+        EditPostDialog(
+            posts = post,
+            onDismiss = { postsToEdit = null },
+            onSave = { updatedPost, newImageUri ->
+                postsViewModel.updatePost(updatedPost, newImageUri) { success ->
+                    if (success) {
+                        Toast.makeText(context, "Publicación actualizada exitosamente.", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Error al actualizar la publicación.", Toast.LENGTH_SHORT).show()
+                    }
+                    postsToEdit = null
+                }
             }
         )
     }
 
-    // Diálogo para editar un post existente
-    postToEdit?.let { post ->
-        EditExistingPostDialog(
-            post = post,
-            onDismiss = { postToEdit = null },
-            onSave = { updatedPost ->
-                postViewModel.updatePostManually(updatedPost) // Actualizar manualmente
-                postToEdit = null
-            }
-        )
-    }
-
-    // Confirmación para eliminar un post
-    postToDelete?.let { post ->
+    showDeleteConfirmation?.let { post ->
         AlertDialog(
-            onDismissRequest = { postToDelete = null },
-            title = { Text(text = "Eliminar Post") },
-            text = { Text(text = "¿Estás seguro de que deseas eliminar este post?") },
+            onDismissRequest = { showDeleteConfirmation = null },
+            title = { Text(text = "Eliminar Publicación") },
+            text = { Text(text = "¿Estás seguro de que deseas eliminar esta publicación?") },
             confirmButton = {
                 TextButton(onClick = {
-                    postViewModel.deletePostManually(post) // Eliminar manualmente
-                    postToDelete = null
+                    postsViewModel.deletePost(post)
+                    showDeleteConfirmation = null
                 }) {
-                    Text("Sí", color = Color.Red)
+                    Text("Sí")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { postToDelete = null }) {
+                TextButton(onClick = { showDeleteConfirmation = null }) {
                     Text("No")
                 }
             }
@@ -163,137 +156,8 @@ fun MyPostsScreen(drawerState: DrawerState) {
     }
 }
 
-
 @Composable
-fun EditExistingPostDialog(post: Post, onDismiss: () -> Unit, onSave: (Post) -> Unit) {
-    var title by remember { mutableStateOf(post.title) }
-    var content by remember { mutableStateOf(post.content) }
-    var authorId by remember { mutableStateOf(post.authorId) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(text = "Editar Post") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Título") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = content,
-                    onValueChange = { content = it },
-                    label = { Text("Contenido") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(100.dp),
-                    maxLines = 5
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = authorId,
-                    onValueChange = { authorId = it },
-                    label = { Text("ID del Autor") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    if (title.isNotBlank() && content.isNotBlank() && authorId.isNotBlank()) {
-                        val updatedPost = post.copy(
-                            title = title,
-                            content = content,
-                            authorId = authorId
-                            // Mantener el timestamp original
-                        )
-                        onSave(updatedPost)
-                    }
-                }
-            ) {
-                Text("Actualizar", color = Color(0xFF6200EE))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        }
-    )
-}
-
-@Composable
-fun AddNewPostDialog(onDismiss: () -> Unit, onSave: (Post) -> Unit) {
-    var title by remember { mutableStateOf("") }
-    var content by remember { mutableStateOf("") }
-    var authorId by remember { mutableStateOf("") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(text = "Agregar Nuevo Post") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Título") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = content,
-                    onValueChange = { content = it },
-                    label = { Text("Contenido") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(100.dp),
-                    maxLines = 5
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = authorId,
-                    onValueChange = { authorId = it },
-                    label = { Text("ID del Autor") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    if (title.isNotBlank() && content.isNotBlank() && authorId.isNotBlank()) {
-                        val newPost = Post(
-                            title = title,
-                            content = content,
-                            authorId = authorId,
-                            timestamp = System.currentTimeMillis()
-                        )
-                        onSave(newPost)
-                    }
-                }
-            ) {
-                Text("Guardar", color = Color(0xFF6200EE))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        }
-    )
-}
-
-@Composable
-fun InsuranceCard(
-    title: String,
-    description: String,
-    imageResId: Int,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit
-) {
+fun PostCard(posts: Posts, onEdit: () -> Unit, onDelete: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -330,15 +194,28 @@ fun InsuranceCard(
 
         Column(modifier = Modifier.fillMaxSize()) {
             // Imagen principal
-            Image(
-                painter = rememberAsyncImagePainter(imageResId),
-                contentDescription = "Insurance Image",
-                contentScale = ContentScale.Crop,
+            posts.image?.let { imageUrl ->
+                Image(
+                    painter = rememberAsyncImagePainter(imageUrl),
+                    contentDescription = "Post Image",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                )
+            } ?: Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
-                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
-            )
+                    .background(Color.LightGray)
+            ) {
+                Text(
+                    text = "Sin Imagen",
+                    color = Color.White,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
 
             // Caja de información en la parte inferior
             Column(
@@ -352,28 +229,16 @@ fun InsuranceCard(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    // Icono en la izquierda
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_qualitas), // Asegúrate de tener este recurso
-                        contentDescription = "Insurance Logo",
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color.White)
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
                     // Título y descripción
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = title,
+                            text = posts.titulo,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
                         )
                         Text(
-                            text = description,
+                            text = posts.descripcion,
                             fontSize = 14.sp,
                             color = Color.Gray
                         )
@@ -400,19 +265,246 @@ fun InsuranceCard(
             }
         }
     }
+}
 
 
+@Composable
+fun AddPostDialog(
+    currentUserId: String,
+    onDismiss: () -> Unit,
+    onSave: (Posts, Uri?) -> Unit,
+    onSelectImage: (Uri) -> Unit
+) {
+    var titulo by remember { mutableStateOf(TextFieldValue()) }
+    var descripcion by remember { mutableStateOf(TextFieldValue()) }
+    var tipo by remember { mutableStateOf("") }
+    var imagenUri by remember { mutableStateOf<Uri?>(null) }
+    val context = LocalContext.current
 
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            imagenUri = uri
+            onSelectImage(uri)
+        }
+    }
 
-
-    /**
-     * Función para formatear la marca de tiempo en un formato legible.
-     *
-     * @param timestamp Marca de tiempo en milisegundos.
-     * @return Cadena con la fecha y hora formateadas.
-     */
-    fun formatTimestamp(timestamp: Long): String {
-        val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
-        return sdf.format(Date(timestamp))
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(24.dp),
+            color = Color.White
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                OutlinedTextField(
+                    value = titulo,
+                    onValueChange = { titulo = it },
+                    label = { Text("Título") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = descripcion,
+                    onValueChange = { descripcion = it },
+                    label = { Text("Descripción") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                DropdownMenu(
+                    tipo = tipo,
+                    onTipoSelected = { tipo = it }
+                )
+                Button(onClick = { launcher.launch("image/*") }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Seleccionar Imagen")
+                }
+                imagenUri?.let {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Image(
+                        painter = rememberAsyncImagePainter(it),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(250.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.Gray)
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancelar")
+                    }
+                    Button(onClick = {
+                        if (tipo.isNotBlank()) {
+                            val newPost = Posts(
+                                titulo = titulo.text,
+                                descripcion = descripcion.text,
+                                userId = currentUserId,
+                                tipo = tipo,
+                                date = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+                            )
+                            onSave(newPost, imagenUri)
+                        } else {
+                            Toast.makeText(context, "Debe seleccionar un tipo.", Toast.LENGTH_SHORT).show()
+                        }
+                    }) {
+                        Text("Guardar")
+                    }
+                }
+            }
+        }
     }
 }
+
+@Composable
+fun DropdownMenu(tipo: String, onTipoSelected: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val tipos = listOf("Autos", "Personal", "Empresarial")
+
+    Box {
+        OutlinedTextField(
+            value = tipo,
+            onValueChange = {},
+            label = { Text("Tipo") },
+            readOnly = true,
+            modifier = Modifier.fillMaxWidth(),
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = null,
+                    modifier = Modifier.clickable { expanded = true }
+                )
+            }
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            tipos.forEach { item ->
+                DropdownMenuItem(
+                    text = { Text(text = item) },
+                    onClick = {
+                        onTipoSelected(item)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun EditPostDialog(posts: Posts, onDismiss: () -> Unit, onSave: (Posts, Uri?) -> Unit) {
+    var title by remember { mutableStateOf(TextFieldValue(posts.titulo)) }
+    var description by remember { mutableStateOf(TextFieldValue(posts.descripcion)) }
+    var newImageUri by remember { mutableStateOf<Uri?>(null) }
+    val context = LocalContext.current
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            newImageUri = uri
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            color = Color.White
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(text = "Editar Publicación", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+
+                // Campo para título
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Título") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Campo para descripción
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Descripción") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Botón para seleccionar nueva imagen
+                Button(
+                    onClick = {
+                        launcher.launch("image/*")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Seleccionar Nueva Imagen")
+                }
+
+                // Previsualización de imagen nueva o existente
+                newImageUri?.let {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Image(
+                        painter = rememberAsyncImagePainter(it),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.Gray)
+                    )
+                } ?: posts.image?.let { imageUrl ->
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Image(
+                        painter = rememberAsyncImagePainter(imageUrl),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.Gray)
+                    )
+                }
+
+                // Botones de acción
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancelar")
+                    }
+                    Button(onClick = {
+                        if (title.text.isNotBlank() && description.text.isNotBlank()) {
+                            val updatedPost = posts.copy(
+                                titulo = title.text,
+                                descripcion = description.text
+                            )
+                            onSave(updatedPost, newImageUri)
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "El título y la descripción no pueden estar vacíos.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }) {
+                        Text("Guardar Cambios")
+                    }
+                }
+            }
+        }
+    }
+}
+

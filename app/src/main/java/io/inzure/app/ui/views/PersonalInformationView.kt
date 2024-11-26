@@ -1,4 +1,3 @@
-// PersonalInformationView.kt
 package io.inzure.app.ui.views
 
 import android.annotation.SuppressLint
@@ -6,7 +5,6 @@ import android.app.DatePickerDialog
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -45,7 +43,6 @@ import io.inzure.app.data.model.User
 import io.inzure.app.viewmodel.UserViewModel
 import io.inzure.app.viewmodel.ValidationUtils
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.Period
 import java.util.*
@@ -79,7 +76,7 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
     var showEditPhotoDialog by remember { mutableStateOf(false) }
     var showDeleteImageDialog by remember { mutableStateOf(false) }
 
-    // Agregar variable de estado para el diálogo de contraseña
+// Agregar variable de estado para el diálogo de contraseña
     var showPasswordDialog by remember { mutableStateOf(false) }
     var enteredPassword by remember { mutableStateOf("") }
 
@@ -147,7 +144,7 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
         },
         "Descripción" to description to { newValue: String ->
             description = newValue
-            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, description, imageUri, role)
+            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone,description, imageUri, role)
         },
         "Fecha de Nacimiento" to birthDate to { newValue: String ->
             birthDate = newValue
@@ -285,7 +282,7 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
                 // Realizar validación
                 coroutineScope.launch {
                     when (editingLabel) {
-                        // Lógica actualizada para manejar "Correo Electrónico"
+// Lógica actualizada para manejar "Correo Electrónico"
                         "Correo Electrónico" -> {
                             val isUnique = ValidationUtils.isEmailUnique(newValue, userId, firestore)
                             if (!isUnique) {
@@ -298,7 +295,6 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
                                 showDialog = false
                             }
                         }
-
                         "Número telefónico" -> {
                             val isUnique = ValidationUtils.isPhoneUnique(newValue, userId, firestore)
                             if (!isUnique) {
@@ -507,19 +503,6 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
 
 }
 
-@SuppressLint("NewApi")
-fun isAgeValid(birthDateStr: String): Boolean {
-    return try {
-        val birthDate = LocalDate.parse(birthDateStr) // Asumiendo formato ISO: yyyy-MM-dd
-        val today = LocalDate.now()
-        val age = Period.between(birthDate, today).years
-        age >= 18
-    } catch (e: Exception) {
-        Log.e("Validation", "Error al analizar la fecha de nacimiento: ${e.message}")
-        false
-    }
-}
-
 // Función para actualizar la información del usuario en Firestore a través del ViewModel
 fun updateUserInfo(
     userId: String,
@@ -547,75 +530,21 @@ fun updateUserInfo(
     userViewModel.updateUser(updatedUser)
 }
 
-@Composable
-fun PersonalInfoCard(label: String, value: String, onEditClick: () -> Unit) {
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 32.dp, vertical = 8.dp)
-            .height(80.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFCFD8DC))
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                Text(
-                    text = label,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = value,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = Color.Black
-                )
-            }
-            IconButton(
-                onClick = onEditClick,
-                modifier = Modifier.size(24.dp)
-            ) {
-                Icon(Icons.Filled.Edit, contentDescription = "Editar", tint = Color.Black)
-            }
-        }
+// Función para validar que el usuario tenga al menos 18 años
+@SuppressLint("NewApi")
+fun isAgeValid(birthDateStr: String): Boolean {
+    return try {
+        val birthDate = LocalDate.parse(birthDateStr) // Asumiendo formato ISO: yyyy-MM-dd
+        val today = LocalDate.now()
+        val age = Period.between(birthDate, today).years
+        age >= 18
+    } catch (e: Exception) {
+        Log.e("Validation", "Error al analizar la fecha de nacimiento: ${e.message}")
+        false
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TopBarProfile() {
-    TopAppBar(
-        title = {
-            Text(
-                "Mi Información Personal",
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
-            )
-        },
-        navigationIcon = {
-            IconButton(onClick = { /* Lógica del menú */ }) {
-                Icon(Icons.Filled.Menu, contentDescription = "Menú", tint = Color.White)
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color(0xFF0D47A1)
-        )
-    )
-}
-
+@SuppressLint("NewApi")
 @Composable
 fun EditPersonalInfoDialog(
     label: String,
@@ -737,3 +666,74 @@ fun EditPersonalInfoDialog(
         }
     )
 }
+
+@Composable
+fun PersonalInfoCard(label: String, value: String, onEditClick: () -> Unit) {
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 32.dp, vertical = 8.dp)
+            .height(80.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFCFD8DC))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    text = label,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = value,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = Color.Black
+                )
+            }
+            IconButton(
+                onClick = onEditClick,
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(Icons.Filled.Edit, contentDescription = "Editar", tint = Color.Black)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TopBarProfile() {
+    TopAppBar(
+        title = {
+            Text(
+                "Mi Información Personal",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = { /* Lógica del menú */ }) {
+                Icon(Icons.Filled.Menu, contentDescription = "Menú", tint = Color.White)
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color(0xFF0D47A1)
+        )
+    )
+}
+
+
