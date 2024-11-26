@@ -24,6 +24,7 @@ import io.inzure.app.ui.views.AprendizajeAutos
 import io.inzure.app.ui.views.AprendizajeEmpresarial
 import io.inzure.app.ui.views.AprendizajeGeneral
 import io.inzure.app.ui.views.AprendizajePersonal
+import io.inzure.app.ui.views.ChatView
 import io.inzure.app.ui.views.EducativoView
 import io.inzure.app.ui.views.QuizView
 import io.inzure.app.ui.views.LoginView
@@ -67,7 +68,8 @@ class MainActivity : ComponentActivity() {
                             startActivity(intent)
                         },
                         onNavigateToChat = {
-                            // Implementa la navegación al chat si es necesario
+                            val intent = Intent(this@MainActivity, ChatView::class.java)
+                            startActivity(intent)
                         },
                         onNavigateToGeneral = {
                             val intent = Intent(this@MainActivity, AprendizajeGeneral::class.java)

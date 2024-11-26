@@ -10,6 +10,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,11 +27,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.inzure.app.ui.components.TopBar
 
 import io.inzure.app.R
 
 // Importa la función BottomBar desde BottomBar.kt
 import io.inzure.app.ui.components.BottomBar
+import kotlinx.coroutines.launch
 
 class CarInsuranceView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,61 +49,82 @@ class CarInsuranceView : ComponentActivity() {
 }
 @Composable
 fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        TopBarCar(onNavigateToLogin)
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
-        Spacer(modifier = Modifier.height(22.dp))
+    Scaffold(
+        topBar = {
+            TopBar(
+                onMenuClick = {
+                    scope.launch {
+                        drawerState.open() // Abre el Drawer
+                    }
+                },
+                onNavigateToProfile = onNavigateToLogin // Implementa la acción de navegación
+            )
+        },
+        bottomBar = {
+            val showChatView = remember { mutableStateOf(false) }
+            BottomBar(
+                onSwipeUp = { /* Acción al deslizar hacia arriba */ },
+                onNavigateToProfile = { /* Acción de navegación */ },
 
+                onNavigateToChat = { showChatView.value = true }
+            )
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(12.dp)
+                .padding(padding)
         ) {
-            // Título principal con ícono de carro
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 12.dp)
-            ) {
-                Text(
-                    text = "Seguros de autos",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
-                    modifier = Modifier.weight(1f)
-                )
-                Image(
-                    painter = painterResource(id = R.drawable.ic_auto),
-                    contentDescription = "Car Icon",
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-
-            InsuranceCategoriesCar() // Categorías de seguros
-
             Spacer(modifier = Modifier.height(22.dp))
 
-            // Tarjetas de seguro
-            InsuranceCard(
-                title = "Qualitas Seguros",
-                description = "Explora por los diversos seguros que tenemos",
-                imageResId = R.drawable.insurance_image2 // Imagen de ejemplo
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            InsuranceCard(
-                title = "GNP Seguros",
-                description = "Seguros completos para tu vehículo",
-                imageResId = R.drawable.insurance_image1 // Imagen de ejemplo
-            )
-        }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(12.dp)
+            ) {
+                // Título principal con ícono de carro
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp)
+                ) {
+                    Text(
+                        text = "Seguros de autos",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_auto),
+                        contentDescription = "Car Icon",
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
 
-        // Reemplaza BottomBarCar() por BottomBar()
-        BottomBar(
-            onSwipeUp = { /* Acción al deslizar hacia arriba */ },
-            onNavigateToUsers = { /* Acción de navegación */ }
-        )
+                InsuranceCategoriesCar() // Categorías de seguros
+
+                Spacer(modifier = Modifier.height(22.dp))
+
+                // Tarjetas de seguro
+                InsuranceCard(
+                    title = "Qualitas Seguros",
+                    description = "Explora por los diversos seguros que tenemos",
+                    imageResId = R.drawable.insurance_image2 // Imagen de ejemplo
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                InsuranceCard(
+                    title = "GNP Seguros",
+                    description = "Seguros completos para tu vehículo",
+                    imageResId = R.drawable.insurance_image1 // Imagen de ejemplo
+                )
+            }
+        }
     }
 }
 

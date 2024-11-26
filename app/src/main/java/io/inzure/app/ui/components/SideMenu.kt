@@ -40,6 +40,7 @@ fun SideMenu(
     onNavigateToQuiz: () -> Unit,
     onNavigateToAdmin: () -> Unit, // Función de navegación al AdminView
     onNavigateToLogin: () -> Unit, // Nueva función de navegación al Login
+    onNavigateToChat: () -> Unit,
     showChatView: MutableState<Boolean>,
     scope: CoroutineScope,
     drawerState: DrawerState
@@ -151,8 +152,8 @@ fun SideMenu(
                 text = "Chat",
                 spacerHeight = 20.dp,
                 onClick = {
-                    showChatView.value = true
-                    scope.launch { drawerState.close() }
+                    scope.launch { drawerState.close() } // Cierra el menú lateral
+                    onNavigateToChat() // Navega al chat
                 }
             )
             MenuOption(

@@ -197,6 +197,9 @@ fun Educativo(
                     onNavigateToQuiz = {
                         scope.launch { drawerState.close() }
                         onNavigateToQuiz()
+                    onNavigateToChat = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToChat()
                     },
                     onNavigateToLogin = {
                         scope.launch { drawerState.close() }
@@ -228,7 +231,8 @@ fun Educativo(
                                 bottomSheetScaffoldState.bottomSheetState.expand()
                             }
                         },
-                        onNavigateToUsers = onNavigateToUsers
+                        onNavigateToProfile = onNavigateToProfile,
+                        onNavigateToChat = { showChatView.value = true }
                     )
                 }
             ) { innerPadding ->
