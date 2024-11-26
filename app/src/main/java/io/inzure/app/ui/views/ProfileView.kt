@@ -187,7 +187,7 @@ fun ProfileScreen(navController: NavController) {
         bottomBar = {
             BottomBar(
                 onSwipeUp = { /* Implementar acción si es necesario */ },
-                onNavigateToUsers = { /* Implementar navegación a Users si es necesario */ }
+                onNavigateToProfile = { /* Implementar navegación a Users si es necesario */ }
             )
         }
     ) { innerPadding ->
