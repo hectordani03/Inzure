@@ -1,5 +1,7 @@
+// Search.kt
 package io.inzure.app.ui.components
 
+import android.content.Intent
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.*
@@ -13,15 +15,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import io.inzure.app.R
 import io.inzure.app.data.model.SearchItem
+import io.inzure.app.ui.views.AgentActivity
+import io.inzure.app.ui.views.InsuranceInfoActivity
 
 @Composable
 fun BottomSheetContent(allSearchItems: List<SearchItem>) {
+    val context = LocalContext.current
     var searchText by remember { mutableStateOf("") }
     val filteredSearchItems = remember(searchText, allSearchItems) {
         if (searchText.isEmpty()) {
@@ -108,7 +114,11 @@ fun BottomSheetContent(allSearchItems: List<SearchItem>) {
                                 imageRes = item.imageRes,
                                 companyLogo = item.companyLogo,
                                 companyName = item.companyName,
-                                description = item.description
+                                description = item.description,
+                                onClick = {
+                                    val intent = Intent(context, InsuranceInfoActivity::class.java)
+                                    context.startActivity(intent)
+                                }
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                         }
@@ -117,7 +127,10 @@ fun BottomSheetContent(allSearchItems: List<SearchItem>) {
                                 userName = item.userName,
                                 userCompany = item.userCompany,
                                 userImageRes = item.userImageRes,
-                                onClick = item.onClick
+                                onClick = {
+                                    val intent = Intent(context, AgentActivity::class.java)
+                                    context.startActivity(intent)
+                                }
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                         }
@@ -162,12 +175,19 @@ fun SearchField(text: String, onTextChange: (String) -> Unit) {
 }
 
 @Composable
-fun InsuranceCardWithImage(imageRes: Int, companyLogo: Int, companyName: String, description: String) {
+fun InsuranceCardWithImage(
+    imageRes: Int,
+    companyLogo: Int,
+    companyName: String,
+    description: String,
+    onClick: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
             .background(Color.White, RoundedCornerShape(12.dp))
+            .clickable { onClick() }
     ) {
         Image(
             painter = painterResource(id = imageRes),
@@ -216,7 +236,7 @@ fun InsuranceCardWithImage(imageRes: Int, companyLogo: Int, companyName: String,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_personal),
+                    painter = painterResource(id = R.drawable.info_ic_gray),
                     contentDescription = null,
                     tint = Color.Gray,
                     modifier = Modifier
@@ -225,15 +245,6 @@ fun InsuranceCardWithImage(imageRes: Int, companyLogo: Int, companyName: String,
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
-
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_arrow),
-                    contentDescription = "Desplegar más",
-                    tint = Color.Gray,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .padding(top = 4.dp)
-                )
             }
         }
     }
@@ -251,7 +262,7 @@ fun ChatItemComposable(
             .fillMaxWidth()
             .background(Color(0xFF04305A), RoundedCornerShape(12.dp))
             .padding(12.dp)
-            .clickable { onClick() }, // Acción de clic para seleccionar el chat
+            .clickable { onClick() },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
@@ -279,7 +290,7 @@ fun ChatItemComposable(
         }
 
         Icon(
-            painter = painterResource(id = R.drawable.ic_chat),
+            painter = painterResource(id = R.drawable.info_ic),
             contentDescription = "Chat",
             tint = Color.White,
             modifier = Modifier.size(24.dp)
