@@ -1,6 +1,7 @@
 // MainView.kt
 package io.inzure.app.ui.views
 
+import android.os.Bundle
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
@@ -34,6 +35,8 @@ import kotlinx.coroutines.launch
 import com.google.firebase.auth.FirebaseAuth
 import io.inzure.app.data.model.User
 import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 
 import io.inzure.app.data.model.SearchItem
 import io.inzure.app.ui.components.BottomSheetContent
@@ -54,7 +57,7 @@ class MainView : ComponentActivity() {
             MaterialTheme {
                 Surface {
                     MainView(
-                        onNavigateToProfile = { /* Acción al hacer clic en el botón de perfil */ },
+                        /*onNavigateToProfile = { /* Acción al hacer clic en el botón de perfil */ },
                         onNavigateToCarInsurance = { /* Acción al hacer clic en el botón de seguros de autos */ },
                         onNavigateToUsers = { /* Acción al hacer clic en el botón de usuarios */ },
                         onNavigateToAdmin = { /* Acción al hacer clic en el botón de administrador */ },
@@ -63,7 +66,7 @@ class MainView : ComponentActivity() {
                         onNavigateToGeneral = { /* Acción al hacer clic en el botón de login */ },
                         onNavigateToAutos = { /* Acción al hacer clic en el botón de login */ },
                         onNavigateToEmpresarial = { /* Acción al hacer clic en el botón de login */ },
-                        onNavigateToPersonal = { /* Acción al hacer clic en el botón de login */ }
+                        onNavigateToPersonal = { /* Acción al hacer clic en el botón de login */ }*/
                     )
                 }
             }
@@ -248,7 +251,7 @@ fun MainView(
                             onNavigateToLifeInsurance = onNavigateToLifeInsurance,
                             onNavigateToEnterpriseInsurance = onNavigateToEnterpriseInsurance // Pasar la nueva función
                         )
-                        LearnAboutInsurance()
+                        //LearnAboutInsurance()
                         Spacer(modifier = Modifier.weight(1f))
                     }
                 }

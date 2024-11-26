@@ -748,7 +748,7 @@ fun RegisterView(
                         "birthDate" to selectedDate,
                         "password" to password,
                         "image" to "",
-                        "role" to if (isInsurer) "Insurer" else "Client",
+                        "role" to if (isInsurer) "insurer" else "client",
                         "description" to ""
                     ).apply {
                         if (isInsurer) {
