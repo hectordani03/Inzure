@@ -1,3 +1,4 @@
+// EnterpriseInsuranceView.kt
 package io.inzure.app.ui.views
 
 import android.os.Bundle
@@ -28,19 +29,19 @@ import io.inzure.app.R
 // Importa la función BottomBar desde BottomBar.kt
 import io.inzure.app.ui.components.BottomBar
 
-class CarInsuranceView : ComponentActivity() {
+class EnterpriseInsuranceView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            CarInsuranceScreen(onNavigateToLogin = { /* Acción de navegación al login */ })
+            EnterpriseInsuranceScreen(onNavigateToLogin = { /* Acción de navegación al login */ })
         }
     }
 }
 
 @Composable
-fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
+fun EnterpriseInsuranceScreen(onNavigateToLogin: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
-        TopBarCar(onNavigateToLogin)
+        EnterpriseInsuranceTopBar(onNavigateToLogin)
 
         Spacer(modifier = Modifier.height(22.dp))
 
@@ -51,7 +52,7 @@ fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(12.dp)
         ) {
-            // Título principal con ícono de carro
+            // Título principal con ícono empresarial
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -59,37 +60,37 @@ fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
                     .padding(bottom = 12.dp)
             ) {
                 Text(
-                    text = "Seguros de autos",
+                    text = "Seguros Empresariales",
                     fontWeight = FontWeight.Bold,
                     fontSize = 22.sp,
                     modifier = Modifier.weight(1f)
                 )
                 Image(
-                    painter = painterResource(id = R.drawable.ic_auto),
-                    contentDescription = "Car Icon",
+                    painter = painterResource(id = R.drawable.ic_empresarial),
+                    contentDescription = "Enterprise Icon",
                     modifier = Modifier.size(28.dp)
                 )
             }
 
-            InsuranceCategoriesCar() // Categorías de seguros
+            EnterpriseInsuranceCategories() // Categorías de seguros empresariales
 
             Spacer(modifier = Modifier.height(22.dp))
 
-            // Tarjetas de seguro
-            InsuranceCard(
-                title = "Qualitas Seguros",
-                description = "Explora por los diversos seguros que tenemos",
-                imageResId = R.drawable.insurance_image2 // Imagen de ejemplo
+            // Tarjetas de seguro empresarial
+            EnterpriseInsuranceCard(
+                title = "EmpresaPlus",
+                description = "Protección integral para tu negocio",
+                imageResId = R.drawable.insurance_image1 // Imagen de ejemplo
             )
             Spacer(modifier = Modifier.height(16.dp))
-            InsuranceCard(
-                title = "GNP Seguros",
-                description = "Seguros completos para tu vehículo",
-                imageResId = R.drawable.insurance_image1 // Imagen de ejemplo
+            EnterpriseInsuranceCard(
+                title = "NegocioSeguro",
+                description = "Cobertura adaptada a tus necesidades empresariales",
+                imageResId = R.drawable.insurance_image2 // Imagen de ejemplo
             )
         }
 
-        // Reemplaza BottomBarCar() por BottomBar()
+        // Barra inferior
         BottomBar(
             onSwipeUp = { /* Acción al deslizar hacia arriba */ },
             onNavigateToUsers = { /* Acción de navegación */ }
@@ -98,9 +99,7 @@ fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
 }
 
 @Composable
-fun TopBarCar(onNavigateToLogin: () -> Unit) {
-    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-
+fun EnterpriseInsuranceTopBar(onNavigateToLogin: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -110,7 +109,7 @@ fun TopBarCar(onNavigateToLogin: () -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = { /* TODO: Handle menu click */ }) {
+        IconButton(onClick = { /* TODO: Manejar clic en menú */ }) {
             Image(
                 painter = painterResource(id = R.drawable.ic_menu),
                 contentDescription = "Menú",
@@ -125,7 +124,7 @@ fun TopBarCar(onNavigateToLogin: () -> Unit) {
         IconButton(onClick = onNavigateToLogin) {
             Image(
                 painter = painterResource(id = R.drawable.ic_profile),
-                contentDescription = "Profile",
+                contentDescription = "Perfil",
                 modifier = Modifier.size(40.dp)
             )
         }
@@ -133,7 +132,7 @@ fun TopBarCar(onNavigateToLogin: () -> Unit) {
 }
 
 @Composable
-fun InsuranceCategoriesCar() {
+fun EnterpriseInsuranceCategories() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -141,17 +140,16 @@ fun InsuranceCategoriesCar() {
             .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        CategoryButton("Más buscadas", R.drawable.ic_mas_buscados, iconSize = 20)
-        CategoryButton("", R.drawable.ic_qualitas, iconSize = 30)
-        CategoryButton("", R.drawable.ic_gnp, iconSize = 30)
-        CategoryButton("", R.drawable.ic_inbursa, iconSize = 30)
-        CategoryButton("", R.drawable.ic_hdi, iconSize = 30)
-        CategoryButton("", R.drawable.ic_inbursa, iconSize = 30)
+        EnterpriseCategoryButton("Más Buscadas", R.drawable.ic_mas_buscados, iconSize = 20)
+        EnterpriseCategoryButton("MetLife", R.drawable.metlife, iconSize = 30)
+        EnterpriseCategoryButton("NegocioSeguro", R.drawable.axa, iconSize = 30)
+        EnterpriseCategoryButton("Protección Empresarial", R.drawable.bbva, iconSize = 30)
+        EnterpriseCategoryButton("Ahorro Empresarial", R.drawable.ic_hdi, iconSize = 30)
     }
 }
 
 @Composable
-fun CategoryButton(name: String, iconResId: Int, iconSize: Int = 24) {
+fun EnterpriseCategoryButton(name: String, iconResId: Int, iconSize: Int = 24) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -179,7 +177,7 @@ fun CategoryButton(name: String, iconResId: Int, iconSize: Int = 24) {
 }
 
 @Composable
-fun InsuranceCard(title: String, description: String, imageResId: Int) {
+fun EnterpriseInsuranceCard(title: String, description: String, imageResId: Int) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -233,7 +231,11 @@ fun InsuranceCard(title: String, description: String, imageResId: Int) {
             ) {
                 // Icono en la izquierda
                 Image(
-                    painter = painterResource(id = R.drawable.ic_qualitas), // Ajusta el ícono según corresponda
+                    painter = painterResource(id = when (title) {
+                        "MetLife" -> R.drawable.metlife
+                        "AXA" -> R.drawable.axa
+                        else -> R.drawable.ic_empresarial
+                    }), // Ajusta el ícono según el título
                     contentDescription = "Insurance Logo",
                     modifier = Modifier
                         .size(40.dp)

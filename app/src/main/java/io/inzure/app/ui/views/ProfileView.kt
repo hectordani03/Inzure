@@ -50,6 +50,7 @@ import kotlinx.coroutines.launch
 
 // Asegúrate de tener esta actividad en tu proyecto
 import io.inzure.app.ui.views.LoginView
+import io.inzure.app.ui.views.PersonalInformationView // Importa la vista personal
 
 class ProfileView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -283,18 +284,5 @@ fun OptionButton(text: String, icon: Int, onClick: () -> Unit) {
                 color = Color.Black // Texto en negro
             )
         }
-    }
-}
-
-@Composable
-fun PersonalInformationView() {
-    // Implementa la UI para Información Personal aquí
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(text = "Información Personal", fontSize = 24.sp, fontWeight = FontWeight.Bold)
     }
 }

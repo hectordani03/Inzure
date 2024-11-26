@@ -1,7 +1,6 @@
 // MainView.kt
 package io.inzure.app.ui.views
 
-import android.os.Bundle
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
@@ -35,9 +34,7 @@ import kotlinx.coroutines.launch
 import com.google.firebase.auth.FirebaseAuth
 import io.inzure.app.data.model.User
 import android.util.Log
-import androidx.activity.ComponentActivity
-import androidx.activity.SystemBarStyle
-import androidx.activity.compose.setContent
+
 import io.inzure.app.data.model.SearchItem
 import io.inzure.app.ui.components.BottomSheetContent
 import androidx.activity.compose.setContent
@@ -79,6 +76,8 @@ class MainView : ComponentActivity() {
 fun MainView(
     onNavigateToProfile: () -> Unit,
     onNavigateToCarInsurance: () -> Unit,
+    onNavigateToLifeInsurance: () -> Unit,
+    onNavigateToEnterpriseInsurance: () -> Unit, // Nuevo parámetro
     onNavigateToUsers: () -> Unit,
     onNavigateToAdmin: () -> Unit,
     onNavigateToChat: () -> Unit,
@@ -241,10 +240,15 @@ fun MainView(
                             .padding(innerPadding)
                     ) {
                         WelcomeMessage(firstName = firstName, lastName = lastName)
-                        InsuranceCategories(onNavigateToCarInsurance)
                         LearnAboutInsurance(onNavigateToGeneral
                         , onNavigateToAutos , onNavigateToEmpresarial , onNavigateToPersonal
                         )
+                        InsuranceCategories(
+                            onNavigateToCarInsurance = onNavigateToCarInsurance,
+                            onNavigateToLifeInsurance = onNavigateToLifeInsurance,
+                            onNavigateToEnterpriseInsurance = onNavigateToEnterpriseInsurance // Pasar la nueva función
+                        )
+                        LearnAboutInsurance()
                         Spacer(modifier = Modifier.weight(1f))
                     }
                 }
@@ -275,7 +279,11 @@ fun WelcomeMessage(firstName: String, lastName: String) {
 }
 
 @Composable
-fun InsuranceCategories(onNavigateToCarInsurance: () -> Unit) {
+fun InsuranceCategories(
+    onNavigateToCarInsurance: () -> Unit,
+    onNavigateToLifeInsurance: () -> Unit,
+    onNavigateToEnterpriseInsurance: () -> Unit // Nuevo parámetro
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth(),
@@ -292,8 +300,8 @@ fun InsuranceCategories(onNavigateToCarInsurance: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             InsuranceCategory("Autos", R.drawable.ic_auto, onClick = onNavigateToCarInsurance)
-            InsuranceCategory("Personal", R.drawable.ic_personal, onClick = { /* Navegación Personal */ })
-            InsuranceCategory("Empresarial", R.drawable.ic_empresarial, onClick = { /* Navegación Empresarial */ })
+            InsuranceCategory("Personal", R.drawable.ic_personal, onClick = onNavigateToLifeInsurance)
+            InsuranceCategory("Empresarial", R.drawable.ic_empresarial, onClick = onNavigateToEnterpriseInsurance) // Actualizar onClick
         }
     }
 }

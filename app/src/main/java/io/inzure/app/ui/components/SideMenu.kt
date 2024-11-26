@@ -133,25 +133,13 @@ fun SideMenu(
                 onClick = { onNavigateToProfile() }
             )
             MenuOption(
-                iconRes = R.drawable.ic_file,
-                text = "Mis Pólizas",
-                spacerHeight = 20.dp,
-                onClick = { /* Acción para "Mis Pólizas" */ }
-            )
-            MenuOption(
                 iconRes = R.drawable.ic_search,
                 text = "Buscador",
                 spacerHeight = 20.dp,
                 onClick = { /* Acción para "Buscador" */ }
             )
             MenuOption(
-                iconRes = R.drawable.ic_history,
-                text = "Historial",
-                spacerHeight = 20.dp,
-                onClick = { /* Acción para "Historial" */ }
-            )
-            MenuOption(
-                iconRes = R.drawable.ic_chat,
+                iconRes = R.drawable.chat_icon,
                 text = "Chat",
                 spacerHeight = 20.dp,
                 onClick = {
