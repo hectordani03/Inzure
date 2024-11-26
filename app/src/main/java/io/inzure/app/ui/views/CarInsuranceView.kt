@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -30,12 +33,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.rememberAsyncImagePainter
 import io.inzure.app.ui.components.TopBar
 
 import io.inzure.app.R
 
 // Importa la función BottomBar desde BottomBar.kt
 import io.inzure.app.ui.components.BottomBar
+import io.inzure.app.viewmodel.PostsViewModel
 import kotlinx.coroutines.launch
 
 class CarInsuranceView : ComponentActivity() {
@@ -62,6 +68,11 @@ fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
+    val postsViewModel: PostsViewModel = viewModel()
+    val carPosts by postsViewModel.carPosts.collectAsState()
+    LaunchedEffect(Unit) {
+        postsViewModel.getCarPosts()
+    }
     Scaffold(
         topBar = {
             TopBar(
@@ -121,18 +132,16 @@ fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(22.dp))
 
-                // Tarjetas de seguro
-                InsuranceCard(
-                    title = "Qualitas Seguros",
-                    description = "Explora por los diversos seguros que tenemos",
-                    imageResId = R.drawable.insurance_image2 // Imagen de ejemplo
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                InsuranceCard(
-                    title = "GNP Seguros",
-                    description = "Seguros completos para tu vehículo",
-                    imageResId = R.drawable.insurance_image1 // Imagen de ejemplo
-                )
+                carPosts.forEach { postWithUser ->
+                    InsuranceCard(
+                        title = postWithUser.post.titulo,
+                        description = postWithUser.post.descripcion,
+                        postImage = postWithUser.post.image,
+                        userImage = postWithUser.profileImage
+                    )
+                    Spacer(modifier = Modifier.height(22.dp))
+                }
+
             }
         }
     }
@@ -227,7 +236,12 @@ fun CategoryButton(name: String, iconResId: Int, iconSize: Int = 24, activity: C
 }
 
 @Composable
-fun InsuranceCard(title: String, description: String, imageResId: Int) {
+fun InsuranceCard(title: String, description: String, postImage: String, userImage: String) {
+    val postsViewModel: PostsViewModel = viewModel()
+    val posts by postsViewModel.posts.collectAsState()
+    LaunchedEffect(Unit) {
+        postsViewModel.getCarPosts()
+    }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -257,7 +271,7 @@ fun InsuranceCard(title: String, description: String, imageResId: Int) {
     ) {
         // Imagen principal
         Image(
-            painter = painterResource(id = imageResId),
+            painter = rememberAsyncImagePainter(postImage),
             contentDescription = "Insurance Image",
             contentScale = ContentScale.Crop,
             modifier = Modifier
@@ -280,15 +294,25 @@ fun InsuranceCard(title: String, description: String, imageResId: Int) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 // Icono en la izquierda
-                Image(
-                    painter = painterResource(id = R.drawable.ic_qualitas), // Ajusta el ícono según corresponda
-                    contentDescription = "Insurance Logo",
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.White)
-                )
-
+                if (!userImage.isNullOrEmpty()) {
+                    Image(
+                        painter = rememberAsyncImagePainter(userImage),
+                        contentDescription = "Insurance Logo",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.White)
+                    )
+                } else{
+                    Image(
+                        painter = painterResource(R.drawable.ic_profile_default),
+                        contentDescription = "Insurance Logo",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.White)
+                    )
+                }
                 Spacer(modifier = Modifier.width(8.dp))
 
                 // Título y descripción
