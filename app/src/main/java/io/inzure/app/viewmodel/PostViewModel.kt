@@ -1,4 +1,3 @@
-// PostViewModel.kt
 package io.inzure.app.viewmodel
 
 import android.util.Log
@@ -68,5 +67,22 @@ class PostViewModel : ViewModel() {
                 Log.e("PostViewModel", "Excepción al eliminar post: ${e.message}")
             }
         }
+    }
+
+    // Función para agregar un post localmente
+    fun addPostManually(post: Post) {
+        _posts.value = _posts.value + post
+    }
+
+    // Función para actualizar un post localmente
+    fun updatePostManually(updatedPost: Post) {
+        _posts.value = _posts.value.map { post ->
+            if (post.id == updatedPost.id) updatedPost else post
+        }
+    }
+
+    // Función para eliminar un post localmente
+    fun deletePostManually(post: Post) {
+        _posts.value = _posts.value.filter { it.id != post.id }
     }
 }

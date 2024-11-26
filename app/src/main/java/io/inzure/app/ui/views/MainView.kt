@@ -5,24 +5,20 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.*
 import androidx.compose.material3.*
 import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.*
-import androidx.compose.ui.geometry.*
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import com.google.firebase.firestore.FirebaseFirestore
@@ -37,39 +33,7 @@ import android.util.Log
 
 import io.inzure.app.data.model.SearchItem
 import io.inzure.app.ui.components.BottomSheetContent
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.runtime.Composable
 
-class MainView : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0),
-            navigationBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0)
-        )
-        setContent {
-            MaterialTheme {
-                Surface {
-                    MainView(
-                        onNavigateToProfile = { /* Acción al hacer clic en el botón de perfil */ },
-                        onNavigateToCarInsurance = { /* Acción al hacer clic en el botón de seguros de autos */ },
-                        onNavigateToUsers = { /* Acción al hacer clic en el botón de usuarios */ },
-                        onNavigateToAdmin = { /* Acción al hacer clic en el botón de administrador */ },
-                        onNavigateToChat = { /* Acción al hacer clic en el botón de chat */ },
-                        onNavigateToLogin = { /* Acción al hacer clic en el botón de login */ },
-                        onNavigateToGeneral = { /* Acción al hacer clic en el botón de login */ },
-                        onNavigateToAutos = { /* Acción al hacer clic en el botón de login */ },
-                        onNavigateToEmpresarial = { /* Acción al hacer clic en el botón de login */ },
-                        onNavigateToPersonal = { /* Acción al hacer clic en el botón de login */ }
-                    )
-                }
-            }
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,8 +48,9 @@ fun MainView(
     onNavigateToLogin: () -> Unit,
     onNavigateToGeneral: () -> Unit,
     onNavigateToAutos: () -> Unit,
-    onNavigateToEmpresarial: () -> Unit,
-    onNavigateToPersonal: () -> Unit
+    onNavigateToPersonal: () -> Unit,
+    onNavigateToEmpresarial: () -> Unit
+
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -240,15 +205,18 @@ fun MainView(
                             .padding(innerPadding)
                     ) {
                         WelcomeMessage(firstName = firstName, lastName = lastName)
-                        LearnAboutInsurance(onNavigateToGeneral
-                        , onNavigateToAutos , onNavigateToEmpresarial , onNavigateToPersonal
-                        )
                         InsuranceCategories(
                             onNavigateToCarInsurance = onNavigateToCarInsurance,
                             onNavigateToLifeInsurance = onNavigateToLifeInsurance,
                             onNavigateToEnterpriseInsurance = onNavigateToEnterpriseInsurance // Pasar la nueva función
                         )
-                        LearnAboutInsurance()
+                        LearnAboutInsurance(
+                            onNavigateToGeneral = { onNavigateToGeneral() }, // Sustituir con el Intent correspondiente
+                            onNavigateToAutos = { onNavigateToAutos() }, // Sustituir con el Intent correspondiente
+                            onNavigateToPersonal = { onNavigateToPersonal() },
+                            onNavigateToEmpresarial = { onNavigateToEmpresarial() } // Sustituir con el Intent correspondiente
+                        )
+
                         Spacer(modifier = Modifier.weight(1f))
                     }
                 }
@@ -331,8 +299,8 @@ fun InsuranceCategory(name: String, iconResId: Int, onClick: () -> Unit) {
 fun LearnAboutInsurance(
     onNavigateToGeneral: () -> Unit,
     onNavigateToAutos: () -> Unit,
-    onNavigateToEmpresarial: () -> Unit,
-    onNavigateToPersonal: () -> Unit
+    onNavigateToPersonal: () -> Unit,
+    onNavigateToEmpresarial: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -357,43 +325,20 @@ fun LearnAboutInsurance(
 
 @Composable
 fun InsuranceImage(onClick: () -> Unit) {
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
-            .clickable { onClick() }
-            .drawBehind
-            {
-                for (i in 1..3) {
-                    drawRoundRect(
-                        color = Color.Gray.copy(alpha = .1f),
-                        size = size.copy(height = size.height + (i * .5).dp.toPx()),
-                        cornerRadius = CornerRadius(8.dp.toPx()),
-                        blendMode = BlendMode.Multiply,
-                        topLeft = Offset(0f, (i * 2).dp.toPx())
-                    )
-                }
-                drawRoundRect(
-                    color = Color.Gray.copy(alpha = .2f),
-                    size = size.copy(height = size.height + .5.dp.toPx()),
-                    cornerRadius = CornerRadius(8.dp.toPx()),
-                    blendMode = BlendMode.Multiply,
-                    topLeft = Offset(0f, 4.dp.toPx())
-                )
-            }
             .clip(RoundedCornerShape(8.dp))
             .background(Color.White)
+            .clickable { onClick() } // Navegación al hacer clic
     ) {
-        // Imagen principal
         Image(
             painter = painterResource(id = R.drawable.aprende_desde_0),
             contentDescription = "Insurance Image",
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
-
-        // Caja con el texto y la imagen a la derecha
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -403,7 +348,6 @@ fun InsuranceImage(onClick: () -> Unit) {
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Texto dentro de la caja
             Text(
                 text = "Aprende todo sobre seguros desde cero",
                 color = Color.Black,
@@ -411,14 +355,10 @@ fun InsuranceImage(onClick: () -> Unit) {
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f)
             )
-
-            // Imagen a la derecha del texto
             Image(
                 painter = painterResource(id = R.drawable.ic_learn),
                 contentDescription = "Info Image",
-                modifier = Modifier
-                    .size(40.dp)
-                    .padding(start = 16.dp)
+                modifier = Modifier.size(30.dp)
             )
         }
     }
@@ -430,41 +370,16 @@ fun InsuranceImage2(onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
-            .padding(bottom = 16.dp)
-            .clickable { onClick() }
-            // Aplicamos la sombra usando elevation
-            .drawBehind {
-                // Dibujamos múltiples sombras con diferentes opacidades para crear efecto blur
-                for (i in 1..3) {
-                    drawRoundRect(
-                        color = Color.Gray.copy(alpha = .1f),
-                        size = size.copy(height = size.height + (i * .5).dp.toPx()),
-                        cornerRadius = CornerRadius(8.dp.toPx()),
-                        blendMode = BlendMode.Multiply,
-                        topLeft = Offset(0f, (i * 2).dp.toPx())
-                    )
-                }
-                // Sombra principal
-                drawRoundRect(
-                    color = Color.Gray.copy(alpha = .2f),
-                    size = size.copy(height = size.height + .5.dp.toPx()),
-                    cornerRadius = CornerRadius(8.dp.toPx()),
-                    blendMode = BlendMode.Multiply,
-                    topLeft = Offset(0f, 4.dp.toPx())
-                )
-            }
             .clip(RoundedCornerShape(8.dp))
             .background(Color.White)
+            .clickable { onClick() } // Navegación al hacer clic
     ) {
-        // Imagen principal
         Image(
             painter = painterResource(id = R.drawable.insurance_image2),
             contentDescription = "Insurance Image",
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
-
-        // Caja con el texto y la imagen a la derecha
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -474,7 +389,6 @@ fun InsuranceImage2(onClick: () -> Unit) {
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Texto dentro de la caja
             Text(
                 text = " Aprende sobre seguros automovilísticos",
                 color = Color.Black,
@@ -482,14 +396,10 @@ fun InsuranceImage2(onClick: () -> Unit) {
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f)
             )
-
-            // Imagen a la derecha del texto
             Image(
                 painter = painterResource(id = R.drawable.ic_auto),
                 contentDescription = "Info Image",
-                modifier = Modifier
-                    .size(30.dp)
-                    .padding(start = 8.dp)
+                modifier = Modifier.size(30.dp)
             )
         }
     }
@@ -501,41 +411,16 @@ fun InsuranceImage3(onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
-            .padding(bottom = 16.dp)
-            .clickable { onClick() }
-            // Aplicamos la sombra usando elevation
-            .drawBehind {
-                // Dibujamos múltiples sombras con diferentes opacidades para crear efecto blur
-                for (i in 1..3) {
-                    drawRoundRect(
-                        color = Color.Gray.copy(alpha = .1f),
-                        size = size.copy(height = size.height + (i * .5).dp.toPx()),
-                        cornerRadius = CornerRadius(8.dp.toPx()),
-                        blendMode = BlendMode.Multiply,
-                        topLeft = Offset(0f, (i * 2).dp.toPx())
-                    )
-                }
-                // Sombra principal
-                drawRoundRect(
-                    color = Color.Gray.copy(alpha = .2f),
-                    size = size.copy(height = size.height + .5.dp.toPx()),
-                    cornerRadius = CornerRadius(8.dp.toPx()),
-                    blendMode = BlendMode.Multiply,
-                    topLeft = Offset(0f, 4.dp.toPx())
-                )
-            }
             .clip(RoundedCornerShape(8.dp))
             .background(Color.White)
+            .clickable { onClick() } // Navegación al hacer clic
     ) {
-        // Imagen principal
         Image(
             painter = painterResource(id = R.drawable.insurance_image1),
             contentDescription = "Insurance Image",
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
-
-        // Caja con el texto y la imagen a la derecha
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -545,7 +430,6 @@ fun InsuranceImage3(onClick: () -> Unit) {
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Texto dentro de la caja
             Text(
                 text = "Aprende sobre seguros personales",
                 color = Color.Black,
@@ -553,14 +437,10 @@ fun InsuranceImage3(onClick: () -> Unit) {
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f)
             )
-
-            // Imagen a la derecha del texto
             Image(
                 painter = painterResource(id = R.drawable.ic_personal),
                 contentDescription = "Info Image",
-                modifier = Modifier
-                    .size(30.dp)
-                    .padding(start = 8.dp)
+                modifier = Modifier.size(30.dp)
             )
         }
     }
@@ -572,41 +452,16 @@ fun InsuranceImage4(onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
-            .padding(bottom = 16.dp)
-            .clickable { onClick() }
-            // Aplicamos la sombra usando elevation
-            .drawBehind {
-                // Dibujamos múltiples sombras con diferentes opacidades para crear efecto blur
-                for (i in 1..3) {
-                    drawRoundRect(
-                        color = Color.Gray.copy(alpha = .1f),
-                        size = size.copy(height = size.height + (i * .5).dp.toPx()),
-                        cornerRadius = CornerRadius(8.dp.toPx()),
-                        blendMode = BlendMode.Multiply,
-                        topLeft = Offset(0f, (i * 2).dp.toPx())
-                    )
-                }
-                // Sombra principal
-                drawRoundRect(
-                    color = Color.Gray.copy(alpha = .2f),
-                    size = size.copy(height = size.height + .5.dp.toPx()),
-                    cornerRadius = CornerRadius(8.dp.toPx()),
-                    blendMode = BlendMode.Multiply,
-                    topLeft = Offset(0f, 4.dp.toPx())
-                )
-            }
             .clip(RoundedCornerShape(8.dp))
             .background(Color.White)
+            .clickable { onClick() } // Navegación al hacer clic
     ) {
-        // Imagen principal
         Image(
             painter = painterResource(id = R.drawable.insurance_image3),
             contentDescription = "Insurance Image",
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
-
-        // Caja con el texto y la imagen a la derecha
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -616,7 +471,6 @@ fun InsuranceImage4(onClick: () -> Unit) {
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Texto dentro de la caja
             Text(
                 text = "Aprende sobre seguros empresariales",
                 color = Color.Black,
@@ -624,14 +478,10 @@ fun InsuranceImage4(onClick: () -> Unit) {
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f)
             )
-
-            // Imagen a la derecha del texto
             Image(
                 painter = painterResource(id = R.drawable.ic_empresarial),
                 contentDescription = "Info Image",
-                modifier = Modifier
-                    .size(30.dp)
-                    .padding(start = 8.dp)
+                modifier = Modifier.size(30.dp)
             )
         }
     }

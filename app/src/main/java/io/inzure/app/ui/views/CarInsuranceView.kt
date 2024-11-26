@@ -36,7 +36,6 @@ class CarInsuranceView : ComponentActivity() {
         }
     }
 }
-
 @Composable
 fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
