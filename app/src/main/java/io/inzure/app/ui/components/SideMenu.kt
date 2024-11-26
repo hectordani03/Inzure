@@ -32,14 +32,15 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import io.inzure.app.data.model.User
 
+
 @Composable
 fun SideMenu(
     screenWidth: Dp,
-    onNavigateToProfile: () -> Unit,
-    showChatView: MutableState<Boolean>,
     scope: CoroutineScope,
     drawerState: DrawerState,
-    onNavigateToAdmin: () -> Unit // Función de navegación al AdminView
+    onNavigateToAdmin: () -> Unit,
+    onNavigateToProfile: () -> Unit,
+    onNavigateToChat: () -> Unit
 ) {
     val auth = FirebaseAuth.getInstance()
     val firestore = FirebaseFirestore.getInstance()
@@ -160,8 +161,7 @@ fun SideMenu(
                 text = "Chat",
                 spacerHeight = 20.dp,
                 onClick = {
-                    showChatView.value = true
-                    scope.launch { drawerState.close() }
+                    onNavigateToChat()
                 }
             )
             MenuOption(

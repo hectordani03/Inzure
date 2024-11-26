@@ -32,9 +32,7 @@ import io.inzure.app.ui.components.TopBar
 import io.inzure.app.ui.components.BottomBar
 import kotlinx.coroutines.launch
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import io.inzure.app.data.model.User
-import android.util.Log
 
 // Clase de datos para la lista de seguros
 data class InsuranceData(
@@ -50,7 +48,7 @@ fun MainView(
     onNavigateToProfile: () -> Unit,
     onNavigateToCarInsurance: () -> Unit,
     onNavigateToUsers: () -> Unit,
-    onNavigateToAdmin: () -> Unit, // Agrega esta función
+    onNavigateToAdmin: () -> Unit,
     onNavigateToChat: () -> Unit
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -155,12 +153,15 @@ fun MainView(
                         scope.launch { drawerState.close() }
                         onNavigateToProfile()
                     },
-                    showChatView = showChatView,
                     scope = scope,
                     drawerState = drawerState,
                     onNavigateToAdmin = {
                         scope.launch { drawerState.close() }
                         onNavigateToAdmin()
+                    },
+                    onNavigateToChat = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToChat() // Aquí pasas la función de navegación a la vista de chat
                     }
                 )
             }

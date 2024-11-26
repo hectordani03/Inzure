@@ -5,11 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -25,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
+import com.google.firebase.auth.FirebaseAuth
 import io.inzure.app.ui.views.LoginView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -38,17 +35,34 @@ class SplashActivity : ComponentActivity() {
             SplashScreen()
         }
 
-        // Navegar a MainActivity después de un tiempo (simulando carga)
+        // Verificar autenticación después de la animación
         lifecycleScope.launch {
-            delay(3000) // Espera 3 segundos
-            navigateToLoginView()
+            delay(3000) // Espera 3 segundos para la pantalla de carga
+            checkAuthentication() // Verificar la autenticación del usuario
         }
     }
-        private fun navigateToLoginView() {
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
-        }
 
+    // Verificar si el usuario tiene sesión activa
+    private fun checkAuthentication() {
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null) {
+            // Usuario no autenticado, enviar a LoginView
+            navigateToLoginView()
+        } else {
+            // Usuario autenticado, enviar a MainActivity
+            navigateToMainActivity()
+        }
+    }
+
+    private fun navigateToLoginView() {
+        startActivity(Intent(this, LoginView::class.java))
+        finish() // Finalizar SplashActivity
+    }
+
+    private fun navigateToMainActivity() {
+        startActivity(Intent(this, MainActivity::class.java))
+        finish() // Finalizar SplashActivity
+    }
 }
 
 @Composable

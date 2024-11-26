@@ -118,16 +118,14 @@ fun ProfileScreen(navController: NavController) {
         drawerState = drawerState,
         scrimColor = scrimColor,
         drawerContent = {
-            val navController = rememberNavController()
             SideMenu(
                 screenWidth = screenWidth,
                 onNavigateToProfile = { /* Navegar a Perfil */ },
-                showChatView = showChatView,
+                onNavigateToChat = { navController.navigate("chat") }, // Navegar a la vista de chat
                 scope = scope,
                 drawerState = drawerState,
                 onNavigateToAdmin = { navController.navigate("admin") } // Navegación al AdminView
             )
-
         }
     ) {
         // Uso de Scaffold para mantener la TopBar y la BottomBar fijas
@@ -222,6 +220,7 @@ fun ProfileScreen(navController: NavController) {
         }
     }
 }
+
 
 @Composable
 fun OptionButton(text: String, icon: Int, onClick: () -> Unit) {
