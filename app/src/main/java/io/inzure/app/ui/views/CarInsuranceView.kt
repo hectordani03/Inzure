@@ -1,5 +1,6 @@
 package io.inzure.app.ui.views
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -13,6 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,8 +27,10 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -51,6 +56,13 @@ class CarInsuranceView : ComponentActivity() {
         }
     }
 }
+
+@Preview(showBackground = true)
+@Composable
+fun previewCarInsuranceScreen() {
+    CarInsuranceScreen(onNavigateToLogin = { /* Acción de navegación al login */ })
+}
+
 @Composable
 fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -73,9 +85,12 @@ fun CarInsuranceScreen(onNavigateToLogin: () -> Unit) {
             )
         },
         bottomBar = {
+            val showChatView = remember { mutableStateOf(false) }
             BottomBar(
                 onSwipeUp = { /* Acción al deslizar hacia arriba */ },
-                onNavigateToProfile = { /* Acción de navegación */ }
+                onNavigateToProfile = { /* Acción de navegación */ },
+
+                onNavigateToChat = { showChatView.value = true }
             )
         }
     ) { padding ->
@@ -177,16 +192,16 @@ fun InsuranceCategoriesCar() {
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         CategoryButton("Más buscadas", R.drawable.ic_mas_buscados, iconSize = 20)
-        CategoryButton("", R.drawable.ic_qualitas, iconSize = 30)
-        CategoryButton("", R.drawable.ic_gnp, iconSize = 30)
-        CategoryButton("", R.drawable.ic_inbursa, iconSize = 30)
-        CategoryButton("", R.drawable.ic_hdi, iconSize = 30)
-        CategoryButton("", R.drawable.ic_inbursa, iconSize = 30)
+        CategoryButton("", R.drawable.ic_qualitas, iconSize = 30, activity = InsuranceInfoActivity(), logo = R.drawable.ic_qualitas)
+        CategoryButton("", R.drawable.ic_gnp, iconSize = 30, activity = InsuranceInfoActivity(), logo = R.drawable.ic_aseguradora2)
+        CategoryButton("", R.drawable.ic_inbursa, iconSize = 30, activity = InsuranceInfoActivity(), logo = R.drawable.ic_inbursa)
+        CategoryButton("", R.drawable.ic_hdi, iconSize = 30, activity = InsuranceInfoActivity(), logo = R.drawable.ic_aseguradora4)
     }
 }
 
 @Composable
-fun CategoryButton(name: String, iconResId: Int, iconSize: Int = 24) {
+fun CategoryButton(name: String, iconResId: Int, iconSize: Int = 24, activity: ComponentActivity? = null, logo: Int? = null) {
+    val context = LocalContext.current
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -195,6 +210,13 @@ fun CategoryButton(name: String, iconResId: Int, iconSize: Int = 24) {
             .clip(RoundedCornerShape(20.dp))
             .background(Color(0xFFE0E0E0))
             .padding(horizontal = 8.dp)
+            .clickable {
+                if (activity != null) {
+                    val intent = Intent(context, activity::class.java)
+                    intent.putExtra("IconResId", logo)
+                    context.startActivity(intent)
+                }
+            }
     ) {
         Image(
             painter = painterResource(id = iconResId),

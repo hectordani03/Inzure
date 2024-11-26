@@ -28,6 +28,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import io.inzure.app.ui.views.AdminView
+import io.inzure.app.ui.views.ChatView
 import io.inzure.app.ui.views.LoginView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

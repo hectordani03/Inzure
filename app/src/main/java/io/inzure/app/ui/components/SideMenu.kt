@@ -37,8 +37,10 @@ fun SideMenu(
     screenWidth: Dp,
     onNavigateToProfile: () -> Unit,
     onNavigateToEducativo: () -> Unit,
+    onNavigateToQuiz: () -> Unit,
     onNavigateToAdmin: () -> Unit, // Función de navegación al AdminView
     onNavigateToLogin: () -> Unit, // Nueva función de navegación al Login
+    onNavigateToChat: () -> Unit,
     showChatView: MutableState<Boolean>,
     scope: CoroutineScope,
     drawerState: DrawerState
@@ -152,8 +154,8 @@ fun SideMenu(
                 text = "Chat",
                 spacerHeight = 20.dp,
                 onClick = {
-                    showChatView.value = true
-                    scope.launch { drawerState.close() }
+                    scope.launch { drawerState.close() } // Cierra el menú lateral
+                    onNavigateToChat() // Navega al chat
                 }
             )
             MenuOption(
@@ -176,6 +178,25 @@ fun SideMenu(
                     }
                 )
             }
+            MenuOption(
+                iconRes = R.drawable.ic_quiz,
+                text = "¿Qué tanto sabes?",
+                spacerHeight = 20.dp,
+                onClick = {
+                    onNavigateToQuiz()
+                }
+            )
+
+            // Nueva opción: Administrador
+            MenuOption(
+                iconRes = R.drawable.ic_profile2, // Asegúrate de tener este recurso o reemplázalo
+                text = "Administrador",
+                spacerHeight = 20.dp,
+                onClick = {
+                    scope.launch { drawerState.close() }
+                    onNavigateToAdmin() // Llamar a la navegación al AdminView
+                }
+            )
 
             Spacer(modifier = Modifier.weight(1f))
 

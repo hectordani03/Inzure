@@ -31,6 +31,14 @@
         </activity>
 
         <activity
+            android:name="io.inzure.app.ui.views.ChatView"
+            android:exported="true"
+            android:label="@string/title_activity_login_screen"
+            android:theme="@style/Theme.Inzure">
+        </activity>
+
+
+        <activity
             android:name="io.inzure.app.ui.views.RegisterView"
             android:exported="true"
             android:theme="@style/Theme.Inzure">
@@ -136,6 +144,12 @@
 
         <activity
             android:name="io.inzure.app.ui.views.EducativoView"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
+        </activity>
+
+        <activity
+            android:name="io.inzure.app.ui.views.QuizView"
             android:exported="true"
             android:theme="@style/Theme.Inzure">
         </activity>

@@ -1,4 +1,3 @@
-// AdminView.kt
 package io.inzure.app.ui.views
 
 import android.content.Intent
@@ -6,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,6 +25,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.google.firebase.auth.FirebaseAuth
 import io.inzure.app.R
 
 class AdminView : ComponentActivity() {
@@ -60,12 +61,21 @@ fun AdminMainScreen() {
                 context.startActivity(Intent(context, AdminPersonalInformationView::class.java))
             }
         }
+        composable("login") {
+            val context = LocalContext.current
+            LaunchedEffect(Unit) {
+                val intent = Intent(context, LoginView::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                context.startActivity(intent)
+            }
+        }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminScreen(navController: NavController) {
+    val context = LocalContext.current
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -94,7 +104,7 @@ fun AdminScreen(navController: NavController) {
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            AdminOptionButton("Información Personal", R.drawable.ic_info,) {
+            AdminOptionButton("Información Personal", R.drawable.ic_info) {
                 navController.navigate("personal_information")
             }
             AdminOptionButton("Usuarios", R.drawable.ic_profile2) {
@@ -103,12 +113,14 @@ fun AdminScreen(navController: NavController) {
             AdminOptionButton("Publicaciones", R.drawable.ic_profile2) {
                 navController.navigate("publications")
             }
-            AdminOptionButton("Agentes", R.drawable.ic_profile2) {
-                navController.navigate("agents")
+            AdminOptionButton("Cerrar Sesión", R.drawable.ic_logout) {
+                FirebaseAuth.getInstance().signOut()
+                navController.navigate("login")
             }
         }
     }
 }
+
 
 @Composable
 fun AdminOptionButton(text: String, icon: Int, onClick: () -> Unit) {
@@ -138,5 +150,31 @@ fun AdminOptionButton(text: String, icon: Int, onClick: () -> Unit) {
                 color = Color.Black
             )
         }
+    }
+}
+
+@Composable
+fun LogoutButton(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_logout),
+            contentDescription = "Cerrar sesión",
+            tint = Color.Black,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = "Cerrar Sesión",
+            fontSize = 16.sp,
+            color = Color.Black,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
