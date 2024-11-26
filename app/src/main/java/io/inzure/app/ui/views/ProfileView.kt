@@ -257,11 +257,6 @@ fun ProfileScreen(navController: NavController) {
                 // Navegar a la ruta "my_posts" utilizando NavController
                 navController.navigate("my_posts")
             }
-            OptionButton("Mis Agentes", R.drawable.ic_profile2) {
-                // Implementar navegación a 'Mis Agentes'
-                // Por ejemplo:
-                // navController.navigate("my_agents")
-            }
         }
     }
 }
