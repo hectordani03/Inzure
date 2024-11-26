@@ -192,6 +192,10 @@ fun Educativo(
                         scope.launch { drawerState.close() }
                         onNavigateToEducativo()
                     },
+                    onNavigateToChat = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToChat()
+                    },
                     onNavigateToLogin = {
                         scope.launch { drawerState.close() }
                         onNavigateToLogin()
