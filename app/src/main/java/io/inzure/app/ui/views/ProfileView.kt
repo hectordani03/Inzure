@@ -84,11 +84,13 @@ fun MainScreen() {
         drawerState = drawerState,
         drawerContent = {
             SideMenu(
+                onNavigateToEducativo = { navController.navigate("educativo") },
                 onNavigateToProfile = {
                     navController.navigate("profile") {
                         popUpTo("profile") { inclusive = true }
                     }
                 },
+
                 onNavigateToAdmin = { navController.navigate("admin") },
                 onNavigateToLogin = {
                     // Cerrar sesión y redirigir al login

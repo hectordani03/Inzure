@@ -56,6 +56,8 @@ class AprendizajeEmpresarial : ComponentActivity() {
                 onNavigateToAdmin = {
                 },
                 onNavigateToLogin = {
+                },
+                onNavigateToEducativo = {
                 }
             )
         }
@@ -71,6 +73,7 @@ fun LearnInsuranceViewEmpresarial(
     onNavigateToAdmin: () -> Unit,
     onNavigateToLogin: () -> Unit,
     onMenuClick: () -> Unit,
+    onNavigateToEducativo: () -> Unit
 ) {
     val context = LocalContext.current as Activity
     val scope = rememberCoroutineScope()
@@ -102,6 +105,10 @@ fun LearnInsuranceViewEmpresarial(
                     onNavigateToAdmin = {
                         scope.launch { drawerState.close() }
                         onNavigateToAdmin()
+                    },
+                    onNavigateToEducativo = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToEducativo()
                     },
                     onNavigateToLogin = {
                         scope.launch { drawerState.close() }

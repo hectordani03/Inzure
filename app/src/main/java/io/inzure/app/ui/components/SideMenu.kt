@@ -36,6 +36,7 @@ import io.inzure.app.data.model.User
 fun SideMenu(
     screenWidth: Dp,
     onNavigateToProfile: () -> Unit,
+    onNavigateToEducativo: () -> Unit,
     onNavigateToAdmin: () -> Unit, // Función de navegación al AdminView
     onNavigateToLogin: () -> Unit, // Nueva función de navegación al Login
     showChatView: MutableState<Boolean>,
@@ -157,7 +158,9 @@ fun SideMenu(
                 iconRes = R.drawable.ic_learn,
                 text = "Educativo",
                 spacerHeight = 20.dp,
-                onClick = { /* Acción para "Educativo" */ }
+                onClick = {
+                    onNavigateToEducativo()
+                }
             )
 
             // Nueva opción: Administrador
