@@ -97,6 +97,12 @@
             android:exported="true">
         </activity>
 
+        <activity
+            android:name="io.inzure.app.ui.views.MainView"
+            android:exported="true"
+            android:theme="@style/Theme.Inzure">
+        </activity>
+
     </application>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
