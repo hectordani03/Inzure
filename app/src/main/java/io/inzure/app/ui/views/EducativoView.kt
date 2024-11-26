@@ -222,7 +222,7 @@ fun Educativo(
                                 bottomSheetScaffoldState.bottomSheetState.expand()
                             }
                         },
-                        onNavigateToUsers = onNavigateToUsers
+                        onNavigateToProfile = onNavigateToProfile
                     )
                 }
             ) { innerPadding ->
