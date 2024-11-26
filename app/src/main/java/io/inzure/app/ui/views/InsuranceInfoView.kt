@@ -21,21 +21,24 @@ import io.inzure.app.R
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import io.inzure.app.InzureTheme
 
 class InsuranceInfoActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val iconResId = intent.getIntExtra("IconResId", -1)
         setContent {
             InzureTheme {
-                InsuranceInfoView()
+                InsuranceInfoView(iconResId)
             }
         }
     }
 }
 
 @Composable
-fun InsuranceInfoView() {
+fun InsuranceInfoView(iconResId: Int) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -51,7 +54,7 @@ fun InsuranceInfoView() {
 
             // Imagen de la aseguradora
             Image(
-                painter = painterResource(id = R.drawable.ic_qualitas), // Sustituir con la imagen de la aseguradora
+                painter = painterResource(id = iconResId), // Sustituir con la imagen de la aseguradora
                 contentDescription = "Logo de la aseguradora",
                 modifier = Modifier
                     .size(120.dp)
