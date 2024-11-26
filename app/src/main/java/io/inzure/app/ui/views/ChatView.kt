@@ -41,92 +41,201 @@ val sampleMessages = listOf(
     Message("Me podría dar más información", true),
     Message("Claro, por el momento estamos manejando un seguro de cobertura total que incluye...", false),
     Message("Perfecto, ¿cuáles son los precios?", true)
+
 )
+
+val suggestedChats = listOf(
+    Chat("Carlos Rivera", "Asegurador de Qualitas", R.drawable.ic_profile5),
+    Chat("Lucía Martínez", "Aseguradora de Seguros x", R.drawable.ic_profile4),
+    Chat("Juan Pérez", "Asegurador de SegurosMex", R.drawable.ic_profile3),
+    Chat("Ana López", "Aseguradora de CubreTuAuto", R.drawable.ic_profile4),
+    Chat("Carlos Rivera", "Asegurador de Qualitas", R.drawable.ic_profile5),
+    Chat("Lucía Martínez", "Aseguradora de Seguros x", R.drawable.ic_profile4),
+    Chat("Juan Pérez", "Asegurador de SegurosMex", R.drawable.ic_profile3),
+    Chat("Ana López", "Aseguradora de CubreTuAuto", R.drawable.ic_profile4),
+    Chat("Carlos Rivera", "Asegurador de Qualitas", R.drawable.ic_profile5),
+    Chat("Lucía Martínez", "Aseguradora de Seguros x", R.drawable.ic_profile4),
+)
+
 
 @Composable
 fun ChatListView(chats: List<Chat>, onClose: () -> Unit) {
-    var selectedChat by remember { mutableStateOf<Chat?>(null) }
+    var isExploringChats by remember { mutableStateOf(false) }
+    var selectedChat by remember { mutableStateOf<Chat?>(null) } // Estado para el chat seleccionado
 
-    selectedChat?.let { chat ->
-        // Mostrar vista de chat individual solo si selectedChat no es null
-        IndividualChatView(chat = chat, onClose = { selectedChat = null })
-    } ?: run {
-        // Mostrar lista de chats cuando no hay chat seleccionado
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight()
-                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                .background(Color(0xFF072A4A))
-                .padding(top = (LocalConfiguration.current.screenHeightDp * 0.22).dp) // Mover la vista hacia abajo
-        ) {
-            // Encabezado del desplegable de chats con gesto de arrastre
-            Box(
+    when {
+        selectedChat != null -> {
+            // Mostrar IndividualChatView cuando hay un chat seleccionado
+            IndividualChatView(
+                chat = selectedChat!!,
+                onClose = { selectedChat = null } // Volver a la vista anterior
+            )
+        }
+        isExploringChats -> {
+            // Mostrar ExploreChatsView con los datos sugeridos
+            ExploreChatsView(
+                chats = suggestedChats,
+                onClose = { isExploringChats = false }, // Volver a la vista de chats principales
+                onChatSelected = { chat ->
+                    selectedChat = chat // Establecer el chat seleccionado
+                }
+            )
+        }
+        else -> {
+            // Mostrar la lista principal de chats
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFF04305A))
+                    .fillMaxHeight()
                     .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                    .pointerInput(Unit) {
-                        detectVerticalDragGestures { _, dragAmount ->
-                            if (dragAmount > 20) {
-                                onClose()
-                            }
-                        }
-                    }
-                    .padding(horizontal = 16.dp, vertical = 16.dp)
+                    .background(Color(0xFF072A4A))
+                    .padding(top = (LocalConfiguration.current.screenHeightDp * 0.22).dp) // Mover la vista hacia abajo
             ) {
                 Box(
                     modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .width(40.dp)
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(Color.White)
-                        .padding(bottom = 8.dp)
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                        .fillMaxWidth()
+                        .background(Color(0xFF04305A))
+                        .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                        .pointerInput(Unit) {
+                            detectVerticalDragGestures { _, dragAmount ->
+                                if (dragAmount > 20) {
+                                    onClose()
+                                }
+                            }
+                        }
+                        .padding(horizontal = 16.dp, vertical = 16.dp)
                 ) {
-                    Text(
-                        text = "Mis Chats",
-                        color = Color.White,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .width(40.dp)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(Color.White)
+                            .padding(bottom = 8.dp)
                     )
 
-                    IconButton(onClick = onClose) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_chat),
-                            contentDescription = "Cerrar",
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Mis Chats",
+                            color = Color.White,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold
                         )
+
+                        IconButton(onClick = { isExploringChats = true }) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_new_chat),
+                                contentDescription = "Buscar más chats",
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
                     }
                 }
-            }
 
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFF072A4A))
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(chats) { chat ->
-                    ChatItem(
-                        userName = chat.userName,
-                        userCompany = chat.userCompany,
-                        userImageRes = chat.userImageRes,
-                        onClick = { selectedChat = chat } // Seleccionar el chat al hacer clic
-                    )
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFF072A4A))
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(chats) { chat ->
+                        ChatItem(
+                            userName = chat.userName,
+                            userCompany = chat.userCompany,
+                            userImageRes = chat.userImageRes,
+                            onClick = { selectedChat = chat } // Seleccionar el chat al hacer clic
+                        )
+                    }
                 }
             }
         }
     }
 }
+
+@Composable
+fun ExploreChatsView(chats: List<Chat>, onClose: () -> Unit, onChatSelected: (Chat) -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+            .background(Color(0xFF072A4A))
+            .padding(top = (LocalConfiguration.current.screenHeightDp * 0.22).dp) // Mover la vista hacia abajo
+    ) {
+        // Encabezado del explorador de chats
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF04305A))
+                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures { _, dragAmount ->
+                        if (dragAmount > 20) {
+                            onClose()
+                        }
+                    }
+                }
+                .padding(horizontal = 16.dp, vertical = 16.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .width(40.dp)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(Color.White)
+                    .padding(bottom = 8.dp)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Explorar Más",
+                    color = Color.White,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                IconButton(onClick = onClose) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_close),
+                        contentDescription = "Cerrar exploración",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+        }
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF072A4A))
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(chats) { chat ->
+                ChatItem(
+                    userName = chat.userName,
+                    userCompany = chat.userCompany,
+                    userImageRes = chat.userImageRes,
+                    onClick = { onChatSelected(chat) } // Seleccionar el chat y abrir conversación
+                )
+            }
+        }
+    }
+}
+
+
 
 @Composable
 fun ChatItem(
