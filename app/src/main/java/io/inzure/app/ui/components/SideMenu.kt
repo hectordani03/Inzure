@@ -187,11 +187,13 @@ fun SideMenu(
             // Botón de cerrar sesión
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .clickable {
+                        // Cerrar sesión
+                        FirebaseAuth.getInstance().signOut()
+                        // Redireccionar al login
+
+                    }
                     .padding(16.dp)
-                    .clickable { /* Acción para cerrar sesión */ },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_logout),
@@ -207,6 +209,7 @@ fun SideMenu(
                     fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                 )
             }
+
         }
     }
 }

@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
+import com.google.firebase.auth.FirebaseAuth
 import io.inzure.app.ui.views.LoginView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -38,18 +39,26 @@ class SplashActivity : ComponentActivity() {
             SplashScreen()
         }
 
-        // Navegar a MainActivity después de un tiempo (simulando carga)
+        // Verificar si el usuario está autenticado
         lifecycleScope.launch {
-            delay(3000) // Espera 3 segundos
-            navigateToLoginView()
+            delay(3000) // Simular carga por 3 segundos
+            checkAuthenticationAndNavigate()
         }
     }
-        private fun navigateToLoginView() {
-            startActivity(Intent(this, LoginView::class.java))
-            finish()
-        }
 
+    private fun checkAuthenticationAndNavigate() {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser != null) {
+            // Si hay un usuario autenticado, navegar a MainActivity
+            startActivity(Intent(this, MainActivity::class.java))
+        } else {
+            // Si no hay un usuario autenticado, navegar a LoginView
+            startActivity(Intent(this, LoginView::class.java))
+        }
+        finish()
+    }
 }
+
 
 @Composable
 fun SplashScreen() {

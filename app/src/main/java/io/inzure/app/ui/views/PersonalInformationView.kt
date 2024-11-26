@@ -5,7 +5,6 @@ import android.app.DatePickerDialog
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -39,13 +38,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreException
 import io.inzure.app.R
 import io.inzure.app.data.model.User
 import io.inzure.app.viewmodel.UserViewModel
 import io.inzure.app.viewmodel.ValidationUtils
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.Period
 import java.util.*
@@ -298,8 +295,6 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
                                 showDialog = false
                             }
                         }
-
-
                         "Número telefónico" -> {
                             val isUnique = ValidationUtils.isPhoneUnique(newValue, userId, firestore)
                             if (!isUnique) {

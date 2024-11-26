@@ -18,8 +18,43 @@ class UserRepository {
 
     suspend fun addUser(user: User): Boolean {
         return try {
+            val userData = when (user.role) {
+                "admin", "editor" -> mapOf(
+                    "id" to user.id,
+                    "firstName" to user.firstName,
+                    "lastName" to user.lastName,
+                    "role" to user.role,
+                    "email" to user.email,
+                    "phone" to user.phone
+                )
+                "client" -> mapOf(
+                    "id" to user.id,
+                    "firstName" to user.firstName,
+                    "lastName" to user.lastName,
+                    "role" to user.role,
+                    "email" to user.email,
+                    "phone" to user.phone,
+                    "image" to user.image,
+                    "description" to user.description,
+                    "birthDate" to user.birthDate
+                )
+                "insurer" -> mapOf(
+                    "id" to user.id,
+                    "firstName" to user.firstName,
+                    "lastName" to user.lastName,
+                    "role" to user.role,
+                    "email" to user.email,
+                    "phone" to user.phone,
+                    "fiscalId" to user.fiscalId,
+                    "companyName" to user.companyName,
+                    "licenseNumber" to user.licenseNumber,
+                    "direction" to user.direction
+                )
+                else -> throw IllegalArgumentException("Unknown role: ${user.role}")
+            }
             db.collection("Users")
-                .add(user)
+                .document(user.id)
+                .set(userData)
                 .await()
             true
         } catch (e: Exception) {
@@ -194,6 +229,7 @@ class UserRepository {
             false
         }
     }
+
     private fun extractStoragePathFromUrl(url: String): String? {
         if (url.isBlank()) return null // Si la URL está vacía, no hay path que extraer
 
@@ -207,7 +243,6 @@ class UserRepository {
         }
         return null // URL no válida
     }
-
     suspend fun deleteImageFromStorage(imageUri: String) {
         if (imageUri.isBlank()) {
             Log.w("Delete", "La URI de la imagen está vacía, no se intentará eliminar del Storage.")
