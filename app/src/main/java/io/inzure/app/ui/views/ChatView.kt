@@ -78,6 +78,7 @@ data class Message(
 
 suspend fun fetchChats(): List<Chat> {
     val db = FirebaseFirestore.getInstance()
+    val currentUserUid = FirebaseAuth.getInstance().currentUser?.uid // Obtén el UID del usuario actual
     val suggestedChats = mutableListOf<Chat>()
 
     try {
@@ -90,6 +91,10 @@ suspend fun fetchChats(): List<Chat> {
         // Mapear datos al modelo Chat
         for (document in querySnapshot.documents) {
             val uid = document.id // Obtener el UID del documento
+
+            // Filtrar el usuario actual
+            if (uid == currentUserUid) continue
+
             val firstName = document.getString("firstName") ?: "Nombre"
             val lastName = document.getString("lastName") ?: "Apellido"
             val companyName = document.getString("companyName") ?: "Sin compañía"
@@ -385,33 +390,39 @@ fun IndividualChatView(chat: Chat, onClose: () -> Unit) {
     var currentMessage by remember { mutableStateOf("") } // Estado para el mensaje actual
     val messages = remember { mutableStateListOf<Message>() } // Estado para los mensajes cargados
 
-    LaunchedEffect(Unit) {
-        try {
-            val querySnapshot = db.collection("chats")
-                .document(chatId)
-                .collection("messages")
-                .orderBy("timestamp") // Ordenar los mensajes por timestamp desde Firestore
-                .get()
-                .await()
+    // Listen for real-time message updates
+    DisposableEffect(Unit) {
+        val listenerRegistration = db.collection("chats")
+            .document(chatId)
+            .collection("messages")
+            .orderBy("timestamp")
+            .addSnapshotListener { querySnapshot, exception ->
+                if (exception != null) {
+                    Log.e("Firestore", "Error listening to messages: $exception")
+                    return@addSnapshotListener
+                }
 
-            val loadedMessages = querySnapshot.documents.map { document ->
-                val senderId = document.getString("senderId") ?: ""
-                val receiverId = document.getString("receiverId") ?: ""
-                val timestamp = document.getLong("timestamp") ?: 0L
-                Message(
-                    text = document.getString("text") ?: "",
-                    isSentByUser = senderId == userIdSender, // Verifica si el mensaje fue enviado por el usuario actual
-                    timestamp = timestamp // Cargar el timestamp
-                )
+                val newMessages = querySnapshot?.documents?.map { document ->
+                    val senderId = document.getString("senderId") ?: ""
+                    val timestamp = document.getLong("timestamp") ?: 0L
+                    Message(
+                        text = document.getString("text") ?: "",
+                        isSentByUser = senderId == userIdSender,
+                        timestamp = timestamp
+                    )
+                } ?: emptyList()
+
+                messages.clear()
+                messages.addAll(newMessages)
             }
 
-            messages.clear()
-            messages.addAll(loadedMessages)
-        } catch (e: Exception) {
-            e.printStackTrace()
+        // Cleanup when the Composable is disposed
+        onDispose {
+            listenerRegistration.remove()
         }
     }
-    // Desplazar automáticamente al último mensaje cuando se carga un mensaje nuevo
+
+    // Automatically scroll to the last message when a new message is added
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
