@@ -1,6 +1,7 @@
 // AdminPersonalInformationView.kt
 package io.inzure.app.ui.views
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -21,8 +22,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -76,6 +79,7 @@ fun AdminPersonalInfoScreen(navController: NavController, userViewModel: UserVie
     var lastName by remember { mutableStateOf("Cargando...") }
     var email by remember { mutableStateOf("Cargando...") }
     var phone by remember { mutableStateOf("Cargando...") }
+    val context = LocalContext.current
 
     // Estado para el diálogo de edición
     var showDialog by remember { mutableStateOf(false) }
@@ -85,6 +89,12 @@ fun AdminPersonalInfoScreen(navController: NavController, userViewModel: UserVie
 
     // Estado para el mensaje de error
     var errorMessage by remember { mutableStateOf("") }
+
+// Agregar variable de estado para el diálogo de contraseña
+    var showPasswordDialog by remember { mutableStateOf(false) }
+    var enteredPassword by remember { mutableStateOf("") }
+    // Estado para el mensaje de success
+    var showSuccessDialog by remember { mutableStateOf(false) }
 
     // Coroutine scope para operaciones asíncronas
     val coroutineScope = rememberCoroutineScope()
@@ -178,24 +188,16 @@ fun AdminPersonalInfoScreen(navController: NavController, userViewModel: UserVie
                 // Realizar validación si es necesario
                 coroutineScope.launch {
                     when (editingLabel) {
+                        // Lógica actualizada para manejar "Correo Electrónico"
                         "Correo Electrónico" -> {
                             val isUnique = ValidationUtils.isEmailUnique(newValue, userId, firestore)
                             if (!isUnique) {
                                 errorMessage = "El email ya está registrado."
                             } else {
-                                // Email válido, proceder a guardar
-                                userViewModel.updateEmail(
-                                    newEmail = newValue,
-                                    onSuccess = {
-                                        // Opcional: mostrar un mensaje de éxito
-                                        navController.navigate("update_success") {
-                                            popUpTo("admin_personal_info_screen") { inclusive = true }
-                                        }
-                                    },
-                                    onError = { exception ->
-                                        errorMessage = exception.message.toString() // Guarda el mensaje de error
-                                    }
-                                )
+                                // Mostrar el diálogo para reautenticación
+                                editingValue = newValue // Guardar temporalmente el nuevo email
+                                enteredPassword = "" // Limpiar el campo de contraseña
+                                showPasswordDialog = true
                                 showDialog = false
                             }
                         }
@@ -231,6 +233,77 @@ fun AdminPersonalInfoScreen(navController: NavController, userViewModel: UserVie
             onCancel = { showDialog = false }
         )
     }
+
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = { /* Opcional: manejar la acción al cerrar el diálogo */ },
+            title = { Text("Correo Actualizado") },
+            text = {
+                Text("Hemos enviado un correo de verificación a $email. Por favor, verifica tu email antes de iniciar sesión nuevamente.")
+            },
+            confirmButton = {
+                Button(onClick = {
+                    showSuccessDialog = false
+                    // Opcional: Navegar o cerrar la pantalla si es necesario
+                }) {
+                    Text("Aceptar")
+                }
+            }
+        )
+    }
+    if (showPasswordDialog) {
+        AlertDialog(
+            onDismissRequest = { showPasswordDialog = false },
+            title = { Text("Reautenticación Requerida") },
+            text = {
+                Column {
+                    Text("Por favor, ingresa tu contraseña actual para actualizar el correo:")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextField(
+                        value = enteredPassword,
+                        onValueChange = { enteredPassword = it },
+                        label = { Text("Contraseña") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (enteredPassword.isNotEmpty()) {
+                        userViewModel.updateEmail(
+                            currentPassword = enteredPassword,
+                            newEmail = editingValue, // Usar el valor temporal
+                            onRedirectToLogin = {
+                                val loginIntent = Intent(context, LoginView::class.java)
+                                loginIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                context.startActivity(loginIntent)
+                            },
+                            onSuccess = {
+                                showPasswordDialog = false
+                                showSuccessDialog = true
+                            },
+                            onError = { exception ->
+                                errorMessage = exception.message.toString()
+                                showPasswordDialog = false
+                            }
+                        )
+                    } else {
+                        errorMessage = "La contraseña no puede estar vacía."
+                    }
+                }) {
+                    Text("Confirmar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPasswordDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
 }
 
 @Composable

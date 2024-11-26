@@ -1,6 +1,7 @@
 // SideMenu.kt
 package io.inzure.app.ui.components
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -8,18 +9,28 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
 import io.inzure.app.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import io.inzure.app.data.model.User
 
 @Composable
 fun SideMenu(
@@ -30,6 +41,42 @@ fun SideMenu(
     drawerState: DrawerState,
     onNavigateToAdmin: () -> Unit // Función de navegación al AdminView
 ) {
+    val auth = FirebaseAuth.getInstance()
+    val firestore = FirebaseFirestore.getInstance()
+
+    // Obtener el ID del usuario autenticado
+    val userId = auth.currentUser?.uid ?: return
+
+    // Variables de estado para almacenar los datos del usuario
+    var firstName by remember { mutableStateOf("Cargando...") }
+    var lastName by remember { mutableStateOf("Cargando...") }
+    var email by remember { mutableStateOf("Cargando...") }
+    var imageUri by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(userId) {
+        firestore.collection("Users")
+            .document(userId)
+            .get()
+            .addOnSuccessListener { userDoc ->
+                if (userDoc.exists()) {
+                    val userData = userDoc.toObject(User::class.java)
+                    if (userData != null) {
+                        firstName = userData.firstName
+                        lastName = userData.lastName
+                        email = userData.email
+                        imageUri = userData.image
+                    } else {
+                        Log.e("Firestore", "El documento existe, pero no se pudo mapear a un objeto User")
+                    }
+                } else {
+                    Log.e("Firestore", "El documento del usuario no existe en Firestore")
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Error al obtener el documento del usuario: ", e)
+            }
+    }
+    val name = "${firstName.split(" ").first()} ${lastName.split(" ").first()}"
+
     Box(
         modifier = Modifier
             .width(screenWidth * 0.75f)
@@ -44,27 +91,39 @@ fun SideMenu(
         ) {
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Sección de perfil
-            Image(
-                painter = painterResource(id = R.drawable.ic_profile3),
-                contentDescription = "User Avatar",
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(CircleShape)
-            )
+            // Imagen de perfil
+            if (!imageUri.isNullOrEmpty()) {
+                Image(
+                    painter = rememberAsyncImagePainter(imageUri),
+                    contentDescription = "Foto de Perfil",
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Image(
+                    painter = painterResource(R.drawable.ic_profile_default),
+                    contentDescription = "Foto de Perfil",
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             // Información del usuario
             Text(
-                text = "Jose Joshua",
+                text = name,
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                 fontSize = 18.sp,
                 color = Color.White
             )
 
             Text(
-                text = "josejoshua01@gmail.com",
+                text = email,
                 fontSize = 14.sp,
                 color = Color.White
             )

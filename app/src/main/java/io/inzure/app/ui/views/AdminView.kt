@@ -53,12 +53,7 @@ fun AdminMainScreen() {
                 context.startActivity(Intent(context, PostsView::class.java))
             }
         }
-        composable("agents") {
-            val context = LocalContext.current
-            LaunchedEffect(Unit) {
-                context.startActivity(Intent(context, AgentsView::class.java))
-            }
-        }
+
         composable("personal_information") {
             val context = LocalContext.current
             LaunchedEffect(Unit) {

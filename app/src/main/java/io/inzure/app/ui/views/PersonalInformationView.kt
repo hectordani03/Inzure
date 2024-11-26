@@ -2,6 +2,7 @@ package io.inzure.app.ui.views
 
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
@@ -31,15 +32,18 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import io.inzure.app.R
 import io.inzure.app.data.model.User
 import io.inzure.app.viewmodel.UserViewModel
+import io.inzure.app.viewmodel.ValidationUtils
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
@@ -61,6 +65,8 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
     var birthDate by remember { mutableStateOf("Cargando...") }
     var email by remember { mutableStateOf("Cargando...") }
     var phone by remember { mutableStateOf("Cargando...") }
+    var description by remember { mutableStateOf("Cargando...") }
+    var role by remember { mutableStateOf("Cargando...") }
     var imageUri by remember { mutableStateOf<String?>(null) }
     var tempImageUri by remember { mutableStateOf<String?>(null) }
 
@@ -71,6 +77,14 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
     var currentEditAction: ((String) -> Unit)? by remember { mutableStateOf(null) }
 
     var showEditPhotoDialog by remember { mutableStateOf(false) }
+    var showDeleteImageDialog by remember { mutableStateOf(false) }
+
+// Agregar variable de estado para el diálogo de contraseña
+    var showPasswordDialog by remember { mutableStateOf(false) }
+    var enteredPassword by remember { mutableStateOf("") }
+
+    val context = LocalContext.current
+
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             tempImageUri = it.toString() // Actualiza la URI temporal
@@ -99,7 +113,9 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
                         birthDate = userData.birthDate
                         email = userData.email
                         phone = userData.phone
+                        description = userData.description
                         imageUri = userData.image
+                        role = userData.role
                     } else {
                         Log.e("Firestore", "El documento existe, pero no se pudo mapear a un objeto User")
                     }
@@ -116,23 +132,27 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
     val userInfo = listOf(
         "Nombre(s)" to firstName to { newValue: String ->
             firstName = newValue
-            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, imageUri)
+            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, description, imageUri, role)
         },
         "Apellidos" to lastName to { newValue: String ->
             lastName = newValue
-            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, imageUri)
+            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, description, imageUri, role)
         },
         "Correo Electrónico" to email to { newValue: String ->
             email = newValue
         },
         "Número telefónico" to phone to { newValue: String ->
             phone = newValue
-            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, imageUri)
+            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, description, imageUri, role)
+        },
+        "Descripción" to description to { newValue: String ->
+            description = newValue
+            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone,description, imageUri, role)
         },
         "Fecha de Nacimiento" to birthDate to { newValue: String ->
             birthDate = newValue
-            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, imageUri)
-        }
+            updateUserInfo(userId, userViewModel, firstName, lastName, birthDate, email, phone, description, imageUri, role)
+        },
     )
 
     Scaffold(
@@ -202,6 +222,28 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
                                 modifier = Modifier.size(24.dp)
                             )
                         }
+                        // Botón para eliminar imagen (solo si existe una imagen)
+                        if (!imageUri.isNullOrEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp) // Tamaño del botón circular
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFE57373)) // Rojo claro
+                                    .align(Alignment.BottomStart) // Posicionado al lado izquierdo
+                                    .clickable {
+                                        showDeleteImageDialog = true // Mostrar diálogo de confirmación
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_remove), // El "-" blanco
+                                    contentDescription = "Eliminar foto",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+
                     }
                 }
 
@@ -243,26 +285,23 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
                 // Realizar validación
                 coroutineScope.launch {
                     when (editingLabel) {
+// Lógica actualizada para manejar "Correo Electrónico"
                         "Correo Electrónico" -> {
-                            val isUnique = isEmailUnique(newValue, userId, firestore)
+                            val isUnique = ValidationUtils.isEmailUnique(newValue, userId, firestore)
                             if (!isUnique) {
                                 errorMessage = "El email ya está registrado."
                             } else {
-                                // Email válido, proceder a guardar
-                                userViewModel.updateEmail(
-                                    newEmail = email,
-                                    onSuccess = {
-                                        showSuccessDialog = true
-                                    },
-                                    onError = { exception ->
-                                        errorMessage = exception.message.toString() // Guarda el mensaje de error
-                                    }
-                                )
+                                // Mostrar el diálogo para reautenticación
+                                editingValue = newValue // Guardar temporalmente el nuevo email
+                                enteredPassword = "" // Limpiar el campo de contraseña
+                                showPasswordDialog = true
                                 showDialog = false
                             }
                         }
+
+
                         "Número telefónico" -> {
-                            val isUnique = isPhoneUnique(newValue, userId, firestore)
+                            val isUnique = ValidationUtils.isPhoneUnique(newValue, userId, firestore)
                             if (!isUnique) {
                                 errorMessage = "El número de teléfono ya está registrado o no es válido."
                             } else {
@@ -293,6 +332,7 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
         )
     }
 
+    // Mostrar el diálogo de edición de imagen
     if (showEditPhotoDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -354,6 +394,46 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
         )
     }
 
+    // Mostrar el diálogo de eliminación de imagen
+    if (showDeleteImageDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteImageDialog = false
+            },
+            title = { Text("Eliminar Foto de Perfil") },
+            text = {
+                Text("¿Estás seguro de que deseas eliminar tu foto de perfil?")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    // Lógica para eliminar la imagen
+                    userViewModel.deleteProfileImage(
+                        userId = userId,
+                        imageUri = imageUri!!,
+                        onSuccess = {
+                            imageUri = null // Limpia la URI de la imagen actual
+                            showDeleteImageDialog = false
+                            Log.d("Delete", "Imagen eliminada correctamente")
+                        },
+                        onError = { e ->
+                            showDeleteImageDialog = false
+                            Log.e("Delete", "Error eliminando imagen: ${e.message}")
+                        }
+                    )
+                }) {
+                    Text("Eliminar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showDeleteImageDialog = false
+                }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     if (showSuccessDialog) {
         AlertDialog(
             onDismissRequest = { /* Opcional: manejar la acción al cerrar el diálogo */ },
@@ -372,6 +452,60 @@ fun PersonalInformationView(userViewModel: UserViewModel = viewModel()) {
         )
     }
 
+
+    if (showPasswordDialog) {
+        AlertDialog(
+            onDismissRequest = { showPasswordDialog = false },
+            title = { Text("Reautenticación Requerida") },
+            text = {
+                Column {
+                    Text("Por favor, ingresa tu contraseña actual para actualizar el correo:")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextField(
+                        value = enteredPassword,
+                        onValueChange = { enteredPassword = it },
+                        label = { Text("Contraseña") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (enteredPassword.isNotEmpty()) {
+                        userViewModel.updateEmail(
+                            currentPassword = enteredPassword,
+                            newEmail = editingValue, // Usar el valor temporal
+                            onRedirectToLogin = {
+                                val loginIntent = Intent(context, LoginView::class.java)
+                                loginIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                context.startActivity(loginIntent)
+                            },
+                            onSuccess = {
+                                showPasswordDialog = false
+                                showSuccessDialog = true
+                            },
+                            onError = { exception ->
+                                errorMessage = exception.message.toString()
+                                showPasswordDialog = false
+                            }
+                        )
+                    } else {
+                        errorMessage = "La contraseña no puede estar vacía."
+                    }
+                }) {
+                    Text("Confirmar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPasswordDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
 }
 
 // Función para actualizar la información del usuario en Firestore a través del ViewModel
@@ -383,7 +517,9 @@ fun updateUserInfo(
     birthDate: String,
     email: String,
     phone: String,
-    imageUri: String?
+    description: String,
+    imageUri: String?,
+    role: String,
 ) {
     val updatedUser = User(
         id = userId,
@@ -392,56 +528,11 @@ fun updateUserInfo(
         birthDate = birthDate,
         email = email,
         phone = phone,
-        image = imageUri ?: ""
+        description = description,
+        image = imageUri ?: "",
+        role = role,
     )
     userViewModel.updateUser(updatedUser)
-}
-
-suspend fun isEmailUnique(email: String, currentUserId: String, firestore: FirebaseFirestore): Boolean {
-    return try {
-        val querySnapshot = firestore.collection("Users")
-            .whereEqualTo("email", email)
-            .get()
-            .await()
-
-        if (querySnapshot.isEmpty) {
-            true // El email no está registrado
-        } else {
-            // Verificar si el email pertenece al usuario actual
-            val otherUsers = querySnapshot.documents.filter { it.id != currentUserId }
-            otherUsers.isEmpty()
-        }
-    } catch (e: Exception) {
-        Log.e("Validation", "Error al verificar la unicidad del email: ${e.message}")
-        false
-    }
-}
-
-suspend fun isPhoneUnique(phone: String, currentUserId: String, firestore: FirebaseFirestore): Boolean {
-    // Validar que el número telefónico tenga exactamente 10 dígitos
-    val phoneRegex = Regex("^\\d{10}$")
-    if (!phoneRegex.matches(phone)) {
-        Log.e("Validation", "El número telefónico debe tener exactamente 10 dígitos.")
-        return false
-    }
-
-    return try {
-        val querySnapshot = firestore.collection("Users")
-            .whereEqualTo("phone", phone)
-            .get()
-            .await()
-
-        if (querySnapshot.isEmpty) {
-            true // El número no está registrado
-        } else {
-            // Verificar si el número pertenece al usuario actual
-            val otherUsers = querySnapshot.documents.filter { it.id != currentUserId }
-            otherUsers.isEmpty()
-        }
-    } catch (e: Exception) {
-        Log.e("Validation", "Error al verificar la unicidad del teléfono: ${e.message}")
-        false
-    }
 }
 
 // Función para validar que el usuario tenga al menos 18 años

@@ -80,12 +80,40 @@ class LoginView : ComponentActivity() {
                             authManager.login(email, password, onSuccess = {
                                 val user = authManager.getCurrentUser()
                                 if (user != null && user.isEmailVerified) {
-                                    // Redirigir a MainActivity si el correo está verificado
-                                    val intent = Intent(this@LoginView, MainActivity::class.java)
-                                    startActivity(intent)
-                                    finish()
+                                    val userId = user.uid
+                                    // Consultar Firestore para obtener el rol del usuario
+                                    val firestore = FirebaseFirestore.getInstance()
+                                    firestore.collection("Users").document(userId).get()
+                                        .addOnSuccessListener { document ->
+                                            val role = document.getString("role")
+                                            when (role) {
+                                                "admin", "editor" -> {
+                                                    // Redirigir a AdminView si el rol es 'admin' o 'editor'
+                                                    val intent =
+                                                        Intent(
+                                                            this@LoginView,
+                                                            AdminView::class.java
+                                                        )
+                                                    startActivity(intent)
+                                                    finish()
+                                                }
+
+                                                "insurer", "client" -> {
+                                                    // Redirigir a MainActivity si el rol es 'insurer' o 'client'
+                                                    val intent =
+                                                        Intent(
+                                                            this@LoginView,
+                                                            MainActivity::class.java
+                                                        )
+                                                    startActivity(intent)
+                                                    finish()
+                                                }
+                                            }
+                                        }
                                 } else {
                                     // Mostrar el popup si el correo no está verificado
+                                    Toast.makeText(this@LoginView, "Correo no verificado, ingrese a su correo electrónico para verificarlo", Toast.LENGTH_SHORT).show()
+
                                 }
                             }, onError = {
                                 Toast.makeText(this@LoginView, "Credenciales incorrectas", Toast.LENGTH_SHORT).show()
@@ -239,8 +267,6 @@ fun loginView(
                 onLoginClick(email, password)
 
                 if (email.isNotEmpty() && password.isNotEmpty()) {
-
-
                     auth.login(email, password, onSuccess = {
                         val currentUser = FirebaseAuth.getInstance().currentUser
                         val authEmail = currentUser?.email

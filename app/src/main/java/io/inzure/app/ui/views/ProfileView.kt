@@ -33,6 +33,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import io.inzure.app.R
@@ -71,53 +72,33 @@ fun ProfileScreen(navController: NavController) {
     val userId = auth.currentUser?.uid ?: return
 
     // Estados para almacenar información del usuario
-    var firstName by remember { mutableStateOf("No disponible") }
-    var lastName by remember { mutableStateOf("No disponible") }
+    var firstName by remember { mutableStateOf("Cargando...") }
+    var lastName by remember { mutableStateOf("Cargando...") }
+    var description by remember { mutableStateOf("Cargando...") }
     var imageUri by remember { mutableStateOf<String?>(null) }
 
-    // Obtener datos del usuario desde Firestore
     LaunchedEffect(userId) {
-        if (userId != null) {
-            firestore.collection("Users")
-                .get()
-                .addOnSuccessListener { querySnapshot ->
-                    var userRole: String? = null
-                    for (document in querySnapshot.documents) {
-                        val documentPath = document.id
-                        firestore.collection("Users")
-                            .document(documentPath)
-                            .collection("userData")
-                            .document(userId)
-                            .get()
-                            .addOnSuccessListener { userDoc ->
-                                if (userDoc.exists()) {
-                                    userRole = documentPath
-                                    val userData = userDoc.toObject(User::class.java)
-                                    if (userData != null) {
-                                        firstName = userData.firstName
-                                        lastName = userData.lastName
-                                        imageUri = userData.image
-                                    }
-                                }
-                            }
-                            .addOnFailureListener { e ->
-                                Log.e("Firestore", "Error al obtener usuario en $documentPath: ", e)
-                            }
-
-                        // Si encontramos el rol, dejamos de buscar
-                        if (userRole != null) break
+        firestore.collection("Users")
+            .document(userId)
+            .get()
+            .addOnSuccessListener { userDoc ->
+                if (userDoc.exists()) {
+                    val userData = userDoc.toObject(User::class.java)
+                    if (userData != null) {
+                        firstName = userData.firstName
+                        lastName = userData.lastName
+                        description = userData.description
+                        imageUri = userData.image
+                    } else {
+                        Log.e("Firestore", "El documento existe, pero no se pudo mapear a un objeto User")
                     }
-
-                    if (userRole == null) {
-                        Log.e("Firestore", "No se pudo determinar el rol del usuario")
-                    }
+                } else {
+                    Log.e("Firestore", "El documento del usuario no existe en Firestore")
                 }
-                .addOnFailureListener { e ->
-                    Log.e("Firestore", "Error al obtener los documentos de usuarios: ", e)
-                }
-        } else {
-            Log.e("Auth", "ID del usuario no disponible")
-        }
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Error al obtener el documento del usuario: ", e)
+            }
     }
 
     // Inicializar DrawerState y CoroutineScope para el SideMenu
@@ -184,22 +165,34 @@ fun ProfileScreen(navController: NavController) {
                         .background(Color(0xFF072A4A)),
                     contentAlignment = Alignment.Center
                 ) {
-                    // Imagen de perfil
-                    Image(
-                        painter = painterResource(R.drawable.ic_profile3),
-                        contentDescription = "Foto de Perfil",
-                        modifier = Modifier
-                            .size(140.dp)
-                            .clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
+                    // Sección de perfil
+                    if (!imageUri.isNullOrEmpty()) {
+                        Image(
+                            painter = rememberAsyncImagePainter(imageUri),
+                            contentDescription = "Foto de Perfil",
+                            modifier = Modifier
+                                .size(140.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Image(
+                            painter = painterResource(R.drawable.ic_profile_default),
+                            contentDescription = "Foto de Perfil",
+                            modifier = Modifier
+                                .size(140.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Nombre del usuario
+                val name = "${firstName.split(" ").first()} ${lastName.split(" ").first()}"
                 Text(
-                    text = "$firstName $lastName",
+                    text = name,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -207,7 +200,7 @@ fun ProfileScreen(navController: NavController) {
 
                 // Descripción del usuario
                 Text(
-                    text = "Me gustan los gatos",
+                    text = description,
                     fontSize = 16.sp,
                     color = Color.Gray,
                     modifier = Modifier.align(Alignment.CenterHorizontally)

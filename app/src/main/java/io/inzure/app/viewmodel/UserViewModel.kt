@@ -85,14 +85,35 @@ class UserViewModel : ViewModel() {
         }
     }
 
-    fun updateEmail(
-        newEmail: String,
+    fun deleteProfileImage(
+        userId: String,
+        imageUri: String,
         onSuccess: () -> Unit,
         onError: (Exception) -> Unit
     ) {
         viewModelScope.launch {
             try {
-                val success = repository.updateEmail(newEmail)
+                repository.deleteImageFromStorage(imageUri)
+                repository.clearImageUriInFirestore(userId)
+                onSuccess()
+            } catch (e: Exception) {
+                onError(e)
+            }
+        }
+    }
+
+    fun updateEmail(
+        currentPassword: String,
+        newEmail: String,
+        onRedirectToLogin: () -> Unit,
+        onSuccess: () -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val success = repository.updateEmail(currentPassword, newEmail) {
+                    onRedirectToLogin()
+                }
                 if (success) {
                     onSuccess()
                 } else {

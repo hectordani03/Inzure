@@ -70,20 +70,6 @@ class PostRepository {
             }
     }
 
-    suspend fun getPostById(postId: String): Post? {
-        return try {
-            val document = db.collection("Posts").document(postId).get().await()
-            if (document.exists()) {
-                document.toObject(Post::class.java)?.copy(id = document.id)
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            Log.e("PostRepository", "Error fetching post: ${e.message}")
-            null
-        }
-    }
-
     fun removeListener() {
         listenerRegistration?.remove()
     }
