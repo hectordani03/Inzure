@@ -17,8 +17,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -48,9 +46,6 @@ import io.inzure.app.ui.components.TopBar
 import kotlinx.coroutines.launch
 
 // Importar MyPostsScreen y otras vistas necesarias
-import io.inzure.app.ui.views.MyPostsListView
-import io.inzure.app.ui.views.LoginView
-import io.inzure.app.ui.views.PersonalInformationView
 
 class ProfileView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,11 +79,13 @@ fun MainScreen() {
         drawerState = drawerState,
         drawerContent = {
             SideMenu(
+                onNavigateToEducativo = { navController.navigate("educativo") },
                 onNavigateToProfile = {
                     navController.navigate("profile") {
                         popUpTo("profile") { inclusive = true }
                     }
                 },
+
                 onNavigateToAdmin = { navController.navigate("admin") },
                 onNavigateToLogin = {
                     // Cerrar sesión y redirigir al login
@@ -98,6 +95,7 @@ fun MainScreen() {
                     }
                     context.startActivity(intent)
                 },
+                onNavigateToChat = { navController.navigate("chat") },
                 showChatView = remember { mutableStateOf(false) },
                 scope = scope,
                 drawerState = drawerState,
@@ -187,7 +185,8 @@ fun ProfileScreen(navController: NavController) {
         bottomBar = {
             BottomBar(
                 onSwipeUp = { /* Implementar acción si es necesario */ },
-                onNavigateToUsers = { /* Implementar navegación a Users si es necesario */ }
+                onNavigateToProfile = { /* Implementar navegación a Users si es necesario */ },
+                onNavigateToChat = { showChatView.value = true }
             )
         }
     ) { innerPadding ->

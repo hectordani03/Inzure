@@ -1,6 +1,6 @@
-// MainView.kt
 package io.inzure.app.ui.views
 
+import android.os.Bundle
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
@@ -30,34 +30,67 @@ import kotlinx.coroutines.launch
 import com.google.firebase.auth.FirebaseAuth
 import io.inzure.app.data.model.User
 import android.util.Log
-
+import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import io.inzure.app.data.model.SearchItem
 import io.inzure.app.ui.components.BottomSheetContent
 
+class EducativoView : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0),
+            navigationBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0)
+        )
+        setContent {
+            Educativo(onNavigateToLogin = { /* Acción de navegación al login */ },
+                onNavigateToProfile = { /* Acción de navegación al perfil */ },
+                onNavigateToCarInsurance = { /* Acción de navegación al seguro de autos */ },
+                onNavigateToLifeInsurance = { /* Acción de navegación al seguro de vida */ },
+                onNavigateToEnterpriseInsurance = { /* Acción de navegación al seguro empresarial */ },
+                onNavigateToUsers = { /* Acción de navegación a la lista de usuarios */ },
+                onNavigateToAdmin = { /* Acción de navegación al administrador */ },
+                onNavigateToChat = { /* Acción de navegación al chat */ },
+                onNavigateToGeneral = { /* Acción de navegación al general */},
+                onNavigateToAutos = { /* Acción de navegación a los seguros de autos */},
+                onNavigateToPersonal = { /* Acción de navegación a los seguros personales */},
+                onNavigateToEmpresarial = { /* Acción de navegación a los seguros empresariales */},
+                onNavigateToEducativo = { /* Acción de navegación al educativo */}
+                )
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainView(
+fun Educativo(
     onNavigateToProfile: () -> Unit,
     onNavigateToCarInsurance: () -> Unit,
     onNavigateToLifeInsurance: () -> Unit,
     onNavigateToEnterpriseInsurance: () -> Unit,
     onNavigateToUsers: () -> Unit,
     onNavigateToAdmin: () -> Unit,
+    onNavigateToChat: () -> Unit,
     onNavigateToLogin: () -> Unit,
     onNavigateToGeneral: () -> Unit,
     onNavigateToAutos: () -> Unit,
     onNavigateToPersonal: () -> Unit,
     onNavigateToEmpresarial: () -> Unit,
-    onNavigateToEducativo: () -> Unit,
-    onNavigateToChat: () -> Unit
+    onNavigateToEducativo: () -> Unit
+
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     var isDrawerOpen by remember { mutableStateOf(false) }
-    val showChatView = remember { mutableStateOf(false) } // Estado para el ChatView
+    val showChatView = remember { mutableStateOf(false) }
 
+    // Estado del BottomSheetScaffold
     val bottomSheetScaffoldState = rememberBottomSheetScaffoldState()
+
+    // Animación de color para el sombreado al abrir el Drawer
     val scrimColor by animateColorAsState(
         targetValue = if (isDrawerOpen) Color.Black.copy(alpha = 0.5f) else Color.Transparent,
         animationSpec = tween(durationMillis = 500)
@@ -95,14 +128,52 @@ fun MainView(
             }
     }
 
+    // Lista de seguros de ejemplo
+    val insuranceList = listOf(
+        SearchItem.InsuranceItem(
+            imageRes = R.drawable.aseguradora1,
+            companyLogo = R.drawable.ic_qualitas,
+            companyName = "Qualitas Seguros",
+            description = "Explora por los diversos seguros que tenemos"
+        ),
+        SearchItem.InsuranceItem(
+            imageRes = R.drawable.aseguradora3,
+            companyLogo = R.drawable.ic_aseguradora3,
+            companyName = "MetLife",
+            description = "Descubriendo la vida juntos"
+        )
+    )
+
+    // Lista de chats de ejemplo
+    val chatList = listOf(
+        SearchItem.ChatItem(
+            userName = "Maria Lopez",
+            userCompany = "Asegurador de MetLife",
+            userImageRes = R.drawable.ic_profile4,
+            onClick = { /* Acción al hacer clic en el chat */ }
+        ),
+        SearchItem.ChatItem(
+            userName = "Carlos Perez",
+            userCompany = "Asegurador de HDI",
+            userImageRes = R.drawable.ic_profile,
+            onClick = { /* Acción al hacer clic en el chat */ }
+        )
+        // Agrega más chats según sea necesario
+    )
+
+    // Combinar las listas de seguros y chats
+    val searchItems = remember { insuranceList + chatList }
+
+    // Implementación del BottomSheetScaffold para manejar el comportamiento de la Bottom Bar
     BottomSheetScaffold(
         scaffoldState = bottomSheetScaffoldState,
-        sheetPeekHeight = 0.dp,
-        containerColor = Color(0xFF072A4A),
+        sheetPeekHeight = 0.dp, // Comienza colapsado
+        containerColor = Color(0xFF072A4A), // Fondo azul del Bottom Sheet
         sheetContent = {
-            BottomSheetContent(emptyList()) // Cambia por el contenido necesario
+            BottomSheetContent(searchItems)
         }
     ) {
+        // Uso de ModalNavigationDrawer para el menú lateral
         ModalNavigationDrawer(
             drawerState = drawerState,
             scrimColor = scrimColor,
@@ -123,25 +194,26 @@ fun MainView(
                     },
                     onNavigateToChat = {
                         scope.launch { drawerState.close() }
-                        showChatView.value = true // Activar el ChatView
+                        onNavigateToChat()
                     },
                     onNavigateToLogin = {
                         scope.launch { drawerState.close() }
                         onNavigateToLogin()
-                    },
+                    }, // Pasar la nueva función de navegación al Login
                     showChatView = showChatView,
                     scope = scope,
                     drawerState = drawerState
                 )
             }
         ) {
+            // Uso de Scaffold para mantener la TopBar y la BottomBar fijas
             Scaffold(
                 topBar = {
                     TopBar(
                         onMenuClick = {
                             scope.launch {
                                 isDrawerOpen = true
-                                drawerState.open()
+                                drawerState.open() // Abrir el Drawer
                             }
                         },
                         onNavigateToProfile = onNavigateToProfile
@@ -155,36 +227,28 @@ fun MainView(
                             }
                         },
                         onNavigateToProfile = onNavigateToProfile,
-                        onNavigateToChat = { showChatView.value = true } // Activar el ChatView desde la BottomBar
+                        onNavigateToChat = { showChatView.value = true }
                     )
                 }
             ) { innerPadding ->
                 if (showChatView.value) {
-                    // Renderizar el ChatView
-                    ChatListView(
-                        chats = emptyList(), // Pasa la lista de chats desde Firestore
-                        onClose = { showChatView.value = false } // Cerrar el ChatView
-                    )
+                    // Lógica para mostrar la vista de chat
+                    // Puedes implementar aquí la vista de chat según tus necesidades
                 } else {
-                    // Contenido principal
+                    // Contenido principal de la pantalla
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState())
                             .padding(innerPadding)
                     ) {
-                        WelcomeMessage(firstName = firstName, lastName = lastName)
-                        InsuranceCategories(
-                            onNavigateToCarInsurance = onNavigateToCarInsurance,
-                            onNavigateToLifeInsurance = onNavigateToLifeInsurance,
-                            onNavigateToEnterpriseInsurance = onNavigateToEnterpriseInsurance
+                        LearnAboutInsuranceEducativo(
+                            onNavigateToGeneral = { onNavigateToGeneral() }, // Sustituir con el Intent correspondiente
+                            onNavigateToAutos = { onNavigateToAutos() }, // Sustituir con el Intent correspondiente
+                            onNavigateToPersonal = { onNavigateToPersonal() },
+                            onNavigateToEmpresarial = { onNavigateToEmpresarial() }
                         )
-                        LearnAboutInsurance(
-                            onNavigateToGeneral = onNavigateToGeneral,
-                            onNavigateToAutos = onNavigateToAutos,
-                            onNavigateToPersonal = onNavigateToPersonal,
-                            onNavigateToEmpresarial = onNavigateToEmpresarial
-                        )
+
                         Spacer(modifier = Modifier.weight(1f))
                     }
                 }
@@ -193,79 +257,8 @@ fun MainView(
     }
 }
 
-
 @Composable
-fun WelcomeMessage(firstName: String, lastName: String) {
-    val name = "${firstName.split(" ").first()} ${lastName.split(" ").first()}"
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-    ) {
-        Text(
-            text = "¡Bienvenid@, $name!",
-            modifier = Modifier
-                .align(Alignment.Center)
-                .background(color = Color(0xFF072A4A), shape = RoundedCornerShape(8.dp))
-                .padding(16.dp),
-            color = Color.White,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-@Composable
-fun InsuranceCategories(
-    onNavigateToCarInsurance: () -> Unit,
-    onNavigateToLifeInsurance: () -> Unit,
-    onNavigateToEnterpriseInsurance: () -> Unit // Nuevo parámetro
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Categorías de Seguros",
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
-            modifier = Modifier.padding(top = 16.dp, bottom = 12.dp)
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            InsuranceCategory("Autos", R.drawable.ic_auto, onClick = onNavigateToCarInsurance)
-            InsuranceCategory("Personal", R.drawable.ic_personal, onClick = onNavigateToLifeInsurance)
-            InsuranceCategory("Empresarial", R.drawable.ic_empresarial, onClick = onNavigateToEnterpriseInsurance) // Actualizar onClick
-        }
-    }
-}
-
-@Composable
-fun InsuranceCategory(name: String, iconResId: Int, onClick: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .padding(8.dp)
-            .clickable { onClick() }
-    ) {
-        Image(
-            painter = painterResource(id = iconResId),
-            contentDescription = name,
-            modifier = Modifier.size(30.dp)
-        )
-        Text(
-            text = name,
-            fontSize = 14.sp,
-            modifier = Modifier.padding(top = 4.dp)
-        )
-    }
-}
-
-@Composable
-fun LearnAboutInsurance(
+fun LearnAboutInsuranceEducativo(
     onNavigateToGeneral: () -> Unit,
     onNavigateToAutos: () -> Unit,
     onNavigateToPersonal: () -> Unit,
@@ -282,18 +275,18 @@ fun LearnAboutInsurance(
             fontSize = 20.sp,
             modifier = Modifier.padding(bottom = 12.dp)
         )
-        InsuranceImage(onClick = onNavigateToGeneral)
+        InsuranceImageEducativo(onClick = onNavigateToGeneral)
         Spacer(modifier = Modifier.height(20.dp))
-        InsuranceImage2(onClick = onNavigateToAutos)
+        InsuranceImageEducativo2(onClick = onNavigateToAutos)
         Spacer(modifier = Modifier.height(10.dp))
-        InsuranceImage3(onClick = onNavigateToPersonal)
+        InsuranceImageEducativo3(onClick = onNavigateToPersonal)
         Spacer(modifier = Modifier.height(10.dp))
-        InsuranceImage4(onClick = onNavigateToEmpresarial)
+        InsuranceImageEducativo4(onClick = onNavigateToEmpresarial)
     }
 }
 
 @Composable
-fun InsuranceImage(onClick: () -> Unit) {
+fun InsuranceImageEducativo(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -334,7 +327,7 @@ fun InsuranceImage(onClick: () -> Unit) {
 }
 
 @Composable
-fun InsuranceImage2(onClick: () -> Unit) {
+fun InsuranceImageEducativo2(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -375,7 +368,7 @@ fun InsuranceImage2(onClick: () -> Unit) {
 }
 
 @Composable
-fun InsuranceImage3(onClick: () -> Unit) {
+fun InsuranceImageEducativo3(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -416,7 +409,7 @@ fun InsuranceImage3(onClick: () -> Unit) {
 }
 
 @Composable
-fun InsuranceImage4(onClick: () -> Unit) {
+fun InsuranceImageEducativo4(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()

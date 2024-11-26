@@ -19,7 +19,8 @@ import androidx.compose.ui.platform.LocalContext
 @Composable
 fun BottomBar(
     onSwipeUp: () -> Unit,
-    onNavigateToUsers: () -> Unit
+    onNavigateToProfile: () -> Unit, // Cambié el nombre para mayor claridad
+    onNavigateToChat: () -> Unit
 ) {
     val context = LocalContext.current
     Box(
@@ -45,28 +46,30 @@ fun BottomBar(
                 )
             }
 
-            IconButton(onClick = onSwipeUp) {
+            IconButton(onClick = onNavigateToChat) { // Llama a la función de navegación
                 Icon(
                     painter = painterResource(id = R.drawable.chat_icon),
-                    contentDescription = "Home",
+                    contentDescription = "Chat",
                     tint = Color.White,
                     modifier = Modifier.size(30.dp)
                 )
             }
+
 
             IconButton(onClick = onSwipeUp) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_search),
-                    contentDescription = "Notifications",
+                    contentDescription = "Search",
                     tint = Color.White,
                     modifier = Modifier.size(30.dp)
                 )
             }
 
-            IconButton(onClick = onNavigateToUsers) {
+            // Cambié esta parte
+            IconButton(onClick = onNavigateToProfile) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_profile2),
-                    contentDescription = "Settings",
+                    contentDescription = "Profile",
                     tint = Color.White,
                     modifier = Modifier.size(30.dp)
                 )
@@ -74,3 +77,4 @@ fun BottomBar(
         }
     }
 }
+

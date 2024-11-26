@@ -2,12 +2,17 @@ package io.inzure.app.ui.views
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -17,20 +22,22 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
 import io.inzure.app.R
-
-// Importa la función BottomBar desde BottomBar.kt
 import io.inzure.app.ui.components.BottomBar
+import io.inzure.app.ui.components.TopBar // Importa tu TopBar personalizado
+import kotlinx.coroutines.launch
 
 class LifeInsuranceView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0),
+            navigationBarStyle = SystemBarStyle.light(scrim = 0, darkScrim = 0)
+        )
         setContent {
             LifeInsuranceScreen(onNavigateToLogin = { /* Acción de navegación al login */ })
         }
@@ -39,96 +46,84 @@ class LifeInsuranceView : ComponentActivity() {
 
 @Composable
 fun LifeInsuranceScreen(onNavigateToLogin: () -> Unit) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        LifeInsuranceTopBar(onNavigateToLogin)
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
-        Spacer(modifier = Modifier.height(22.dp))
-
+    Scaffold(
+        topBar = {
+            TopBar(
+                onMenuClick = {
+                    scope.launch {
+                        drawerState.open() // Abre el drawer al hacer clic en el menú
+                    }
+                },
+                onNavigateToProfile = onNavigateToLogin // Configura la acción de navegación
+            )
+        },
+        bottomBar = {
+            val showChatView = remember { mutableStateOf(false) }
+            BottomBar(
+                onSwipeUp = { /* Acción al deslizar hacia arriba */ },
+                onNavigateToProfile = { /* Acción de navegación */ },
+                onNavigateToChat = { showChatView.value = true }
+            )
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(12.dp)
+                .padding(padding)
         ) {
-            // Título principal con ícono de vida
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 12.dp)
-            ) {
-                Text(
-                    text = "Seguros de Vida",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
-                    modifier = Modifier.weight(1f)
-                )
-                Image(
-                    painter = painterResource(id = R.drawable.ic_personal),
-                    contentDescription = "Life Icon",
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-
-            LifeInsuranceCategories() // Categorías de seguros de vida
-
             Spacer(modifier = Modifier.height(22.dp))
 
-            // Tarjetas de seguro
-            LifeInsuranceCard(
-                title = "VidaPlus",
-                description = "Protección completa para tu futuro",
-                imageResId = R.drawable.insurance_image1 // Imagen de ejemplo
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            LifeInsuranceCard(
-                title = "GNP Seguros",
-                description = "Cobertura flexible para tus necesidades",
-                imageResId = R.drawable.insurance_image2 // Imagen de ejemplo
-            )
-        }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(12.dp)
+            ) {
+                // Título principal con ícono de vida
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp)
+                ) {
+                    Text(
+                        text = "Seguros de Vida",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_personal),
+                        contentDescription = "Life Icon",
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
 
-        // Barra inferior
-        BottomBar(
-            onSwipeUp = { /* Acción al deslizar hacia arriba */ },
-            onNavigateToUsers = { /* Acción de navegación */ }
-        )
+                LifeInsuranceCategories() // Categorías de seguros de vida
+
+                Spacer(modifier = Modifier.height(22.dp))
+
+                // Tarjetas de seguro
+                LifeInsuranceCard(
+                    title = "VidaPlus",
+                    description = "Protección completa para tu futuro",
+                    imageResId = R.drawable.insurance_image1 // Imagen de ejemplo
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                LifeInsuranceCard(
+                    title = "GNP Seguros",
+                    description = "Cobertura flexible para tus necesidades",
+                    imageResId = R.drawable.insurance_image2 // Imagen de ejemplo
+                )
+            }
+        }
     }
 }
 
-@Composable
-fun LifeInsuranceTopBar(onNavigateToLogin: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White)
-            .statusBarsPadding()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = { /* TODO: Manejar clic en menú */ }) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_menu),
-                contentDescription = "Menú",
-                modifier = Modifier.size(40.dp)
-            )
-        }
-        Image(
-            painter = painterResource(id = R.drawable.logo),
-            contentDescription = "Logo",
-            modifier = Modifier.size(80.dp)
-        )
-        IconButton(onClick = onNavigateToLogin) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_profile),
-                contentDescription = "Perfil",
-                modifier = Modifier.size(40.dp)
-            )
-        }
-    }
-}
 
 @Composable
 fun LifeInsuranceCategories() {

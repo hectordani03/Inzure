@@ -88,7 +88,11 @@ class AprendizajeGeneral : ComponentActivity() {
                 onNavigateToAdmin = {
                 },
                 onNavigateToLogin = {
-                }
+                },
+                onNavigateToEducativo = {
+                },
+                onNavigateToChat = {
+                },
             )
         }
     }
@@ -103,6 +107,8 @@ fun LearnInsuranceView(
     onNavigateToAdmin: () -> Unit,
     onNavigateToLogin: () -> Unit,
     onMenuClick: () -> Unit,
+    onNavigateToEducativo: () -> Unit,
+    onNavigateToChat: () -> Unit,
 ) {
     val context = LocalContext.current as Activity
     val scope = rememberCoroutineScope()
@@ -135,6 +141,14 @@ fun LearnInsuranceView(
                         scope.launch { drawerState.close() }
                         onNavigateToAdmin()
                     },
+                    onNavigateToEducativo = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToEducativo()
+                    },
+                    onNavigateToChat = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToChat()
+                    },
                     onNavigateToLogin = {
                         scope.launch { drawerState.close() }
                         onNavigateToLogin()
@@ -158,10 +172,6 @@ fun LearnInsuranceView(
                 )
             },
             bottomBar = {
-                BottomBar(
-                    onSwipeUp = { /* Acción al deslizar hacia arriba en el BottomBar */ },
-                    onNavigateToUsers = onNavigateToUsers
-                )
             },
         ) { innerPadding ->
             Column(
