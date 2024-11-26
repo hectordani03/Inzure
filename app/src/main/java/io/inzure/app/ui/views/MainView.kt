@@ -62,7 +62,11 @@ class MainView : ComponentActivity() {
                         onNavigateToUsers = { /* Acción al hacer clic en el botón de usuarios */ },
                         onNavigateToAdmin = { /* Acción al hacer clic en el botón de administrador */ },
                         onNavigateToChat = { /* Acción al hacer clic en el botón de chat */ },
-                        onNavigateToLogin = { /* Acción al hacer clic en el botón de login */ }
+                        onNavigateToLogin = { /* Acción al hacer clic en el botón de login */ },
+                        onNavigateToGeneral = { /* Acción al hacer clic en el botón de login */ },
+                        onNavigateToAutos = { /* Acción al hacer clic en el botón de login */ },
+                        onNavigateToEmpresarial = { /* Acción al hacer clic en el botón de login */ },
+                        onNavigateToPersonal = { /* Acción al hacer clic en el botón de login */ }
                     )
                 }
             }
@@ -78,7 +82,11 @@ fun MainView(
     onNavigateToUsers: () -> Unit,
     onNavigateToAdmin: () -> Unit,
     onNavigateToChat: () -> Unit,
-    onNavigateToLogin: () -> Unit // Nuevo parámetro para navegar al Login
+    onNavigateToLogin: () -> Unit,
+    onNavigateToGeneral: () -> Unit,
+    onNavigateToAutos: () -> Unit,
+    onNavigateToEmpresarial: () -> Unit,
+    onNavigateToPersonal: () -> Unit
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -234,7 +242,9 @@ fun MainView(
                     ) {
                         WelcomeMessage(firstName = firstName, lastName = lastName)
                         InsuranceCategories(onNavigateToCarInsurance)
-                        LearnAboutInsurance()
+                        LearnAboutInsurance(onNavigateToGeneral
+                        , onNavigateToAutos , onNavigateToEmpresarial , onNavigateToPersonal
+                        )
                         Spacer(modifier = Modifier.weight(1f))
                     }
                 }
@@ -310,7 +320,12 @@ fun InsuranceCategory(name: String, iconResId: Int, onClick: () -> Unit) {
 }
 
 @Composable
-fun LearnAboutInsurance() {
+fun LearnAboutInsurance(
+    onNavigateToGeneral: () -> Unit,
+    onNavigateToAutos: () -> Unit,
+    onNavigateToEmpresarial: () -> Unit,
+    onNavigateToPersonal: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -322,23 +337,26 @@ fun LearnAboutInsurance() {
             fontSize = 20.sp,
             modifier = Modifier.padding(bottom = 12.dp)
         )
-        InsuranceImage()
+        InsuranceImage(onClick = onNavigateToGeneral)
         Spacer(modifier = Modifier.height(20.dp))
-        InsuranceImage2()
+        InsuranceImage2(onClick = onNavigateToAutos)
         Spacer(modifier = Modifier.height(10.dp))
-        InsuranceImage3()
+        InsuranceImage3(onClick = onNavigateToPersonal)
         Spacer(modifier = Modifier.height(10.dp))
-        InsuranceImage4()
+        InsuranceImage4(onClick = onNavigateToEmpresarial)
     }
 }
 
 @Composable
-fun InsuranceImage() {
+fun InsuranceImage(onClick: () -> Unit) {
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
-            .drawBehind {
+            .clickable { onClick() }
+            .drawBehind
+            {
                 for (i in 1..3) {
                     drawRoundRect(
                         color = Color.Gray.copy(alpha = .1f),
@@ -399,12 +417,13 @@ fun InsuranceImage() {
 }
 
 @Composable
-fun InsuranceImage2() {
+fun InsuranceImage2(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
             .padding(bottom = 16.dp)
+            .clickable { onClick() }
             // Aplicamos la sombra usando elevation
             .drawBehind {
                 // Dibujamos múltiples sombras con diferentes opacidades para crear efecto blur
@@ -469,12 +488,13 @@ fun InsuranceImage2() {
 }
 
 @Composable
-fun InsuranceImage3() {
+fun InsuranceImage3(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
             .padding(bottom = 16.dp)
+            .clickable { onClick() }
             // Aplicamos la sombra usando elevation
             .drawBehind {
                 // Dibujamos múltiples sombras con diferentes opacidades para crear efecto blur
@@ -539,12 +559,13 @@ fun InsuranceImage3() {
 }
 
 @Composable
-fun InsuranceImage4() {
+fun InsuranceImage4(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
             .padding(bottom = 16.dp)
+            .clickable { onClick() }
             // Aplicamos la sombra usando elevation
             .drawBehind {
                 // Dibujamos múltiples sombras con diferentes opacidades para crear efecto blur
