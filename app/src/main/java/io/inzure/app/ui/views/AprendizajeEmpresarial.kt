@@ -61,6 +61,8 @@ class AprendizajeEmpresarial : ComponentActivity() {
                 },
                 onNavigateToEducativo = {
                 },
+                onNavigateToQuiz = {
+                }
             )
         }
     }
@@ -76,6 +78,7 @@ fun LearnInsuranceViewEmpresarial(
     onNavigateToLogin: () -> Unit,
     onMenuClick: () -> Unit,
     onNavigateToEducativo: () -> Unit,
+    onNavigateToQuiz: () -> Unit
     onNavigateToChat: () -> Unit,
 ) {
     val context = LocalContext.current as Activity
@@ -113,6 +116,9 @@ fun LearnInsuranceViewEmpresarial(
                         scope.launch { drawerState.close() }
                         onNavigateToEducativo()
                     },
+                    onNavigateToQuiz = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToQuiz()
                     onNavigateToChat = {
                         scope.launch { drawerState.close() }
                         onNavigateToChat()

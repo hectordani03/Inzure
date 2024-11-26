@@ -91,6 +91,7 @@ class AprendizajePersonal : ComponentActivity() {
                 },
                 onNavigateToEducativo = {
                 },
+                onNavigateToQuiz = {
                 onNavigateToChat = {
                 }
             )
@@ -108,6 +109,8 @@ fun LearnInsuranceViewPersonal(
     onNavigateToLogin: () -> Unit,
     onMenuClick: () -> Unit,
     onNavigateToEducativo: () -> Unit,
+    onNavigateToQuiz: () -> Unit
+
     onNavigateToChat: () -> Unit
 ) {
     val context = LocalContext.current as Activity
@@ -145,6 +148,9 @@ fun LearnInsuranceViewPersonal(
                         scope.launch { drawerState.close() }
                         onNavigateToEducativo()
                     },
+                    onNavigateToQuiz = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToQuiz()
                     onNavigateToChat = {
                         scope.launch { drawerState.close() }
                         onNavigateToChat()
