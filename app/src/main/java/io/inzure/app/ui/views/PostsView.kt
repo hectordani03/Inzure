@@ -1,8 +1,5 @@
-// PostsView.kt
 package io.inzure.app.ui.views
 
-import android.app.Activity
-import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
@@ -95,11 +92,7 @@ fun PostsListView() {
                     )
                 } else {
                     posts.forEach { post ->
-                        PostCard(
-                            posts = post,
-                            onEdit = { postsToEdit = post },
-                            onDelete = { showDeleteConfirmation = post }
-                        )
+
                     }
                 }
             }

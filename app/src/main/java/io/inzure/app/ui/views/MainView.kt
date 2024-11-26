@@ -1,6 +1,5 @@
 package io.inzure.app.ui.views
 
-import android.util.Log
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
@@ -32,7 +31,6 @@ import io.inzure.app.ui.components.TopBar
 import io.inzure.app.ui.components.BottomBar
 import kotlinx.coroutines.launch
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import io.inzure.app.data.model.User
 import android.util.Log
 

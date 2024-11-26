@@ -15,19 +15,38 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
+import io.inzure.app.data.repository.PostRepository.PostWithUser
 
 class PostsViewModel : ViewModel() {
 
     private val repository = PostRepository()
 
-    private val _posts = MutableStateFlow<List<Posts>>(emptyList())
-    val posts: StateFlow<List<Posts>> get() = _posts
+    private val _posts = MutableStateFlow<List<PostRepository.PostWithUser>>(emptyList())
+    val posts: StateFlow<List<PostRepository.PostWithUser>> get() = _posts
 
     private val _post = MutableStateFlow<Posts?>(null)
     val post: StateFlow<Posts?> get() = _post
 
     fun getPosts() {
         repository.getPosts { postsList ->
+            //_posts.value = postsList
+        }
+    }
+
+    fun getCarPosts() {
+        repository.getCarPosts { postsList ->
+            _posts.value = postsList
+        }
+    }
+
+    fun getPersonalPosts() {
+        repository.getPersonalPosts { postsList ->
+            _posts.value = postsList
+        }
+    }
+
+    fun getBusinessPosts() {
+        repository.getBusinessPosts { postsList ->
             _posts.value = postsList
         }
     }

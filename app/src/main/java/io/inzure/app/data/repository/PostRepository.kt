@@ -12,6 +12,11 @@ class PostRepository {
     private var listenerRegistration: ListenerRegistration? = null
     private val db = FirebaseFirestore.getInstance()
 
+    data class PostWithUser(
+        val post: Posts,
+        val profileImage: String
+    )
+
     suspend fun addPost(posts: Posts): Boolean {
         return try {
             db.collection("Posts")
@@ -69,6 +74,143 @@ class PostRepository {
             }
     }
 
+    fun getCarPosts(onPostsChanged: (List<PostWithUser>) -> Unit) {
+
+        listenerRegistration?.remove()
+        listenerRegistration = db.collection("Posts")
+            .whereEqualTo("tipo", "Autos") // Filtra publicaciones donde el campo 'tipo' sea 'Autos'
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("PostRepository", "Error fetching car posts: ${error.message}")
+                    return@addSnapshotListener
+                }
+
+                val postsList = snapshot?.documents?.mapNotNull { document ->
+                    val posts = document.toObject(Posts::class.java)
+                    posts?.copy(id = document.id)
+                } ?: emptyList()
+
+                val postWithUserList = mutableListOf<PostWithUser>()
+
+                postsList.forEach { post ->
+                    db.collection("Users")
+                        .document(post.userId)
+                        .get()
+                        .addOnSuccessListener { userSnapshot ->
+                            val firstName = userSnapshot.getString("firstName") ?: ""
+                            val lastName = userSnapshot.getString("lastName") ?: ""
+                            val profileImage = userSnapshot.getString("image") ?: ""
+
+                            // Crea una nueva entrada en la lista combinada
+                            val postWithUser = PostWithUser(
+                                post = post,
+                                profileImage = profileImage
+                            )
+                            postWithUserList.add(postWithUser)
+
+                            // Llama al callback solo cuando se han procesado todas las publicaciones
+                            if (postWithUserList.size == postsList.size) {
+                                onPostsChanged(postWithUserList)
+                            }
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("PostRepository", "Error fetching user data: ${e.message}")
+                        }
+                }
+            }
+    }
+
+    fun getPersonalPosts(onPostsChanged: (List<PostWithUser>) -> Unit) {
+
+        listenerRegistration?.remove()
+        listenerRegistration = db.collection("Posts")
+            .whereEqualTo("tipo", "Personal") // Filtra publicaciones donde el campo 'tipo' sea 'Personal'
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("PostRepository", "Error fetching car posts: ${error.message}")
+                    return@addSnapshotListener
+                }
+
+                val postsList = snapshot?.documents?.mapNotNull { document ->
+                    val posts = document.toObject(Posts::class.java)
+                    posts?.copy(id = document.id)
+                } ?: emptyList()
+
+                val postWithUserList = mutableListOf<PostWithUser>()
+
+                postsList.forEach { post ->
+                    db.collection("Users")
+                        .document(post.userId)
+                        .get()
+                        .addOnSuccessListener { userSnapshot ->
+                            val firstName = userSnapshot.getString("firstName") ?: ""
+                            val lastName = userSnapshot.getString("lastName") ?: ""
+                            val profileImage = userSnapshot.getString("image") ?: ""
+
+                            // Crea una nueva entrada en la lista combinada
+                            val postWithUser = PostWithUser(
+                                post = post,
+                                profileImage = profileImage
+                            )
+                            postWithUserList.add(postWithUser)
+
+                            // Llama al callback solo cuando se han procesado todas las publicaciones
+                            if (postWithUserList.size == postsList.size) {
+                                onPostsChanged(postWithUserList)
+                            }
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("PostRepository", "Error fetching user data: ${e.message}")
+                        }
+                }
+            }
+    }
+
+    fun getBusinessPosts(onPostsChanged: (List<PostWithUser>) -> Unit) {
+
+        listenerRegistration?.remove()
+        listenerRegistration = db.collection("Posts")
+            .whereEqualTo("tipo", "Empresarial") // Filtra publicaciones donde el campo 'tipo' sea 'Personal'
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("PostRepository", "Error fetching car posts: ${error.message}")
+                    return@addSnapshotListener
+                }
+
+                val postsList = snapshot?.documents?.mapNotNull { document ->
+                    val posts = document.toObject(Posts::class.java)
+                    posts?.copy(id = document.id)
+                } ?: emptyList()
+
+                val postWithUserList = mutableListOf<PostWithUser>()
+
+                postsList.forEach { post ->
+                    db.collection("Users")
+                        .document(post.userId)
+                        .get()
+                        .addOnSuccessListener { userSnapshot ->
+                            val firstName = userSnapshot.getString("firstName") ?: ""
+                            val lastName = userSnapshot.getString("lastName") ?: ""
+                            val profileImage = userSnapshot.getString("image") ?: ""
+
+                            // Crea una nueva entrada en la lista combinada
+                            val postWithUser = PostWithUser(
+                                post = post,
+                                profileImage = profileImage
+                            )
+                            postWithUserList.add(postWithUser)
+
+                            // Llama al callback solo cuando se han procesado todas las publicaciones
+                            if (postWithUserList.size == postsList.size) {
+                                onPostsChanged(postWithUserList)
+                            }
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("PostRepository", "Error fetching user data: ${e.message}")
+                        }
+                }
+            }
+    }
     fun removeListener() {
         listenerRegistration?.remove()
     }
