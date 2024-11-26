@@ -165,12 +165,28 @@ fun MainView(
                 }
             ) { innerPadding ->
                 if (showChatView.value) {
-                    // Renderizar el ChatView
+                    // Estado reactivo para los chats
+                    val chats = remember { mutableStateOf<List<Chat>>(emptyList()) }
+                    val isLoading = remember { mutableStateOf(true) }
+
+                    // Cargar los chats desde Firestore
+                    LaunchedEffect(Unit) {
+                        try {
+                            val fetchedChats = fetchChats() // Llamar a Firestore para obtener los chats
+                            chats.value = fetchedChats // Actualizar la lista de chats
+                        } catch (e: Exception) {
+                            Log.e("Firestore", "Error al cargar los chats: $e")
+                        } finally {
+                            isLoading.value = false // Finalizar el estado de carga
+                        }
+                    }
+
+                    // Renderizar el ChatListView con los datos cargados
                     ChatListView(
-                        chats = emptyList(), // Pasa la lista de chats desde Firestore
+                        chats = chats.value, // Pasar los chats cargados
                         onClose = { showChatView.value = false } // Cerrar el ChatView
                     )
-                } else {
+                }else {
                     // Contenido principal
                     Column(
                         modifier = Modifier
